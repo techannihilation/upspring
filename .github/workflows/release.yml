@@ -8,6 +8,7 @@ on:
 env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
   BUILD_TYPE: Release
+  PRESET: msys2-mingw64-release
 
 jobs:
   build:
@@ -22,10 +23,10 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: '${{ matrix.icon }} Setup MSYS2'
+    - name: 'Setup MSYS2'
       uses: msys2/setup-msys2@v2
       with:
-        msystem: ${{matrix.sys}}
+        msystem: "mingw64"
         update: true
         install: >-
           git
@@ -43,7 +44,6 @@ jobs:
 
     - name: '🚧 Build'
       run: |
-        export PRESET=msys2-mingw64-release
         cmake --preset ${PRESET}
         cmake --build --preset ${PRESET}
         # Thanks to: https://github.com/msys2/MINGW-packages/issues/5204#issuecomment-1013818547
