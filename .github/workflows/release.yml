@@ -6,14 +6,12 @@ on:
     - '*'
 
 env:
-  # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
-  BUILD_TYPE: Release
   PRESET: msys2-mingw64-release
 
 jobs:
   build:
     runs-on: windows-latest
-    name: 🚧 mingw64
+    name: 🚧 MINGW64
     defaults:
       run:
         shell: msys2 {0}
@@ -26,7 +24,7 @@ jobs:
     - name: 'Setup MSYS2'
       uses: msys2/setup-msys2@v2
       with:
-        msystem: "mingw64"
+        msystem: MINGW64
         update: true
         install: >-
           git
