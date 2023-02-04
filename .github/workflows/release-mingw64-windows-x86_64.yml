@@ -33,6 +33,7 @@ jobs:
         install: >-
           git
           make
+          zip
         pacboy: >-
           toolchain:p
           ninja:p
@@ -43,7 +44,6 @@ jobs:
           boost:p
           lua:p
           swig:p
-          zip:p
 
     - name: 'Fix IL/ilut_config.h'
       run: |
@@ -56,19 +56,26 @@ jobs:
       env:
         PRESET: ${{matrix.preset}}
 
-    - name: 'Copy .dlls'
-      run: |
-        # Thanks to: https://github.com/msys2/MINGW-packages/issues/5204#issuecomment-1013818547
-        ldd out/build/${PRESET}/src/*.exe | grep -iv system32|grep -vi windows|grep -v :$  | cut -f2 -d\> | cut -f1 -d\( | tr \\ / |while read a; do ! [ -e "out/build/${PRESET}/src/`basename $a`" ] && cp -v "$a" out/build/${PRESET}/src/; done
-      env:
-        PRESET: ${{matrix.preset}}
-
     - name: 'Create upload directory'
       if: startsWith(github.ref, 'refs/tags/')
       run: |
         mkdir Upspring
         cp -pfr out/build/${PRESET}/src/* Upspring/
-        zip -r Upspring-${PRESET}.zip
+      env:
+        PRESET: ${{matrix.preset}}
+
+    - name: 'Copy .dlls'
+      if: startsWith(github.ref, 'refs/tags/')
+      run: |
+        # Thanks to: https://github.com/msys2/MINGW-packages/issues/5204#issuecomment-1013818547
+        ldd out/build/${PRESET}/src/*.exe | grep -iv system32|grep -vi windows|grep -v :$  | cut -f2 -d\> | cut -f1 -d\( | tr \\ / |while read a; do ! [ -e "Upspring/`basename $a`" ] && cp -v "$a" Upspring/; done
+      env:
+        PRESET: ${{matrix.preset}}
+
+    - name: 'Make archive'
+      if: startsWith(github.ref, 'refs/tags/')
+      run: |
+        zip -r Upspring/ Upspring-${PRESET}.zip
       env:
         PRESET: ${{matrix.preset}}
 
