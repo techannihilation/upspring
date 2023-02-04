@@ -6,13 +6,15 @@ on:
     # tags:
     # - '*'
 
-env:
-  PRESET: msys2-mingw64-release
-
 jobs:
   build:
+    strategy:
+      matrix:
+        include:
+          - { sys: MINGW64, cpu: x86_64, sysl: mingw64, preset: msys2-mingw64-release }
+          - { sys: CLANG64, cpu: x86_64, sysl: clang64, preset: msys2-clang64-release }
     runs-on: windows-latest
-    name: 🚧 MINGW64
+    name: 🚧 Build ${{matrix.sys}}
     defaults:
       run:
         shell: msys2 {0}
@@ -26,7 +28,7 @@ jobs:
     - name: 'Setup MSYS2'
       uses: msys2/setup-msys2@v2
       with:
-        msystem: MINGW64
+        msystem: ${{matrix.sys}}
         update: true
         install: >-
           git
@@ -44,7 +46,7 @@ jobs:
 
     - name: 'Fix IL/ilut_config.h'
       run: |
-        touch /d/a/_temp/msys64/mingw64/include/IL/ilut_config.h
+        touch /d/a/_temp/msys64/${{matrix.sysl}}/include/IL/ilut_config.h
 
     - name: '🚧 Build'
       run: |
@@ -56,9 +58,14 @@ jobs:
         # Thanks to: https://github.com/msys2/MINGW-packages/issues/5204#issuecomment-1013818547
         ldd out/build/${PRESET}/src/*.exe | grep -iv system32|grep -vi windows|grep -v :$  | cut -f2 -d\> | cut -f1 -d\( | tr \\ / |while read a; do ! [ -e "out/build/${PRESET}/src/`basename $a`" ] && cp -v "$a" out/build/${PRESET}/src/; done
 
+    - name: 'Create upload directory'
+      run: |
+        mkdir Upspring
+        cp -pfr out/build/${PRESET}/src/* Upspring/
+
     - name: '📤 Archive'
       uses: actions/upload-artifact@v3
       with:
-        name: upspring-windows-x86_64
+        name: upspring-windows-${{matrix.sysl}}-${{matrix.cpu}}
         path: |
-          out/build/${PRESET}/src/
+          Upspring
