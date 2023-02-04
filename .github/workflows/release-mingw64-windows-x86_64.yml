@@ -25,15 +25,22 @@ jobs:
         fetch-depth: 0
         submodules: true
 
-    - name: 'Setup MSYS2'
+    - name: 'Setup MSYS2 - MSYS'
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: MSYS
+        update: true
+        install: >-
+          zip
+
+    - name: 'Setup MSYS2 - ${{matrix.sys}}'
       uses: msys2/setup-msys2@v2
       with:
         msystem: ${{matrix.sys}}
-        update: true
+        update: false
         install: >-
           git
           make
-          zip
         pacboy: >-
           toolchain:p
           ninja:p
