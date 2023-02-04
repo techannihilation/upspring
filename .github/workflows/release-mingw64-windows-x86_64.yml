@@ -12,7 +12,7 @@ jobs:
       matrix:
         include:
           - { sys: MINGW64, cpu: x86_64, sysl: mingw64, preset: msys2-mingw64-release }
-          - { sys: CLANG64, cpu: x86_64, sysl: clang64, preset: msys2-clang64-release }
+          # - { sys: CLANG64, cpu: x86_64, sysl: clang64, preset: msys2-clang64-release }
     runs-on: windows-latest
     name: 🚧 Build ${{matrix.sys}}
     defaults:
@@ -52,20 +52,26 @@ jobs:
       run: |
         cmake --preset ${PRESET}
         cmake --build --preset ${PRESET}
+      env:
+        PRESET: ${{matrix.preset}}
 
     - name: 'Copy .dlls'
       run: |
         # Thanks to: https://github.com/msys2/MINGW-packages/issues/5204#issuecomment-1013818547
         ldd out/build/${PRESET}/src/*.exe | grep -iv system32|grep -vi windows|grep -v :$  | cut -f2 -d\> | cut -f1 -d\( | tr \\ / |while read a; do ! [ -e "out/build/${PRESET}/src/`basename $a`" ] && cp -v "$a" out/build/${PRESET}/src/; done
+      env:
+        PRESET: ${{matrix.preset}}
 
     - name: 'Create upload directory'
       run: |
         mkdir Upspring
         cp -pfr out/build/${PRESET}/src/* Upspring/
+        zip -r Upspring-${PRESET}.zip
+      env:
+        PRESET: ${{matrix.preset}}
 
-    - name: '📤 Archive'
-      uses: actions/upload-artifact@v3
-      with:
-        name: upspring-windows-${{matrix.sysl}}-${{matrix.cpu}}
-        path: |
-          Upspring
+    - name: '📤 Release'
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: Upspring-${{matrix.preset}}.zip
