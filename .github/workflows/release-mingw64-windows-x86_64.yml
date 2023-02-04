@@ -44,7 +44,7 @@ jobs:
 
     - name: 'Fix IL/ilut_config.h'
       run: |
-        touch /a/_temp/msys64/mingw64/include/IL/ilut_config.h
+        touch /d/a/_temp/msys64/mingw64/include/IL/ilut_config.h
 
     - name: '🚧 Build'
       run: |
