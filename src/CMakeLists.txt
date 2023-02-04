@@ -38,10 +38,8 @@ target_link_libraries (Upspring
     ${LUA_LIBRARIES}
 )
 
-# TODO(jochumdev): I hate those manual directories here.
 target_include_directories(Upspring 
     PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}" 
-#    PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../vendor/lib3ds/src"
 )
 
 target_sources(Upspring PRIVATE

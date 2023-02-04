@@ -1,89 +1,122 @@
 {
   "version": 6,
   "cmakeMinimumRequired": {
-      "major": 3,
-      "minor": 23,
-      "patch": 0
+    "major": 3,
+    "minor": 23,
+    "patch": 0
   },
   "configurePresets": [
-      {
-          "name": "debug-gcc",
-          "displayName": "GCC",
-          "description": "Using compilers: C = /usr/bin/gcc, CXX = /usr/bin/g++",
-          "generator": "Ninja",
-          "binaryDir": "${sourceDir}/out/build/${presetName}",
-          "cacheVariables": {
-              "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
-              "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}",
-              "CMAKE_C_COMPILER": "gcc",
-              "CMAKE_CXX_COMPILER": "g++",
-              "CMAKE_BUILD_TYPE": "Debug"
-          }
-      },
-      {
-          "name": "msvc",
-          "generator": "Visual Studio 17 2022",
-          "toolset": "host=x64",
-          "architecture": "x64",
-          "binaryDir": "${sourceDir}/out/build/${presetName}",
-          "cacheVariables": {
-              "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}",
-              "CMAKE_C_COMPILER": "cl.exe",
-              "CMAKE_CXX_COMPILER": "cl.exe"
-          }
-      },
-      {
-          "name": "msys2-mingw64-debug",
-          "binaryDir": "${sourceDir}/out/build/${presetName}",
-          "cacheVariables": {
-              "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}",
-              "CMAKE_C_COMPILER": "gcc.exe",
-              "CMAKE_CXX_COMPILER": "g++.exe",
-              "CMAKE_BUILD_TYPE": "Debug"
-          }
-      },
-      {
-          "name": "msys2-mingw64-release",
-          "binaryDir": "${sourceDir}/out/build/${presetName}",
-          "cacheVariables": {
-              "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}",
-              "CMAKE_C_COMPILER": "gcc.exe",
-              "CMAKE_CXX_COMPILER": "g++.exe",
-              "CMAKE_BUILD_TYPE": "Release"
-          }
-      },
-      {
-          "name": "msys2-clang64-release",
-          "binaryDir": "${sourceDir}/out/build/${presetName}",
-          "cacheVariables": {
-              "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}",
-              "CMAKE_C_COMPILER": "clang.exe",
-              "CMAKE_CXX_COMPILER": "clang++.exe",
-              "CMAKE_BUILD_TYPE": "Release"
-          }
+    {
+      "name": "gcc-debug",
+      "displayName": "GCC Debug",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/out/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}",
+        "CMAKE_C_COMPILER": "gcc",
+        "CMAKE_CXX_COMPILER": "g++",
+        "CMAKE_BUILD_TYPE": "Debug"
       }
+    },
+    {
+      "name": "gcc-release",
+      "displayName": "GCC Release",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/out/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}",
+        "CMAKE_C_COMPILER": "gcc",
+        "CMAKE_CXX_COMPILER": "g++",
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "clang-debug",
+      "displayName": "Clang Debug",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/out/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}",
+        "CMAKE_C_COMPILER": "clang",
+        "CMAKE_CXX_COMPILER": "clang++",
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "clang-release",
+      "displayName": "Clang Release",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/out/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}",
+        "CMAKE_C_COMPILER": "clang",
+        "CMAKE_CXX_COMPILER": "clang++",
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "msys2-mingw64-debug",
+      "binaryDir": "${sourceDir}/out/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}",
+        "CMAKE_C_COMPILER": "gcc.exe",
+        "CMAKE_CXX_COMPILER": "g++.exe",
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "msys2-mingw64-release",
+      "binaryDir": "${sourceDir}/out/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}",
+        "CMAKE_C_COMPILER": "gcc.exe",
+        "CMAKE_CXX_COMPILER": "g++.exe",
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "msys2-clang64-release",
+      "binaryDir": "${sourceDir}/out/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}",
+        "CMAKE_C_COMPILER": "clang.exe",
+        "CMAKE_CXX_COMPILER": "clang++.exe",
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    }
   ],
   "buildPresets": [
-      {
-          "name": "debug-gcc",
-          "configurePreset": "debug-gcc"
-      },
-      {
-          "name": "msvc-debug",
-          "configurePreset": "msvc",
-          "configuration": "Debug"
-      },
-      {
-          "name": "msys2-mingw64-debug",
-          "configurePreset": "msys2-mingw64-debug"
-      },
-      {
-          "name": "msys2-mingw64-release",
-          "configurePreset": "msys2-mingw64-release"
-      },
-      {
-          "name": "msys2-clang64-release",
-          "configurePreset": "msys2-clang64-release"
-      }
+    {
+      "name": "gcc-debug",
+      "configurePreset": "gcc-debug"
+    },
+    {
+      "name": "gcc-release",
+      "configurePreset": "gcc-release"
+    },
+    {
+      "name": "clang-debug",
+      "configurePreset": "clang-debug"
+    },
+    {
+      "name": "clang-release",
+      "configurePreset": "clang-release"
+    },
+    {
+      "name": "msys2-mingw64-debug",
+      "configurePreset": "msys2-mingw64-debug"
+    },
+    {
+      "name": "msys2-mingw64-release",
+      "configurePreset": "msys2-mingw64-release"
+    },
+    {
+      "name": "msys2-clang64-release",
+      "configurePreset": "msys2-clang64-release"
+    }
   ]
 }

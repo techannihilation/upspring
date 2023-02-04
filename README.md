@@ -1,13 +1,23 @@
-# Upspring the Spring RTS model editor.
+# Upspring the Spring RTS model editor
 
 ## February 3, 2023 [jochumdev]
 
 Added support for MSYS2 Mingw64 builds
 
-Install msys2 x86_64, then install these packages in msys gui:
+Install msys2 x86_64, then install these packages in the msys mingw64 cmd:
 
 ```bash
-$ pacman -S mingw-w64-x86_64-toolchain mingw64/mingw-w64-x86_64-ninja mingw-w64-x86_64-cmake mingw64/mingw-w64-x86_64-glew mingw64/mingw-w64-x86_64-freeglut mingw64/mingw-w64-x86_64-devil mingw64/mingw-w64-x86_64-boost mingw64/mingw-w64-x86_64-lua mingw64/mingw-w64-x86_64-swig
+pacman -S pactoys
+pacboy -S \
+  toolchain:p \
+  ninja:p \
+  cmake:p \
+  glew:p \
+  freeglut:p \
+  devil:p \
+  boost:p \
+  lua:p \
+  swig:p
 ```
 
 Now you can use vs-code for example with cmake-tools and build it.
@@ -26,9 +36,9 @@ Added cmake support
 quick compilation guide:
 
 ```bash
-$ cmake --preset debug-gcc
-$ cmake --build --preset debug-gcc
-$ ./out/build/debug-gcc/src/upspring/Upspring
+cmake --preset debug-gcc
+cmake --build --preset debug-gcc
+./out/build/debug-gcc/src/upspring/Upspring
 ```
 
 TODO: I don't like how I added the fltk2 and lua dependencies, need to look closer at it at another time.
@@ -43,11 +53,13 @@ TODO: I don't like how I added the fltk2 and lua dependencies, need to look clos
 
 quick compilation guide:
 
-    src/fltk2          configure && make
-    src/lib3ds         cmake -S . -B build --install-prefix=/usr; cmake --build build --parallel; sudo cmake --install build
-    src/lua            make linux
+```text
+src/fltk2          configure && make
+src/lib3ds         cmake -S . -B build --install-prefix=/usr; cmake --build build --parallel; sudo cmake --install build
+src/lua            make linux
 
-    cd src/upspring/ && make all
+cd src/upspring/ && make all
+```
 
 for now, all temporary object files are created in src/obj/
 and the binary is placed in src/bin/ after linking, but do
@@ -66,7 +78,7 @@ moved data.ups, palette.pal, skybox.dds, views.cfg to
 their own directory data/ (and adjusted the source path
 strings accordingly)
 
-## original readme:
+## original readme
 
 Upspring Model Editor (freeware)
 version 1.54 (Euler Angles release)
