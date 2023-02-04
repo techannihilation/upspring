@@ -50,7 +50,7 @@ jobs:
         cmake --preset ${PRESET}
         cmake --build --preset ${PRESET}
 
-    - name: 'Copy .dll\'s'
+    - name: 'Copy .dlls'
       run: |
         # Thanks to: https://github.com/msys2/MINGW-packages/issues/5204#issuecomment-1013818547
         ldd out/build/${PRESET}/src/*.exe | grep -iv system32|grep -vi windows|grep -v :$  | cut -f2 -d\> | cut -f1 -d\( | tr \\ / |while read a; do ! [ -e "out/build/${PRESET}/src/`basename $a`" ] && cp -v "$a" out/build/${PRESET}/src/; done
