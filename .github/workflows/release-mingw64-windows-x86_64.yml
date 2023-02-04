@@ -2,8 +2,9 @@ name: "Release 'upspring-windows-x86_64' on Tag"
 
 on:
   push:
-    tags:
-    - '*'
+    branchs: [main]
+    # tags:
+    # - '*'
 
 env:
   PRESET: msys2-mingw64-release
