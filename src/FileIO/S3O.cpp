@@ -179,6 +179,9 @@ bool Model::LoadS3O(const char* filename, IProgressCtl& /*progctl*/) {
 
   fclose(file);
 
+  // Flip UV's on Load and again on Save
+  FlipUVs();
+
   return true;
 }
 
@@ -285,6 +288,9 @@ static inline void ApplyOrientationAndScaling(MdlObject* o) {
 }
 
 bool Model::SaveS3O(const char* filename, IProgressCtl& /*progctl*/) {
+  // we have them internal flipped.
+  FlipUVs();
+
   S3OHeader header;
   size_t write_result;
   memset(&header, 0, sizeof(S3OHeader));

@@ -51,9 +51,6 @@ function model.Convert3DOToS3O(input)
         print("-- Stored S3O to: '" .. _s3oOut .. "'")
     end
 
-    print("-- Flip texture")
-    os.execute("convert  " .. _texOutPath .. " -flip " .. _texOutPath)
-
     print("Done")
 end
 

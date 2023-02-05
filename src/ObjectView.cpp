@@ -11,7 +11,6 @@
 #include "ObjectView.h"
 #include "Util.h"
 
-
 EditorUI::ObjectView::ObjectView(EditorUI* editor, fltk::Browser* tree)
     : editor(editor), tree(tree) {
   browserList.editor = editor;

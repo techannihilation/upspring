@@ -8,7 +8,6 @@
 #include "CfgParser.h"
 #include "Util.h"
 
-
 // this keeps a list of implemented value types
 std::vector<CfgValueClass*> CfgValue::classes;
 

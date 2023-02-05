@@ -328,6 +328,8 @@ struct Model {
 
   void Remove3DOBase();
   void Cleanup();
+  void FlipUVs();
+  void MirrorUVs();
 
   float radius;  // radius of collision sphere
   float height;  // height of whole object

@@ -8,7 +8,6 @@
 #include <GL/glew.h>
 #include <GL/gl.h>
 
-
 using namespace csurf;
 
 Object::Object() {}

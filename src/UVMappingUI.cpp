@@ -11,7 +11,6 @@
 #include "CfgParser.h"
 #include "MeshIterators.h"
 
-
 #include <GL/glew.h>
 #include <GL/gl.h>
 
@@ -210,23 +209,9 @@ void MappingUI::Show() {
 }
 
 void MappingUI::flipUVs() {
-  Model* mdl = callback->GetMdl();
-  std::vector<MdlObject*> obj = mdl->GetObjectList();
-
-  for (uint a = 0; a < obj.size(); a++) {
-    MdlObject* o = obj[a];
-
-    for (VertexIterator vi(o); !vi.End(); vi.Next()) vi->tc[0].y = 1.0f - vi->tc[0].y;
-  }
+  callback->GetMdl()->FlipUVs();
 }
 
 void MappingUI::mirrorUVs() {
-  Model* mdl = callback->GetMdl();
-  std::vector<MdlObject*> obj = mdl->GetObjectList();
-
-  for (uint a = 0; a < obj.size(); a++) {
-    MdlObject* o = obj[a];
-
-    for (VertexIterator vi(o); !vi.End(); vi.Next()) vi->tc[0].x = 1.0f - vi->tc[0].x;
-  }
+  callback->GetMdl()->MirrorUVs();
 }

@@ -5,7 +5,7 @@
 #include "Util.h"
 
 // If defined, use SDL_image, otherwise use DevIL/OpenIL
-//#define USE_SDL_IMAGE 
+//#define USE_SDL_IMAGE
 
 #ifdef USE_SDL_IMAGE
 #include <SDL_image.h>

@@ -629,3 +629,25 @@ void Model::Cleanup() {
   // Cleanup nullptr from the removeall
   removeInvalidChilds(root);
 }
+
+void Model::FlipUVs() {
+  auto objs = GetObjectList();
+
+  for (auto &obj : objs) {
+    for (VertexIterator vi(obj); !vi.End(); vi.Next()) {
+      vi->tc[0].y = 1.0F - vi->tc[0].y;
+      // vi->tc[1].y = 1.0F - vi->tc[1].y;
+    }
+  }
+}
+
+void Model::MirrorUVs() {
+  auto objs = GetObjectList();
+
+  for (auto &obj : objs) {
+    for (VertexIterator vi(obj); !vi.End(); vi.Next()) {
+      vi->tc[0].x = 1.0F - vi->tc[0].x;
+      // vi->tc[1].x = 1.0F - vi->tc[1].x;
+    }
+  }
+}
