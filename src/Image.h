@@ -111,6 +111,10 @@ class Image : public Referenced {
   void FillAlpha();
   void SetAlphaZero();
   void SetNonAlphaZero();
+  void Mirror();
+  void Flip();
+  void FlipNonDDS(const std::string &path);
+
   void Convert(Image* dst);  // copy this to dst in dst.format
   void Blit(Image* dst, int sx, int sy, int dx, int dy, int w, int h);
 

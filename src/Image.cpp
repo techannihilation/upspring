@@ -16,8 +16,6 @@
 #include <iostream>
 #include <filesystem>
 
-namespace fs = std::filesystem;
-
 struct DevILInitializer {
   DevILInitializer() {
     ilInit();
@@ -576,6 +574,25 @@ void Image::SetNonAlphaZero() {
       *p &= ~format.mask[3];
       *pp += format.bytesPerPixel;
     }
+  }
+}
+
+void Image::Mirror() {
+  auto ilId = ToIL();
+  iluMirror();
+  FromIL(ilId);
+}
+
+void Image::Flip() {
+  auto ilId = ToIL();
+  iluFlipImage();
+  FromIL(ilId);
+}
+
+void Image::FlipNonDDS(const std::string &path) {
+  auto ext = std::filesystem::path(path).extension();
+  if (ext != ".dds") {
+    Flip();
   }
 }
 

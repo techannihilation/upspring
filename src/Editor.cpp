@@ -661,10 +661,12 @@ void EditorUI::BrowseForTexture(int textureIndex) {
   static std::string fn;
   if (FileOpenDlg("Select texture:", ImageFileExt, fn)) {
     Texture* tex = new Texture(fn);
-    if (!tex->IsLoaded())
+    if (!tex->IsLoaded()) {
       delete tex;
-    else
+    } else {
+      tex->image->FlipNonDDS(fn);
       SetModelTexture(textureIndex, tex);
+    }
 
     Update();
   }

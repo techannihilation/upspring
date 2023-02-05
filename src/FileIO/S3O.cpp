@@ -14,6 +14,8 @@
 #include "S3O.h"
 #pragma pack(pop)
 
+#include <filesystem>
+
 #define S3O_ID "Spring unit"
 
 static void MirrorX(MdlObject* o) {
@@ -165,22 +167,24 @@ bool Model::LoadS3O(const char* filename, IProgressCtl& /*progctl*/) {
 
   // load textures
   for (int tex = 0; tex < 2; tex++) {
-    if (!(tex ? header.texture2 : header.texture1)) continue;
+    if (!(tex == 1 ? header.texture2 : header.texture1)) continue;
 
-    texBindings.push_back(TextureBinding());
+    texBindings.emplace_back();
     TextureBinding& tb = texBindings.back();
 
-    tb.name = Readstring(tex ? header.texture2 : header.texture1, file);
+    tb.name = Readstring(tex == 1 ? header.texture2 : header.texture1, file);
     tb.texture = new Texture(tb.name, mdlPath);
-    if (!tb.texture->IsLoaded()) tb.texture = 0;
+    if (!tb.texture->IsLoaded()) {
+      tb.texture = nullptr;
+      continue;
+    }
+
+    tb.texture->image->FlipNonDDS(tb.name);
   }
 
   mapping = MAPPING_S3O;
 
   fclose(file);
-
-  // Flip UV's on Load and again on Save
-  FlipUVs();
 
   return true;
 }
@@ -288,9 +292,6 @@ static inline void ApplyOrientationAndScaling(MdlObject* o) {
 }
 
 bool Model::SaveS3O(const char* filename, IProgressCtl& /*progctl*/) {
-  // we have them internal flipped.
-  FlipUVs();
-
   S3OHeader header;
   size_t write_result;
   memset(&header, 0, sizeof(S3OHeader));

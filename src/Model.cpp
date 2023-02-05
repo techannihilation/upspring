@@ -424,13 +424,6 @@ bool Model::ConvertToS3O(std::string textureName, int texw, int texh) {
   std::set<Texture*> textures;
   std::map<uint, RefPtr<Texture>> coltextures;
 
-  // conver to lowecase names
-  auto objlist = GetObjectList();
-  for (auto& obj : objlist) {
-    std::transform(obj->name.begin(), obj->name.end(), obj->name.begin(),
-                   [](unsigned char c) { return std::tolower(c); });
-  }
-
   std::vector<PolyMesh*> pmlist = GetPolyMeshList();
   std::vector<Poly*> polygons = GetElementList(&PolyMesh::poly, pmlist.begin(), pmlist.end());
 
@@ -489,12 +482,15 @@ bool Model::ConvertToS3O(std::string textureName, int texw, int texh) {
     texToNode[*ti] = node;
   }
 
-  auto img = tree.GetResult()->Clone();
-  img->Save((textureName + "1.png").c_str());
+  auto *img = tree.GetResult()->Clone();
+  auto saveName = textureName + "1.png";
+  img->FlipNonDDS(saveName);
+  img->Save(saveName.c_str());
+  img->FlipNonDDS(saveName);
 
-  auto tex1 = new Texture();
+  auto *tex1 = new Texture();
   tex1->SetImage(img);
-  tex1->name = textureName + "1.png";
+  tex1->name = saveName;
   SetTexture(0, tex1);
 
   // now set new texture coordinates.
@@ -649,5 +645,14 @@ void Model::MirrorUVs() {
       vi->tc[0].x = 1.0F - vi->tc[0].x;
       // vi->tc[1].x = 1.0F - vi->tc[1].x;
     }
+  }
+}
+
+void Model::AllLowerCaseNames() {
+  // convert to lowecase names
+  auto objlist = GetObjectList();
+  for (auto& obj : objlist) {
+    std::transform(obj->name.begin(), obj->name.end(), obj->name.begin(),
+                   [](unsigned char c) { return std::tolower(c); });
   }
 }

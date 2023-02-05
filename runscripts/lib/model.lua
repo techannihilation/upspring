@@ -36,14 +36,16 @@ function model.Convert3DOToS3O(input)
     end
     lfs.chdir(_oldDir)
 
-    print("-- Remove 3DO base")
-    model:Remove3DOBase()
+    -- print("-- Remove 3DO base")
+    -- model:Remove3DOBase()
+    -- print("-- Making all names lowercase")
+    -- model:AllLowerCaseNames()
 
     print("-- Normalize normals")
     model.root:NormalizeNormals();
 
-    print("-- Cleanup Model")
-    model:Cleanup()
+    -- print("-- Cleanup Model")
+    -- model:Cleanup()
 
     local _s3oOut = lib.utils.join_paths(_dirname, _fileName .. ".s3o")
     local ok = model:SaveS3O(_s3oOut)

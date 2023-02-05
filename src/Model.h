@@ -330,6 +330,7 @@ struct Model {
   void Cleanup();
   void FlipUVs();
   void MirrorUVs();
+  void AllLowerCaseNames();
 
   float radius;  // radius of collision sphere
   float height;  // height of whole object
