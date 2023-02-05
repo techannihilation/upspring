@@ -6,19 +6,19 @@
 
 #ifndef JC_MODEL_H
 #define JC_MODEL_H
-#include "IView.h"
 #include "Animation.h"
-#include "VertexBuffer.h"
+#include "IView.h"
 #include "Referenced.h"
 #include "Texture.h"
+#include "VertexBuffer.h"
 
 #define MAPPING_S3O 0
 #define MAPPING_3DO 1
 
-namespace csurf { 
-	class Face; 
-	class Object;
-};
+namespace csurf {
+class Face;
+class Object;
+};  // namespace csurf
 
 class Texture;
 
@@ -29,349 +29,331 @@ struct Model;
 struct IKinfo;
 class PolyMesh;
 
-struct Triangle
-{
-	Triangle(){vrt[0]=vrt[1]=vrt[2]=0;}
-	int vrt[3];
+struct Triangle {
+  Triangle() { vrt[0] = vrt[1] = vrt[2] = 0; }
+  int vrt[3];
 };
 
-
-struct Vertex
-{
-	Vector3 pos, normal;
-	Vector2 tc[1];
+struct Vertex {
+  Vector3 pos, normal;
+  Vector2 tc[1];
 };
 
-struct Poly
-{
-	Poly ();
-	~Poly ();
+struct Poly {
+  Poly();
+  ~Poly();
 
-	Plane CalcPlane(const std::vector<Vertex>& verts);
-	void Flip();
-	Poly* Clone();
-	void RotateVerts();
+  Plane CalcPlane(const std::vector<Vertex>& verts);
+  void Flip();
+  Poly* Clone();
+  void RotateVerts();
 
-	std::vector<int> verts;
-	std::string texname;
-	Vector3 color;
-	int taColor; // TA indexed color
-	RefPtr<Texture> texture;
+  std::vector<int> verts;
+  std::string texname;
+  Vector3 color;
+  int taColor;  // TA indexed color
+  RefPtr<Texture> texture;
 
-	bool isCurved; // this polygon should get a curved surface at the next csurf update
-	bool isSelected;
+  bool isCurved;  // this polygon should get a curved surface at the next csurf update
+  bool isSelected;
 
 #ifndef SWIG
-	struct Selector : ViewSelector {
-		Selector(Poly *poly) : poly(poly),mesh(0) {}
-		float Score(Vector3 &pos, float camdis);
-		void Toggle (Vector3 &pos, bool bSel);
-		bool IsSelected ();
-		Poly *poly;
-		Matrix transform;
-		PolyMesh *mesh;
-	};
+  struct Selector : ViewSelector {
+    Selector(Poly* poly) : poly(poly), mesh(0) {}
+    float Score(Vector3& pos, float camdis);
+    void Toggle(Vector3& pos, bool bSel);
+    bool IsSelected();
+    Poly* poly;
+    Matrix transform;
+    PolyMesh* mesh;
+  };
 
-	Selector *selector;
+  Selector* selector;
 #endif
 };
 
 // Inverse Kinematics joint types - these use the same naming as ODE
-enum IKJointType
-{
-	IKJT_Fixed=0,
-	IKJT_Hinge=1,  // rotation around an axis
-	IKJT_Universal=2,  // 2 axis
+enum IKJointType {
+  IKJT_Fixed = 0,
+  IKJT_Hinge = 1,      // rotation around an axis
+  IKJT_Universal = 2,  // 2 axis
 };
 
-struct BaseJoint 
-{
-	virtual ~BaseJoint() {}
+struct BaseJoint {
+  virtual ~BaseJoint() {}
 };
 
-struct HingeJoint : public BaseJoint
-{
-	Vector3 axis;
+struct HingeJoint : public BaseJoint {
+  Vector3 axis;
 };
 
-struct UniversalJoint : public BaseJoint
-{
-	Vector3 axis[2];
+struct UniversalJoint : public BaseJoint {
+  Vector3 axis[2];
 };
 
-struct IKinfo
-{
-	IKinfo();
-	~IKinfo();
+struct IKinfo {
+  IKinfo();
+  ~IKinfo();
 
-	IKJointType jointType;
-	BaseJoint* joint;
+  IKJointType jointType;
+  BaseJoint* joint;
 };
 
-struct IRenderData
-{
-	virtual ~IRenderData() {}
-	virtual void Invalidate () = 0;
+struct IRenderData {
+  virtual ~IRenderData() {}
+  virtual void Invalidate() = 0;
 };
 
-class Rotator
-{
-public:
-	Rotator();
-	void AddEulerAbsolute(const Vector3& rot);
-	void AddEulerRelative(const Vector3& rot);
-	Vector3 GetEuler();
-	void SetEuler(Vector3 euler);
-	void ToMatrix(Matrix& o);
-	void FromMatrix(const Matrix& r);
-	Quaternion GetQuat();
-	void SetQuat(Quaternion q);
+class Rotator {
+ public:
+  Rotator();
+  void AddEulerAbsolute(const Vector3& rot);
+  void AddEulerRelative(const Vector3& rot);
+  Vector3 GetEuler();
+  void SetEuler(Vector3 euler);
+  void ToMatrix(Matrix& o);
+  void FromMatrix(const Matrix& r);
+  Quaternion GetQuat();
+  void SetQuat(Quaternion q);
 
-	Vector3 euler;
-//	Quaternion q;
-	bool eulerInterp; // Use euler angles to interpolate
+  Vector3 euler;
+  //	Quaternion q;
+  bool eulerInterp;  // Use euler angles to interpolate
 };
 
 class PolyMesh;
 class ModelDrawer;
 
-class Geometry
-{
-public:
-	virtual ~Geometry() {}
-	
-	virtual void Draw(ModelDrawer *drawer, Model* mdl, MdlObject* o) = 0;
-	virtual Geometry* Clone() = 0;
-	virtual void Transform(const Matrix& transform) = 0;
-	virtual PolyMesh* ToPolyMesh() = 0;
-	virtual void InvalidateRenderData() {}
+class Geometry {
+ public:
+  virtual ~Geometry() {}
 
-	virtual void CalculateRadius(float& radius, const Matrix &tr, const Vector3& mid) = 0;
+  virtual void Draw(ModelDrawer* drawer, Model* mdl, MdlObject* o) = 0;
+  virtual Geometry* Clone() = 0;
+  virtual void Transform(const Matrix& transform) = 0;
+  virtual PolyMesh* ToPolyMesh() = 0;
+  virtual void InvalidateRenderData() {}
+
+  virtual void CalculateRadius(float& radius, const Matrix& tr, const Vector3& mid) = 0;
 };
 
-class PolyMesh : public Geometry
-{
-public:
-	~PolyMesh();
+class PolyMesh : public Geometry {
+ public:
+  ~PolyMesh();
 
-	std::vector<Vertex> verts;
-	std::vector<Poly*> poly;
+  std::vector<Vertex> verts;
+  std::vector<Poly*> poly;
 
-	void Draw(ModelDrawer* drawer, Model* mdl, MdlObject* o);
-	Geometry* Clone();
-	void Transform(const Matrix& transform);
-	PolyMesh* ToPolyMesh(); // clones
-	std::vector<Triangle> MakeTris();
+  void Draw(ModelDrawer* drawer, Model* mdl, MdlObject* o);
+  Geometry* Clone();
+  void Transform(const Matrix& transform);
+  PolyMesh* ToPolyMesh();  // clones
+  std::vector<Triangle> MakeTris();
 
-	static bool IsEqualVertexTC(Vertex& a, Vertex& b);
-	static bool IsEqualVertexTCNormal(Vertex& a, Vertex& b);
-	typedef bool (*IsEqualVertexCB)(Vertex& a, Vertex& b);
+  static bool IsEqualVertexTC(Vertex& a, Vertex& b);
+  static bool IsEqualVertexTCNormal(Vertex& a, Vertex& b);
+  typedef bool (*IsEqualVertexCB)(Vertex& a, Vertex& b);
 
-	void OptimizeVertices(IsEqualVertexCB cb);
-	void Optimize(IsEqualVertexCB cb);
+  void OptimizeVertices(IsEqualVertexCB cb);
+  void Optimize(IsEqualVertexCB cb);
 
-	void MoveGeometry(PolyMesh *dst);
-	void FlipPolygons(); // flip polygons of object and child objects
-	void CalculateRadius (float& radius, const Matrix &tr, const Vector3& mid);
-	void CalculateNormals ();
-	void CalculateNormals2 (float maxSmoothAngle);
+  void MoveGeometry(PolyMesh* dst);
+  void FlipPolygons();  // flip polygons of object and child objects
+  void CalculateRadius(float& radius, const Matrix& tr, const Vector3& mid);
+  void CalculateNormals();
+  void CalculateNormals2(float maxSmoothAngle);
 };
-
 
 struct MdlObject {
-	MdlObject ();
-	virtual ~MdlObject ();
+  MdlObject();
+  virtual ~MdlObject();
 
-	bool IsEmpty ();
-	void Dump (int r=0);
-	void MergeChild (MdlObject *ch);
-	void FullMerge (); // merge all childs and their subchilds
-	void GetTransform (Matrix& tr); // calculates the object space -> parent space transform
-	void GetFullTransform (Matrix& tr); // object space -> world space
-	std::vector<MdlObject*> GetChildObjects (); // returns all child objects (recursively)
+  bool IsEmpty();
+  void Dump(int r = 0);
+  void MergeChild(MdlObject* ch);
+  void FullMerge();                   // merge all childs and their subchilds
+  void GetTransform(Matrix& tr);      // calculates the object space -> parent space transform
+  void GetFullTransform(Matrix& tr);  // object space -> world space
+  std::vector<MdlObject*> GetChildObjects();  // returns all child objects (recursively)
 
-	void UnlinkFromParent ();
-	void LinkToParent (MdlObject *p);
+  void UnlinkFromParent();
+  void LinkToParent(MdlObject* p);
 
-	template<typename Fn>
-	void ApplyPolyMeshOperationR(Fn f)
-	{
-		PolyMesh *pm = GetPolyMesh();
-		if (pm) (pm->*f)();
-		for (uint a=0;a<childs.size();a++)
-			childs[a]->ApplyPolyMeshOperationR(f);
-	}
+  template <typename Fn>
+  void ApplyPolyMeshOperationR(Fn f) {
+    PolyMesh* pm = GetPolyMesh();
+    if (pm) (pm->*f)();
+    for (uint a = 0; a < childs.size(); a++) childs[a]->ApplyPolyMeshOperationR(f);
+  }
 
-	void FlipPolygons();
+  void FlipPolygons();
 
-	void Load3DOTextures(TextureHandler *th);
+  void Load3DOTextures(TextureHandler* th);
 
-	bool HasSelectedParent ();
-	
-	void ApplyTransform (bool rotation, bool scaling, bool position);
-	void ApplyParentSpaceTransform(const Matrix& transform);
-	void TransformVertices (const Matrix& transform);
-	void ApproximateOffset ();
-	void SetPropertiesFromMatrix(Matrix& transform);
-	// Apply transform to contents of object, 
-	// does not touch the properties such as position/scale/rotation
-	void Transform(const Matrix& matrix);
+  bool HasSelectedParent();
 
-	void InvalidateRenderData ();
-	void NormalizeNormals ();
+  void ApplyTransform(bool rotation, bool scaling, bool position);
+  void ApplyParentSpaceTransform(const Matrix& transform);
+  void TransformVertices(const Matrix& transform);
+  void ApproximateOffset();
+  void SetPropertiesFromMatrix(Matrix& transform);
+  // Apply transform to contents of object,
+  // does not touch the properties such as position/scale/rotation
+  void Transform(const Matrix& matrix);
 
-	void MoveOrigin(Vector3 move);
+  void InvalidateRenderData();
+  void NormalizeNormals();
 
-	// Simple script util functions, useful for other code as well
-	void AddChild(MdlObject *o);
-	void RemoveChild(MdlObject *o);
+  void MoveOrigin(Vector3 move);
 
-	PolyMesh* GetPolyMesh();
-	PolyMesh* ToPolyMesh() { return geometry ? geometry->ToPolyMesh() : 0; } // returns a new PolyMesh
-	PolyMesh* GetOrCreatePolyMesh();
+  // Simple script util functions, useful for other code as well
+  void AddChild(MdlObject* o);
+  void RemoveChild(MdlObject* o);
 
-	virtual void InitAnimationInfo ();
-	void UpdateAnimation (float time);
+  PolyMesh* GetPolyMesh();
+  PolyMesh* ToPolyMesh() {
+    return geometry ? geometry->ToPolyMesh() : 0;
+  }  // returns a new PolyMesh
+  PolyMesh* GetOrCreatePolyMesh();
 
-	MdlObject *Clone();
+  virtual void InitAnimationInfo();
+  void UpdateAnimation(float time);
 
-	// Orientation
-    Vector3 position;
-	Rotator rotation;
-	Vector3 scale;
+  MdlObject* Clone();
 
-	Geometry* geometry;
+  // Orientation
+  Vector3 position;
+  Rotator rotation;
+  Vector3 scale;
 
-	AnimationInfo animInfo;
+  Geometry* geometry;
 
-	std::string name;
-	bool isSelected;
-	bool isOpen; // childs visible in object browser
-	IKinfo ikInfo;
+  AnimationInfo animInfo;
 
-	MdlObject *parent;
-	std::vector<MdlObject*> childs;
+  std::string name;
+  bool isSelected;
+  bool isOpen;  // childs visible in object browser
+  IKinfo ikInfo;
+
+  MdlObject* parent;
+  std::vector<MdlObject*> childs;
 
 #ifndef SWIG
-	csurf::Object* csurfobj;
+  csurf::Object* csurfobj;
 
-	struct Selector : ViewSelector
-	{
-		Selector(MdlObject *obj) : obj(obj) {}
-		// Is pos contained by this object?
-		float Score (Vector3 &pos, float camdis);
-		void Toggle (Vector3 &pos, bool bSel);
-		bool IsSelected ();
-		MdlObject *obj;
-	};
-	Selector *selector;
-	bool bTexturesLoaded;
+  struct Selector : ViewSelector {
+    Selector(MdlObject* obj) : obj(obj) {}
+    // Is pos contained by this object?
+    float Score(Vector3& pos, float camdis);
+    void Toggle(Vector3& pos, bool bSel);
+    bool IsSelected();
+    MdlObject* obj;
+  };
+  Selector* selector;
+  bool bTexturesLoaded;
 #endif
 };
 
-static inline void IterateObjects(MdlObject *obj, void (*fn)(MdlObject *obj))
-{
-	fn (obj);
-	for (unsigned int a=0;a<obj->childs.size();a++)
-		IterateObjects (obj->childs[a], fn);
+static inline void IterateObjects(MdlObject* obj, void (*fn)(MdlObject* obj)) {
+  fn(obj);
+  for (unsigned int a = 0; a < obj->childs.size(); a++) IterateObjects(obj->childs[a], fn);
 }
-
-
 
 // allows a GUI component to plug in and show the progress
 struct IProgressCtl {
-	IProgressCtl() { data=0; cb=0; }
-	virtual void Update(float v) { if (cb) cb(v, data); }
-	void (*cb)(float part, void *data);
-	void *data;
+  IProgressCtl() {
+    data = 0;
+    cb = 0;
+  }
+  virtual void Update(float v) {
+    if (cb) cb(v, data);
+  }
+  void (*cb)(float part, void* data);
+  void* data;
 };
 
-struct TextureBinding
-{
-	std::string name;
+struct TextureBinding {
+  std::string name;
 #ifndef SWIG
-	RefPtr<Texture> texture;
+  RefPtr<Texture> texture;
 #endif
-	// swig helpers
-	void SetTexture(Texture *t) { texture = t; }
-	Texture* GetTexture() { return texture.Get(); }
+  // swig helpers
+  void SetTexture(Texture* t) { texture = t; }
+  Texture* GetTexture() { return texture.Get(); }
 };
-
-
 
 // NOTE: g++ disallows references to temporary objects, so...
 static IProgressCtl defprogctl;
 
 struct Model {
-	Model();
-	~Model();
+  Model();
+  ~Model();
 
-	void PostLoad();
+  void PostLoad();
 
+  bool Load3DO(const char* filename, IProgressCtl& progctl = defprogctl);
+  bool Save3DO(const char* filename, IProgressCtl& progctl = defprogctl);
 
-	bool Load3DO(const char *filename, IProgressCtl& progctl = defprogctl);
-	bool Save3DO(const char *filename, IProgressCtl& progctl = defprogctl);
+  bool LoadS3O(const char* filename, IProgressCtl& progctl = defprogctl);
+  bool SaveS3O(const char* filename, IProgressCtl& progctl = defprogctl);
 
-	bool LoadS3O(const char *filename, IProgressCtl& progctl = defprogctl);
-	bool SaveS3O(const char *filename, IProgressCtl& progctl = defprogctl);
+  static Model* Load(const std::string& fn, bool Optimize = true,
+                     IProgressCtl& progctl = defprogctl);
+  static bool Save(Model* mdl, const std::string& fn, IProgressCtl& progctl = defprogctl);
 
-	static Model* Load(const std::string& fn, bool Optimize=true, IProgressCtl& progctl = defprogctl);
-	static bool Save(Model *mdl, const std::string& fn, IProgressCtl& progctl = defprogctl);
+  // exports merged version of the model
+  bool ExportUVMesh(const char* fn);
 
-	// exports merged version of the model
-	bool ExportUVMesh(const char *fn);
+  // copies the UV coords of the single piece exported by ExportUVMesh back to the model
+  bool ImportUVMesh(const char* fn, IProgressCtl& progctl = defprogctl);
+  bool ImportUVCoords(Model* other, IProgressCtl& progctl = defprogctl);
 
-	// copies the UV coords of the single piece exported by ExportUVMesh back to the model
-	bool ImportUVMesh(const char *fn, IProgressCtl& progctl = defprogctl);
-	bool ImportUVCoords(Model* other, IProgressCtl& progctl = defprogctl);
+  void InsertModel(MdlObject* obj, Model* sub);
+  std::vector<MdlObject*> GetSelectedObjects();
+  std::vector<MdlObject*> GetObjectList();  // returns all objects
+  std::vector<PolyMesh*> GetPolyMeshList();
+  void DeleteObject(MdlObject* obj);
+  void ReplaceObject(MdlObject* oldObj, MdlObject* newObj);
+  void EstimateMidPosition();
+  void CalculateRadius();
+  void SwapObjects(MdlObject* a, MdlObject* b);
+  Model* Clone();
 
+  unsigned long ObjectSelectionHash();
 
-	void InsertModel(MdlObject *obj, Model *sub);
-	std::vector<MdlObject*> GetSelectedObjects();
-	std::vector<MdlObject*> GetObjectList(); // returns all objects
-	std::vector<PolyMesh*> GetPolyMeshList();
-	void DeleteObject(MdlObject *obj);
-	void ReplaceObject(MdlObject *oldObj, MdlObject *newObj);
-	void EstimateMidPosition();
-	void CalculateRadius();
-	void SwapObjects(MdlObject *a, MdlObject *b);
-	Model* Clone();
+  void SetTextureName(uint index, const char* name);
+  void SetTexture(uint index, Texture* tex);
 
-	unsigned long ObjectSelectionHash();
+  bool ConvertToS3O(std::string texName, int texw, int texh);
 
-	void SetTextureName(uint index, const char *name);
-	void SetTexture(uint index, Texture* tex);
+  void Remove3DOBase();
+  void Cleanup();
 
-	bool ConvertToS3O(std::string texName, int texw, int texh);
-	void Cleanup3DO();
+  float radius;  // radius of collision sphere
+  float height;  // height of whole object
+  Vector3 mid;   // these give the offset from origin(which is supposed to lay in the ground plane)
+                 // to the middle of the unit collision sphere
 
-	float radius;		//radius of collision sphere
-	float height;		//height of whole object
-	Vector3 mid;//these give the offset from origin(which is supposed to lay in the ground plane) to the middle of the unit collision sphere
+  bool HasTex(uint i) { return i < texBindings.size() && texBindings[i].texture; }
+  uint TextureID(uint i) { return texBindings[i].texture->glIdent; }
+  std::string& TextureName(uint i) { return texBindings[i].name; }
 
-	bool HasTex(uint i) { return i<texBindings.size() && texBindings[i].texture; }
-	uint TextureID(uint i) { return texBindings[i].texture->glIdent; }
-	std::string& TextureName(uint i) { return texBindings[i].name; }
+  std::vector<TextureBinding> texBindings;
+  int mapping;
 
-	std::vector<TextureBinding> texBindings;
-	int mapping;
+  MdlObject* root;
 
-	MdlObject *root;
-
-private:
-	Model(const Model& /*c*/) {}
-	void operator=(const Model& /*c*/) {}
+ private:
+  Model(const Model& /*c*/) {}
+  void operator=(const Model& /*c*/) {}
 };
 
+MdlObject* Load3DSObject(const char* filename, IProgressCtl& progctl);
+bool Save3DSObject(const char* filename, MdlObject* obj, IProgressCtl& progctl);
+MdlObject* LoadWavefrontObject(const char* fn, IProgressCtl& progctl);
+bool SaveWavefrontObject(const char* fn, MdlObject* obj);
 
-
-MdlObject* Load3DSObject(const char *filename, IProgressCtl& progctl);
-bool Save3DSObject(const char *filename, MdlObject *obj, IProgressCtl& progctl);
-MdlObject* LoadWavefrontObject(const char *fn, IProgressCtl& progctl);
-bool SaveWavefrontObject(const char *fn, MdlObject *obj);
-
-void GenerateUniqueVectors(const std::vector<Vertex>& verts,
-						   std::vector<Vector3>& vertPos,
-						   std::vector<int>& old2new);
+void GenerateUniqueVectors(const std::vector<Vertex>& verts, std::vector<Vector3>& vertPos,
+                           std::vector<int>& old2new);
 
 #endif

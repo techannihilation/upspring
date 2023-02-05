@@ -13,62 +13,51 @@
 
 static char g_logfile[64];
 
-void d_setlogfile (const char *f)
-{
-	strncpy (g_logfile, f, 64);
-}
+void d_setlogfile(const char* f) { strncpy(g_logfile, f, 64); }
 
-void d_trace(const char *fmt, ...)
-{
-	static char buf[256];
+void d_trace(const char* fmt, ...) {
+  static char buf[256];
 
-	va_list ap;
-	va_start(ap,fmt);
-	VSNPRINTF (buf,256,fmt,ap);
-	va_end(ap);
+  va_list ap;
+  va_start(ap, fmt);
+  VSNPRINTF(buf, 256, fmt, ap);
+  va_end(ap);
 
-	d_puts (buf);
+  d_puts(buf);
 }
 
 /*
 d_puts - writes a std::string of any length to the debug output
-	(as opposed to d_trace, which is limited by the buffer)
+        (as opposed to d_trace, which is limited by the buffer)
 */
-void d_puts (const char *buf)
-{
+void d_puts(const char* buf) {
 #ifdef WIN32
-	OutputDebugString(buf);
+  OutputDebugString(buf);
 #else
-	fprintf(stderr, buf);
+  fprintf(stderr, buf);
 #endif
 
-	if(g_logfile[0])
-	{
-		FILE *p = fopen (g_logfile, "a");
-		if(p) {
-			fputs(buf, p);
-			fclose (p);
-		}
-	}
+  if (g_logfile[0]) {
+    FILE* p = fopen(g_logfile, "a");
+    if (p) {
+      fputs(buf, p);
+      fclose(p);
+    }
+  }
 
 #ifdef WIN32
-	printf (buf);
+  printf(buf);
 #endif
 }
 
-void d_clearlog()
-{
-	remove (g_logfile);
-}
+void d_clearlog() { remove(g_logfile); }
 
-
-void d_assert(char *str, char *file, int line)
-{
-	d_trace ("Assertion \"%s\" failed at line %d in \'%s\'\n", str, line, file);
+void d_assert(char* str, char* file, int line) {
+  d_trace("Assertion \"%s\" failed at line %d in \'%s\'\n", str, line, file);
 
 #ifdef _DEBUG
-	usDebugBreak ();
+  usDebugBreak();
 #endif
 
-	exit (-1);
+  exit(-1);
 }

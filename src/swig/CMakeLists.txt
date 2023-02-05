@@ -4,6 +4,7 @@ INCLUDE(${SWIG_USE_FILE})
 
 set(UseSWIG_MODULE_VERSION 2)
 set_property(SOURCE upspring.i PROPERTY CPLUSPLUS ON)
+# set_property(SOURCE list.i PROPERTY CPLUSPLUS ON)
 # set_property(SOURCE upspring.i PROPERTY SWIG_MODULE_NAME "upspring")
 
 swig_add_library(upspring

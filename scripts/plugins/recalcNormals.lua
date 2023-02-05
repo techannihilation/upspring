@@ -16,7 +16,7 @@ local function RecalcNormals(selected)
 		else
 			objs = upsGetModel():GetObjectList();
 		end
-		
+
 		for i=0,#objs-1 do
 			local o = objs[i];
 			local pm = o:GetPolyMesh();

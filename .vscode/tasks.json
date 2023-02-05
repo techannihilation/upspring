@@ -4,12 +4,12 @@
     {
       "label": "configure",
       "type": "shell",
-      "command": "cmake --preset debug-gcc"
+      "command": "cmake --preset gcc-debug"
     },
     {
       "label": "build-debug-gcc",
       "type": "shell",
-      "command": "cmake --build --preset debug-gcc"
+      "command": "cmake --build --preset gcc-debug"
     },
     {
       "label": "msys2-mingw64-debug",

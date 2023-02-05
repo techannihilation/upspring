@@ -12,43 +12,38 @@
 // (C) Copyright 2000 Javier Arevalo. Use and modify as you like
 // Get zlib from http://www.cdrom.com/pub/infozip/zlib/
 
-enum TError
-{
+enum TError {
   RET_OK,
   RET_FAIL,
 };
 
+class ZipFile {
+ public:
+  ZipFile() : m_nEntries(0) {}
+  ~ZipFile() { End(); }
 
-class ZipFile
-{
-  public:
+  TError Init(FILE* f);
+  void End();
+  bool IsOk() const { return (m_nEntries != 0); }
 
-    ZipFile    (): m_nEntries(0) { }
-    ~ZipFile   ()                { End(); }
+  int GetNumFiles() const { return m_nEntries; }
 
-    TError  Init          (FILE *f);
-    void    End           ();
-    bool    IsOk          ()         const { return (m_nEntries != 0); }
+  void GetFilename(int i, char* pszDest, int Max) const;
+  int GetFileLen(int i) const;
 
-    int     GetNumFiles   ()         const { return m_nEntries; }
+  TError ReadFile(int i, void* pBuf);
 
-    void    GetFilename   (int i, char *pszDest, int Max) const;
-    int     GetFileLen    (int i) const;
+ private:
+  struct TZipDirHeader;
+  struct TZipDirFileHeader;
+  struct TZipLocalHeader;
 
-    TError  ReadFile      (int i, void *pBuf);
+  FILE* m_f;
+  char* m_pDirData;  // Raw data buffer.
+  int m_nEntries;    // Number of entries.
 
-  private:
-
-    struct TZipDirHeader;
-    struct TZipDirFileHeader;
-    struct TZipLocalHeader;
-
-    FILE                     *m_f;
-    char                     *m_pDirData; // Raw data buffer.
-    int                       m_nEntries; // Number of entries.
-
-    // Pointers to the dir entries in pDirData.
-    const TZipDirFileHeader **m_papDir;   
+  // Pointers to the dir entries in pDirData.
+  const TZipDirFileHeader** m_papDir;
 };
 
-#endif // _ZIPFILE_H_
+#endif  // _ZIPFILE_H_

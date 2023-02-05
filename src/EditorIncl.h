@@ -6,23 +6,21 @@
 #ifndef EDITOR_PCH
 #define EDITOR_PCH
 
-#include <stdio.h>
-#include <math.h>
-#include <string.h>
-#include <stdarg.h>
-#include <stdlib.h>
-
 #include <assert.h>
+#include <math.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 // STL
-#include <vector>
-#include <string>
 #include <algorithm>
-#include <map>
 #include <list>
+#include <map>
 #include <set>
-
 #include <stdexcept>
+#include <string>
+#include <vector>
 
 #include "math/Mathlib.h"
 
@@ -30,8 +28,8 @@
 #include "Fltk.h"
 
 extern "C" {
-	#include <lua.h>
-	#include <lauxlib.h>
+#include <lauxlib.h>
+#include <lua.h>
 }
 
 #endif

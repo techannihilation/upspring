@@ -7,40 +7,37 @@
 #ifndef JC_VERTEX_BUFFER_H
 #define JC_VERTEX_BUFFER_H
 
+class VertexBuffer {
+ public:
+  VertexBuffer();
+  ~VertexBuffer();
 
-class VertexBuffer
-{
-public:
-	VertexBuffer ();
-	~VertexBuffer ();
+  void Init(int bytesize);
 
-	void Init(int bytesize);
+  void* Bind();  // returns the pointer that should be passed to glVertexPointer
+  void Unbind();
 
-	void* Bind (); // returns the pointer that should be passed to glVertexPointer
-	void Unbind ();
+  void* LockData();  // returns a pointer to the data, write-only
+  void UnlockData();
 
-	void* LockData(); // returns a pointer to the data, write-only
-	void UnlockData();
+  uint GetByteSize() { return size; }
 
-	uint GetByteSize() { return size; }
-	
-	static int TotalSize() { return totalBufferSize; }
+  static int TotalSize() { return totalBufferSize; }
 
-protected:
-	VertexBuffer(const VertexBuffer&) {} // nocopy
+ protected:
+  VertexBuffer(const VertexBuffer&) {}  // nocopy
 
-	void *data;
-	uint id;
-	uint size;
-	uint type;
+  void* data;
+  uint id;
+  uint size;
+  uint type;
 
-	static int totalBufferSize;
+  static int totalBufferSize;
 };
 
-class IndexBuffer : public VertexBuffer
-{
-public:
-	IndexBuffer ();
+class IndexBuffer : public VertexBuffer {
+ public:
+  IndexBuffer();
 };
 
 #endif

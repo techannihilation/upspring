@@ -1,0 +1,8 @@
+BasedOnStyle: Google
+ColumnLimit: 100
+---
+Language: Cpp
+DerivePointerAlignment: false
+SortIncludes: Never
+---
+Language: Proto

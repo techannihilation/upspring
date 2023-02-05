@@ -21,26 +21,40 @@ function model.Convert3DOToS3O(input)
     local _oldDir = lfs.currentdir()
 
     local _unittexturesDir = lib.utils.join_paths(_dirname, lib.utils.join_paths("..", "unittextures"))
-    lfs.chdir(_unittexturesDir)
+    if lib.utils.is_directory(_unittexturesDir) then
+        lfs.chdir(_unittexturesDir)
+    end
 
     local _texOut =  _fileName .. "_tex"
-    local ok = model:ConvertToS3O(_texOut, 512, 512)
+    local _texOutPath = lib.utils.join_paths(lfs.currentdir(), _texOut) .. "1.png"
+    local ok = model:ConvertToS3O(_texOut, 1024, 1024)
     if ok then
-        print("-- Converted to S3O, wrote textures to: '" .. lib.utils.join_paths(lfs.currentdir(), _texOut) .. "1.dds', "  .. lib.utils.join_paths(lfs.currentdir(), _texOut) .. "2.dds'")
+        print("-- Converted to S3O, wrote textures to: '" .. _texOutPath .. "'")
     else
         print("-- ERROR: Convert failed.")
         return
     end
     lfs.chdir(_oldDir)
-    
+
+    print("-- Remove 3DO base")
+    model:Remove3DOBase()
+
+    print("-- Normalize normals")
+    model.root:NormalizeNormals();
+
+    print("-- Cleanup Model")
+    model:Cleanup()
 
     local _s3oOut = lib.utils.join_paths(_dirname, _fileName .. ".s3o")
     local ok = model:SaveS3O(_s3oOut)
     if ok then
-        print("-- Stored S3O")
+        print("-- Stored S3O to: '" .. _s3oOut .. "'")
     end
 
-    print("Done, output file is: '" .. _s3oOut .. "'")
+    print("-- Flip texture")
+    os.execute("convert  " .. _texOutPath .. " -flip " .. _texOutPath)
+
+    print("Done")
 end
 
 return model

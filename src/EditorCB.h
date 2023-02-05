@@ -56,39 +56,40 @@ void uiSwapObjects();
 void uiDeleteSelection();
 void uiApplyTransform();
 void uiUniformScale();
-void uiCalculateMidPos ();
-void uiCalculateRadius ();
-void uiSetRenderMethod (RenderMethod rm);
+void uiCalculateMidPos();
+void uiCalculateRadius();
+void uiSetRenderMethod(RenderMethod rm);
 
-void uiRotate3DOTex (); // rotate tool button
+void uiRotate3DOTex();  // rotate tool button
 
 #define DegreesToRadians (3.141593f / 180.0f)
-void uiObjectStateChanged(Vector3 MdlObject::*state, float Vector3::*axis,fltk::Input *o, float scale=1.0f);
-void uiModelStateChanged(float *prop, fltk::Input *o);
+void uiObjectStateChanged(Vector3 MdlObject::*state, float Vector3::*axis, fltk::Input* o,
+                          float scale = 1.0f);
+void uiModelStateChanged(float* prop, fltk::Input* o);
 void uiObjectRotationChanged(int axis, fltk::Input* o);
 void uiObjectPositionChanged(int axis, fltk::Input* o);
-void browserSetObjectName(MdlObject *obj);
+void browserSetObjectName(MdlObject* obj);
 void uiAddUnitTextures();
 
 void Show(bool initial);
-void Update ();
-void Initialize ();
-void UpdateTitle ();
-bool Save ();
-bool Load (const std::string& fn);
-void SetModel (Model *mdl);
-void SetTool (Tool *t);
-void RenderScene (IView *view);
+void Update();
+void Initialize();
+void UpdateTitle();
+bool Save();
+bool Load(const std::string& fn);
+void SetModel(Model* mdl);
+void SetTool(Tool* t);
+void RenderScene(IView* view);
 void SetMapping(int mapping);
-void BrowseForTexture (int index);
-void SetModelTexture (int index, Texture *tex);
-void ReloadTexture (int index);
+void BrowseForTexture(int index);
+void SetModelTexture(int index, Texture* tex);
+void ReloadTexture(int index);
 void ConvertToS3O();
-MdlObject *GetSingleSel ();
+MdlObject* GetSingleSel();
 void SelectionUpdated();
 // Texture groups
 void UpdateTextureGroups();
-void SelectTextureGroup(fltk::Widget *w, void *d);
+void SelectTextureGroup(fltk::Widget* w, void* d);
 void InitTexBrowser();
 TextureGroup* GetCurrentTexGroup();
 fltk::Color SetTeamColor();
@@ -98,50 +99,50 @@ void SerializeConfig(CfgList& cfg, bool store);
 
 fltk::Color teamColor;
 std::string filename, windowTitle;
-Model *model;
+Model* model;
 ModelDrawer* modelDrawer;
-Tool *currentTool;
+Tool* currentTool;
 
 Tools tools;
 
 class ObjectView;
 ObjectView* objectViewer;
 
-class EditorCB : public IEditor { 
-public:
-	EditorUI *ui;
+class EditorCB : public IEditor {
+ public:
+  EditorUI* ui;
 
-	void RedrawViews () { ui->Update(); }
-	std::vector<EditorViewWindow *> GetViews ();
-	void SelectionUpdated() {ui->SelectionUpdated();}
-	Model* GetMdl() { return ui->model; }
-	Tool* GetTool();
-	void RenderScene (IView *view) { ui->RenderScene(view); }
-	TextureHandler* GetTextureHandler() { return ui->textureHandler; }
-	void SetTextureSelectCallback (void (*cb)(Texture*,void*),void *d) { 
-		ui->texBrowser->SetSelectCallback( cb, d );
-	}
-	float GetTime () { return ui->uiTimeline->GetTime(); }
-	void MergeView(EditorViewWindow *own, EditorViewWindow *other);
-	void AddView(EditorViewWindow *v);
-	void SetModel(Model *mdl) { ui->SetModel(mdl); }
+  void RedrawViews() { ui->Update(); }
+  std::vector<EditorViewWindow*> GetViews();
+  void SelectionUpdated() { ui->SelectionUpdated(); }
+  Model* GetMdl() { return ui->model; }
+  Tool* GetTool();
+  void RenderScene(IView* view) { ui->RenderScene(view); }
+  TextureHandler* GetTextureHandler() { return ui->textureHandler; }
+  void SetTextureSelectCallback(void (*cb)(Texture*, void*), void* d) {
+    ui->texBrowser->SetSelectCallback(cb, d);
+  }
+  float GetTime() { return ui->uiTimeline->GetTime(); }
+  void MergeView(EditorViewWindow* own, EditorViewWindow* other);
+  void AddView(EditorViewWindow* v);
+  void SetModel(Model* mdl) { ui->SetModel(mdl); }
 };
 
 EditorCB callback;
 CopyBuffer copyBuffer;
 ArchiveList archives;
 
-TextureHandler *textureHandler;
-TextureGroupHandler *textureGroupHandler;
+TextureHandler* textureHandler;
+TextureGroupHandler* textureGroupHandler;
 
-BackupViewerUI *uiBackupViewer;
-RotatorUI *uiRotator;
-IK_UI *uiIK;
-TimelineUI *uiTimeline;
+BackupViewerUI* uiBackupViewer;
+RotatorUI* uiRotator;
+IK_UI* uiIK;
+TimelineUI* uiTimeline;
 MappingUI* uiMapping;
 TexBuilderUI* uiTexBuilder;
 AnimTrackEditorUI* uiAnimTrackEditor;
 bool optimizeOnLoad;
 
-lua_State *luaState;
+lua_State* luaState;
 std::vector<ScriptedMenuItem*> scripts;

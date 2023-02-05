@@ -8,39 +8,37 @@
 
 #include "Texture.h"
 
-typedef void (*TextureSelectCallback)(Texture *tex, void *data);
+typedef void (*TextureSelectCallback)(Texture* tex, void* data);
 
-class TextureBrowser : public fltk::ScrollGroup
-{
-public:
-	TextureBrowser (int X,int Y, int W,int H,const char *label=0);
+class TextureBrowser : public fltk::ScrollGroup {
+ public:
+  TextureBrowser(int X, int Y, int W, int H, const char* label = 0);
 
-	//void resize(int x,int y,int w,int h);
-	void layout();
+  // void resize(int x,int y,int w,int h);
+  void layout();
 
-	struct Item : public fltk::Widget {
-		Item (Texture *t);
-		Texture *tex;
-		bool selected;
+  struct Item : public fltk::Widget {
+    Item(Texture* t);
+    Texture* tex;
+    bool selected;
 
-		int handle (int event);
-		void draw();
-	};
+    int handle(int event);
+    void draw();
+  };
 
-	void AddTexture (Texture *t);
-	void RemoveTexture (Texture *t);
-	void UpdatePositions (bool bRedraw=true);
-	std::vector<Texture*> GetSelection();
-	void SelectAll();
-	void SetSelectCallback (TextureSelectCallback cb, void *data);
+  void AddTexture(Texture* t);
+  void RemoveTexture(Texture* t);
+  void UpdatePositions(bool bRedraw = true);
+  std::vector<Texture*> GetSelection();
+  void SelectAll();
+  void SetSelectCallback(TextureSelectCallback cb, void* data);
 
-protected:
-	int prevWidth; 
-	TextureSelectCallback selectCallback;
-	void *selectCallbackData;
+ protected:
+  int prevWidth;
+  TextureSelectCallback selectCallback;
+  void* selectCallbackData;
 
-	void SelectItem (Item *i);
+  void SelectItem(Item* i);
 };
 
-
-#endif 
+#endif

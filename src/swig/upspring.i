@@ -15,12 +15,12 @@
 
 
 %{
-#include "EditorIncl.h"
-#include "EditorDef.h"
+#include "../EditorIncl.h"
+#include "../EditorDef.h"
 #include "ScriptInterface.h"
 #include "../Model.h"
-#include "DebugTrace.h"
-#include "Texture.h"
+#include "../DebugTrace.h"
+#include "../Texture.h"
 
 #include <iostream>
 %}
@@ -33,11 +33,29 @@
 %rename(cppstring) string;
 %include "std_string.i"
 %include "list.i"
-namespace std{ 
-	%template(IntArray) std::vector<int>; 
-	%template(FloatArray) std::vector<float>;
-	%template(CharArray) std::vector<char>;
-	%template(ShortArray) std::vector<short>;
+
+%extend std::vector { int __len(void*) { return self->size(); } }
+
+namespace std {
+	%template(vectori) vector<int>; 
+	%template(vectorf) vector<float>;
+	%template(vectorc) vector<char>;
+	%template(vectors) vector<short>;
+}
+
+namespace std {
+	%template(PolyRefArray) vector<Poly*>;
+	%template(VertexArray) vector<Vertex>;
+	%template(TriArray) vector<Triangle>;
+	%template(ObjectRefArray) vector<MdlObject*>;
+	%template(AnimationInfoRefArray) vector<AnimationInfo*>;
+	%template(AnimationInfoList) list<AnimationInfo>;
+	%template(AnimInfoListIt)  list_iterator<AnimationInfo>;
+	%template(AnimInfoListRevIt)  list_reverse_iterator<AnimationInfo>;
+	%template(AnimPropertyList) list<AnimProperty>;
+	%template(AnimPropListIt) list_iterator<AnimProperty>;
+	%template(AnimPropListRevIt) list_reverse_iterator<AnimProperty>;
+	%template(AnimPropertyRefArray) vector<AnimProperty*>;
 }
 
 %include "../DebugTrace.h"
@@ -54,21 +72,6 @@ namespace std{
 
 %newobject MdlObject::Clone();
 %newobject Poly::Clone();
-
-namespace std{
-	%template(PolyRefArray) std::vector<Poly*>;
-	%template(VertexArray) std::vector<Vertex>;
-	%template(TriArray) std::vector<Triangle>;
-	%template(ObjectRefArray) std::vector<MdlObject*>;
-	%template(AnimationInfoRefArray) std::vector<AnimationInfo*>;
-	%template(AnimationInfoList) std::list<AnimationInfo>;
-	%template(AnimInfoListIt)  list_iterator<AnimationInfo>;
-	%template(AnimInfoListRevIt)  list_reverse_iterator<AnimationInfo>;
-	%template(AnimPropertyList) std::list<AnimProperty>;
-	%template(AnimPropListIt) list_iterator<AnimProperty>;
-	%template(AnimPropListRevIt) list_reverse_iterator<AnimProperty>;
-	%template(AnimPropertyRefArray) std::vector<AnimProperty*>;
-}
 
 namespace fltk{
 void message(const char *fmt, ...);
