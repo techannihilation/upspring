@@ -10,7 +10,7 @@ class Image {
   Image()
       : ilid_(),
         has_error_(true),
-        error_(),
+        error_("not loaded/created"),
         width_(),
         height_(),
         bpp_(),
