@@ -527,7 +527,7 @@ void Tools::LoadImages()
       continue;
     }
 
-    if (!image.has_alpha() && !image.AddAlpha()) {
+    if (!image.has_alpha() && !image.add_alpha()) {
       spdlog::error("Failed to add alpha to tool image: '{}', error was: {}", tool->imageFile, image.error());
       continue;
     }

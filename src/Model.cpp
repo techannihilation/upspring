@@ -466,9 +466,9 @@ bool Model::ConvertToS3O(std::string textureName, int texw, int texh) {
 
     // Everything that has a alpha color is "teamcolor", everything else "normal".
     if (clone.has_alpha()) {
-      clone.SetNonAlphaZero();
+      clone.non_alpha_to_zero();
     } else {
-      clone.SetAlphaZero();
+      clone.alpha_to_zero();
     }
 
     TextureBinTree::Node* node = tree.AddNode(clone);
@@ -484,7 +484,7 @@ bool Model::ConvertToS3O(std::string textureName, int texw, int texh) {
   auto img = tree.GetResult();
   auto saveName = textureName + "1.png";
   img.FlipNonDDS(saveName);
-  img.Save(saveName);
+  img.save(saveName);
   img.FlipNonDDS(saveName);
 
   auto tex1 = std::make_shared<Texture>();

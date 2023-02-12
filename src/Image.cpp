@@ -109,7 +109,7 @@ bool Image::create(int par_width, int par_height, float par_red, float par_green
   ilSetInteger(IL_IMAGE_HEIGHT, par_height);
   ilSetInteger(IL_IMAGE_CHANNELS, 3);
 
-  ClearColor(par_red / 255.0F, par_green / 255.0F, par_blue / 255.0F, 1.0F);
+  clear_color(par_red / 255.0F, par_green / 255.0F, par_blue / 255.0F, 1.0F);
 
   // Read back image infos
   has_error_ = false;
@@ -118,7 +118,7 @@ bool Image::create(int par_width, int par_height, float par_red, float par_green
   return true;
 }
 
-bool Image::Save(const std::string& par_file) const {
+bool Image::save(const std::string& par_file) const {
   if (has_error()) {
     return false;
   }
@@ -126,6 +126,16 @@ bool Image::Save(const std::string& par_file) const {
   ilBindImage(ilid_);
   ilEnable(IL_FILE_OVERWRITE);
   return ilSaveImage(static_cast<const ILstring>(par_file.c_str())) == IL_TRUE;
+}
+
+// trunk-ignore(my-clang-tidy/readability-make-member-function-const)
+std::uint8_t* Image::data() {
+  if (has_error()) {
+    return nullptr;
+  }
+
+  ilBindImage(ilid_);
+  return ilGetData();
 }
 
 const std::uint8_t* Image::data() const {
@@ -137,7 +147,8 @@ const std::uint8_t* Image::data() const {
   return ilGetData();
 }
 
-bool Image::ClearColor(float pRed, float pGreen, float pBlue, float pAlpha) {
+// trunk-ignore(my-clang-tidy/readability-make-member-function-const)
+bool Image::clear_color(float pRed, float pGreen, float pBlue, float pAlpha) {
   if (has_error()) {
     return false;
   }
@@ -152,7 +163,8 @@ bool Image::ClearColor(float pRed, float pGreen, float pBlue, float pAlpha) {
 /*
 Add/Remove alpha channel
 */
-bool Image::AddAlpha() {
+// trunk-ignore(my-clang-tidy/readability-make-member-function-const)
+bool Image::add_alpha() {
   if (has_error() or has_alpha()) {
     return false;
   }
@@ -162,23 +174,26 @@ bool Image::AddAlpha() {
   return true;
 }
 
-bool Image::SetAlphaZero() {
+// trunk-ignore(my-clang-tidy/readability-make-member-function-const)
+bool Image::alpha_to_zero() {
   if (has_error() or !has_alpha()) {
     return false;
   }
 
-  return ClearColor(0.0F, 0.0F, 0.0F, 1.0F);
+  return clear_color(0.0F, 0.0F, 0.0F, 1.0F);
 }
 
-bool Image::SetNonAlphaZero() {
+// trunk-ignore(my-clang-tidy/readability-make-member-function-const)
+bool Image::non_alpha_to_zero() {
   if (has_error() or !has_alpha()) {
     return false;
   }
 
-  return ClearColor(1.0F, 1.0F, 1.0F, 0.0F);
+  return clear_color(1.0F, 1.0F, 1.0F, 0.0F);
 }
 
-bool Image::Mirror() {
+// trunk-ignore(my-clang-tidy/readability-make-member-function-const)
+bool Image::mirror() {
   if (has_error()) {
     return false;
   }
@@ -189,7 +204,8 @@ bool Image::Mirror() {
   return true;
 }
 
-bool Image::Flip() {
+// trunk-ignore(my-clang-tidy/readability-make-member-function-const)
+bool Image::flip() {
   if (has_error()) {
     return false;
   }
@@ -203,7 +219,7 @@ bool Image::Flip() {
 bool Image::FlipNonDDS(const std::string& path) {
   auto ext = std::filesystem::path(path).extension();
   if (ext != ".dds") {
-    return Flip();
+    return flip();
   }
 
   return false;
@@ -214,7 +230,8 @@ This function is not intended to actually draw things (it doesn't do any clippin
 it is just a way to copy certain parts of an image.
 The formats have to be exactly the same
 */
-bool Image::Blit(const Image& pSrc, int pDx, int pDy, int pDz, int pSx, int pSy, int pSz, int pWidth,
+// trunk-ignore(my-clang-tidy/readability-make-member-function-const)
+bool Image::blit(const Image& pSrc, int pDx, int pDy, int pDz, int pSx, int pSy, int pSz, int pWidth,
                  int pHeight, int pDepth) {
   if (has_error() or pSrc.has_error()) {
     return false;

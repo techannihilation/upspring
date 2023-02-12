@@ -341,7 +341,7 @@ void TextureBinTree::StoreNode(Node* n, const Image& tex) {
   n->img_w = tex.width();
   n->img_h = tex.height();
 
-  image_.Blit(tex, n->x, n->y, 1, 0, 0, 1, tex.width(), tex.height(), 1);
+  image_.blit(tex, n->x, n->y, 1, 0, 0, 1, tex.width(), tex.height(), 1);
 }
 
 TextureBinTree::Node* TextureBinTree::InsertNode(Node* n, int w, int h) {
