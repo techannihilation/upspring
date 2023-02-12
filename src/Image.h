@@ -1,53 +1,57 @@
 #pragma once
 
-#include "EditorDef.h"
+#include <cstdint>
+#include <vector>
+#include <string>
 
 class Image {
  public:
   // Constructors
   Image()
-      : mILID(),
-        mHasError(true),
-        mError(),
-        mWidth(),
-        mHeight(),
-        mBytesPerPixel(),
-        mDeepth(),
-        mChannels(){};
-  Image(const std::vector<uchar>& pBuf);
-  Image(const std::string& pFile);
-  Image(int pWidth, int pHeight);
-  Image(int pWidth, int pHeight, float pRed, float pGreen, float pBlue);  // RGB
+      : ilid_(),
+        has_error_(true),
+        error_(),
+        width_(),
+        height_(),
+        bpp_(),
+        deepth_(),
+        channels_(){};
+
+  bool load(const std::vector<std::uint8_t>& par_buffer);
+  bool load(const std::string& par_file);
+
+  bool create(int par_width, int par_height);
+  bool create(int par_width, int par_height, float par_red, float par_green, float par_blue);  // RGB
 
   // Destructor
   virtual ~Image();
 
   // Copy
-  Image(const Image& other) = default;
-  Image& operator=(const Image& other);
+  Image(const Image& rhs) = default;
+  Image& operator=(const Image& rhs);
 
   // Move
-  Image(Image&& other) = default;
-  Image& operator=(Image&& other) noexcept;
+  Image(Image&& rhs) = default;
+  Image& operator=(Image&& rhs) noexcept;
 
   // Error handling
-  inline const bool HasError() const { return mHasError; };
-  inline const std::string& Error() const { return mError; };
+  inline const bool has_error() const { return has_error_; };
+  inline const std::string& error() const { return error_; };
 
   bool Save(const std::string& pFile) const;
 
   // Image info accessors
-  inline uint ID() const { return mILID; }
-  inline int Width() const { return mWidth; }
-  inline int Height() const { return mHeight; }
-  inline int BytesPerPixel() const { return mBytesPerPixel; }
-  inline int Deepth() const { return mDeepth; }
-  inline int Channels() const { return mChannels; }
-  inline bool HasAlpha() const { return mChannels > 3; }
+  inline uint id() const { return ilid_; }
+  inline int width() const { return width_; }
+  inline int height() const { return height_; }
+  inline int bpp() const { return bpp_; }
+  inline int deepth() const { return deepth_; }
+  inline int channels() const { return channels_; }
+  inline bool has_alpha() const { return channels_ > 3; }
 
   // Image Data
-  const std::uint8_t* Data() const;
-  inline uint Size() const { return static_cast<uint>(mWidth) * mHeight * mBytesPerPixel; }
+  const std::uint8_t* data() const;
+  inline uint size() const { return static_cast<uint>(width_) * height_ * bpp_; }
 
   /**
    * Image manipulation
@@ -66,14 +70,14 @@ class Image {
             int pHeight, int pDepth);
 
  protected:
-  uint mILID;
+  uint ilid_;
 
-  bool mHasError;
-  std::string mError;
+  bool has_error_;
+  std::string error_;
 
-  int mWidth, mHeight, mBytesPerPixel, mDeepth, mChannels;
+  int width_, height_, bpp_, deepth_, channels_;
 
  private:
-  void LoadFromMemory_(const std::vector<uchar>& pBuf);
-  void GetImageInfos_();
+  bool load_from_memory_(const std::vector<std::uint8_t>& par_buffer);
+  void image_infos_();
 };

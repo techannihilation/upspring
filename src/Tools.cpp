@@ -521,13 +521,18 @@ void Tools::LoadImages()
       continue;
     }
 
-    Image image(buffer);
-    if (!image.HasAlpha() && !image.AddAlpha()) {
-      spdlog::error("Failed to add alpha to tool image: '{}'", tool->imageFile);
+    Image image;
+    if (!image.load(buffer)) {
+      spdlog::error("Failed to load image: '{}', error was: {}", tool->imageFile, image.error());
       continue;
     }
 
-    fltk::Image* img = new fltk::Image(image.Data(), fltk::RGBA, image.Width(), image.Height());
+    if (!image.has_alpha() && !image.AddAlpha()) {
+      spdlog::error("Failed to add alpha to tool image: '{}', error was: {}", tool->imageFile, image.error());
+      continue;
+    }
+
+    fltk::Image* img = new fltk::Image(image.data(), fltk::RGBA, image.width(), image.height());
     tool->button->image(img);
     tool->button->label("");
   }

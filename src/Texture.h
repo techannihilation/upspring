@@ -30,14 +30,14 @@ class Texture {
   ~Texture();
 
   bool Load(const std::string& filename, const std::string& hintpath);
-  bool IsLoaded() const { return image.HasError(); }
+  bool IsLoaded() const { return image.has_error(); }
   bool VideoInit();
 
   Image& GetImage();
   void SetImage(Image& img);
 
-  inline int Width() const { return image.Width(); }
-  inline int Height() const { return image.Height(); }
+  inline int Width() const { return image.width(); }
+  inline int Height() const { return image.height(); }
 
   uint glIdent;
   std::string name;
@@ -126,10 +126,10 @@ class TextureBinTree {
   bool IsEmpty() { return !tree; }
 
   inline float GetU(Node* n, float u) {
-    return u * (float)n->img_w / float(image_.Width()) + (n->x + 0.5F) / image_.Width();
+    return u * (float)n->img_w / float(image_.width()) + (n->x + 0.5F) / image_.width();
   }
   inline float GetV(Node* n, float v) {
-    return v * (float)n->img_h / float(image_.Height()) + (n->y + 0.5F) / image_.Height();
+    return v * (float)n->img_h / float(image_.height()) + (n->y + 0.5F) / image_.height();
   }
 
   // Unused by class: uint for storing texture rendering id

@@ -444,7 +444,11 @@ bool Model::ConvertToS3O(std::string textureName, int texw, int texh) {
           continue;
         }
 
-        Image color_image(1, 1, poly->color.x, poly->color.y, poly->color.z);
+        Image color_image;
+        if (!color_image.create(1, 1, poly->color.x, poly->color.y, poly->color.z)) {
+          spdlog::error("Failed to create a color image, error was: {}", color_image.error());
+          continue;
+        }
         auto color_tex = std::make_shared<Texture>(color_image, color_name);
         textures.insert({color_name, color_tex});
 
@@ -461,7 +465,7 @@ bool Model::ConvertToS3O(std::string textureName, int texw, int texh) {
     Image clone(texmap_entry.second->image);
 
     // Everything that has a alpha color is "teamcolor", everything else "normal".
-    if (clone.HasAlpha()) {
+    if (clone.has_alpha()) {
       clone.SetNonAlphaZero();
     } else {
       clone.SetAlphaZero();

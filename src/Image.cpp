@@ -1,8 +1,4 @@
-#include "EditorIncl.h"
-#include "EditorDef.h"
-
 #include "Image.h"
-#include "Util.h"
 
 #include <IL/il.h>
 #include <IL/ilu.h>
@@ -28,129 +24,125 @@ struct ILInitializer {
 // -------------------------------- Image ---------------------------------
 
 Image::~Image() {
-  if (mILID == 0) {
+  if (ilid_ == 0) {
     return;
   }
 
-  ilDeleteImage(mILID);
+  ilDeleteImage(ilid_);
 }
 
-Image::Image(const std::vector<uchar>& pBuf) : Image() { LoadFromMemory_(pBuf); }
-
-Image& Image::operator=(const Image& other) {
-  if (this == &other) {
+Image& Image::operator=(const Image& rhs) {
+  if (this == &rhs) {
     return *this;
   }
 
-  if (other.HasError()) {
-    mHasError = true;
-    mError = other.Error();
+  if (rhs.has_error()) {
+    has_error_ = true;
+    error_ = rhs.error();
     return *this;
   }
 
-  mILID = ilGenImage();
-  ilBindImage(mILID);
-  ilCopyImage(other.ID());
-  mWidth = other.mWidth;
-  mHeight = other.mHeight;
-  mBytesPerPixel = other.mBytesPerPixel;
-  mDeepth = other.mDeepth;
-  mChannels = other.mChannels;
+  ilid_ = ilGenImage();
+  ilBindImage(ilid_);
+  ilCopyImage(rhs.id());
+  width_ = rhs.width_;
+  height_ = rhs.height_;
+  bpp_ = rhs.bpp_;
+  deepth_ = rhs.deepth_;
+  channels_ = rhs.channels_;
 
   return *this;
 }
 
-Image& Image::operator=(Image&& other) noexcept {
-    if (this == &other) {
+Image& Image::operator=(Image&& rhs) noexcept {
+    if (this == &rhs) {
       return *this;
     }
 
-    if (other.HasError()) {
-      mHasError = true;
-      mError = other.Error();
+    if (rhs.has_error()) {
+      has_error_ = true;
+      error_ = rhs.error();
       return *this;
     }
 
-    mILID = other.mILID;
-    mWidth = other.mWidth;
-    mHeight = other.mHeight;
-    mBytesPerPixel = other.mBytesPerPixel;
-    mDeepth = other.mDeepth;
-    mChannels = other.mChannels;
+    ilid_ = rhs.ilid_;
+    width_ = rhs.width_;
+    height_ = rhs.height_;
+    bpp_ = rhs.bpp_;
+    deepth_ = rhs.deepth_;
+    channels_ = rhs.channels_;
     return *this;
 }
 
-Image::Image(const std::string& pFile) : Image() {
-  const std::basic_ifstream<uchar> file(pFile);
-  std::basic_ostringstream<uchar> stream;
-  stream << file.rdbuf();
-  const std::vector<uchar> buf(stream.str().begin(), stream.str().end());
-
-  LoadFromMemory_(buf);
+bool Image::load(const std::vector<std::uint8_t>& par_buffer) {
+  return load_from_memory_(par_buffer);
 }
 
-Image::Image(int pWidth, int pHeight)
-    : mILID(ilGenImage()),
-      mHasError(false),
-      mWidth(),
-      mHeight(),
-      mBytesPerPixel(),
-      mDeepth(),
-      mChannels() {
-  ilBindImage(mILID);
-  ilSetInteger(IL_IMAGE_WIDTH, pWidth);
-  ilSetInteger(IL_IMAGE_HEIGHT, pHeight);
+bool Image::load(const std::string& par_file) {
+  const std::basic_ifstream<std::uint8_t> file(par_file);
+  std::basic_ostringstream<std::uint8_t> stream;
+  stream << file.rdbuf();
+  const std::vector<std::uint8_t> buf(stream.str().begin(), stream.str().end());
+
+  return load_from_memory_(buf);
+}
+
+bool Image::create(int par_width, int par_height) {
+  ilid_ = ilGenImage();
+  ilBindImage(ilid_);
+  ilSetInteger(IL_IMAGE_WIDTH, par_width);
+  ilSetInteger(IL_IMAGE_HEIGHT, par_height);
   ilSetInteger(IL_IMAGE_CHANNELS, 4);
   ilClearImage();
 
   // Read back image infos
-  GetImageInfos_();
+  has_error_ = false;
+  image_infos_();
+
+  return true;
 }
 
-Image::Image(int pWidth, int pHeight, float pRed, float pGreen, float pBlue)
-    : mILID(ilGenImage()),
-      mHasError(false),
-      mWidth(),
-      mHeight(),
-      mBytesPerPixel(),
-      mDeepth(),
-      mChannels() {
-  ilBindImage(mILID);
-  ilSetInteger(IL_IMAGE_WIDTH, pWidth);
-  ilSetInteger(IL_IMAGE_HEIGHT, pHeight);
+bool Image::create(int par_width, int par_height, float par_red, float par_green, float par_blue) {
+  ilid_ = ilGenImage();
+  ilBindImage(ilid_);
+  ilSetInteger(IL_IMAGE_WIDTH, par_width);
+  ilSetInteger(IL_IMAGE_HEIGHT, par_height);
   ilSetInteger(IL_IMAGE_CHANNELS, 3);
 
-  ClearColor(pRed / 255.0F, pGreen / 255.0F, pBlue / 255.0F, 1.0F);
+  ClearColor(par_red / 255.0F, par_green / 255.0F, par_blue / 255.0F, 1.0F);
 
   // Read back image infos
-  GetImageInfos_();
+  has_error_ = false;
+  image_infos_();
+
+  return true;
 }
 
-bool Image::Save(const std::string& pFile) const {
-  if (HasError()) {
+bool Image::Save(const std::string& par_file) const {
+  if (has_error()) {
     return false;
   }
 
-  ilBindImage(mILID);
+  ilBindImage(ilid_);
   ilEnable(IL_FILE_OVERWRITE);
-  return ilSaveImage(static_cast<const ILstring>(pFile.c_str())) == IL_TRUE;
+  return ilSaveImage(static_cast<const ILstring>(par_file.c_str())) == IL_TRUE;
 }
 
-const std::uint8_t* Image::Data() const {
-  if (HasError()) {
+const std::uint8_t* Image::data() const {
+  if (has_error()) {
     return nullptr;
   }
 
-  ilBindImage(mILID);
+  ilBindImage(ilid_);
   return ilGetData();
 }
 
 bool Image::ClearColor(float pRed, float pGreen, float pBlue, float pAlpha) {
-  if (HasError()) {
+  if (has_error()) {
     return false;
   }
 
-  ilBindImage(mILID);
+  ilBindImage(ilid_);
   ilClearColour(pRed, pGreen, pBlue, pAlpha);
   ilClearImage();
 
@@ -161,17 +153,17 @@ bool Image::ClearColor(float pRed, float pGreen, float pBlue, float pAlpha) {
 Add/Remove alpha channel
 */
 bool Image::AddAlpha() {
-  if (HasError() or HasAlpha()) {
+  if (has_error() or has_alpha()) {
     return false;
   }
 
-  ilBindImage(mILID);
+  ilBindImage(ilid_);
   ilConvertImage(IL_RGBA, IL_UNSIGNED_BYTE);
   return true;
 }
 
 bool Image::SetAlphaZero() {
-  if (HasError() or !HasAlpha()) {
+  if (has_error() or !has_alpha()) {
     return false;
   }
 
@@ -179,7 +171,7 @@ bool Image::SetAlphaZero() {
 }
 
 bool Image::SetNonAlphaZero() {
-  if (HasError() or !HasAlpha()) {
+  if (has_error() or !has_alpha()) {
     return false;
   }
 
@@ -187,22 +179,22 @@ bool Image::SetNonAlphaZero() {
 }
 
 bool Image::Mirror() {
-  if (HasError()) {
+  if (has_error()) {
     return false;
   }
 
-  ilBindImage(mILID);
+  ilBindImage(ilid_);
   iluMirror();
 
   return true;
 }
 
 bool Image::Flip() {
-  if (HasError()) {
+  if (has_error()) {
     return false;
   }
 
-  ilBindImage(mILID);
+  ilBindImage(ilid_);
   iluFlipImage();
 
   return true;
@@ -224,21 +216,21 @@ The formats have to be exactly the same
 */
 bool Image::Blit(const Image& pSrc, int pDx, int pDy, int pDz, int pSx, int pSy, int pSz, int pWidth,
                  int pHeight, int pDepth) {
-  if (HasError() or pSrc.HasError()) {
+  if (has_error() or pSrc.has_error()) {
     return false;
   }
 
-  ilBindImage(mILID);
-  return ilBlit(pSrc.ID(), pDx, pDy, pDz, pSx, pSy, pSz, pWidth, pHeight, pDepth) == IL_TRUE;
+  ilBindImage(ilid_);
+  return ilBlit(pSrc.id(), pDx, pDy, pDz, pSx, pSy, pSz, pWidth, pHeight, pDepth) == IL_TRUE;
 }
 
-void Image::LoadFromMemory_(const std::vector<uchar>& pBuf) {
-  if (mILID != 0) {
-    ilDeleteImage(mILID);
+bool Image::load_from_memory_(const std::vector<std::uint8_t>& pBuf) {
+  if (ilid_ != 0) {
+    ilDeleteImage(ilid_);
   }
 
-  ilGenImages(1, &mILID);
-  ilBindImage(mILID);
+  ilGenImages(1, &ilid_);
+  ilBindImage(ilid_);
 
   // /* Convert paletted to packed colors */
   // ilEnable(IL_CONV_PAL);
@@ -248,25 +240,27 @@ void Image::LoadFromMemory_(const std::vector<uchar>& pBuf) {
 
   auto ret = ilLoadL(IL_TYPE_UNKNOWN, pBuf.data(), pBuf.size());
   if (ret == IL_FALSE) {
-    mHasError = true;
-    mError = std::string(iluErrorString(ilGetError()));
-    spdlog::error("Failed to read image, error was: {}", mError);
-    return;
+    has_error_ = true;
+    error_ = std::string(iluErrorString(ilGetError()));
+    spdlog::error("Failed to read image, error was: {}", error_);
+    return false;
   }
 
-  mHasError = false;
-  GetImageInfos_();
+  has_error_ = false;
+  image_infos_();
+
+  return true;
 }
 
-void Image::GetImageInfos_()
+void Image::image_infos_()
 {
-  if (HasError()) {
+  if (has_error()) {
     return;
   }
 
-  ilGetIntegerv(IL_IMAGE_WIDTH, &mWidth);
-  ilGetIntegerv(IL_IMAGE_HEIGHT, &mHeight);
-  ilGetIntegerv(IL_IMAGE_BYTES_PER_PIXEL, &mBytesPerPixel);
-  ilGetIntegerv(IL_IMAGE_DEPTH, &mDeepth);
-  ilGetIntegerv(IL_IMAGE_CHANNELS, &mChannels);
+  ilGetIntegerv(IL_IMAGE_WIDTH, &width_);
+  ilGetIntegerv(IL_IMAGE_HEIGHT, &height_);
+  ilGetIntegerv(IL_IMAGE_BYTES_PER_PIXEL, &bpp_);
+  ilGetIntegerv(IL_IMAGE_DEPTH, &deepth_);
+  ilGetIntegerv(IL_IMAGE_CHANNELS, &channels_);
 }

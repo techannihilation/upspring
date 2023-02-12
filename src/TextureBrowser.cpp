@@ -40,18 +40,18 @@ void TextureBrowser::Item::draw() {
   auto img = tex->image;
 
   if (selected) {
-    fltk::Rectangle selr(-3, -3, img.Width() + 6, img.Height() + 6);
+    fltk::Rectangle selr(-3, -3, img.width() + 6, img.height() + 6);
     fltk::push_clip(selr);
     fltk::setcolor(fltk::BLUE);
     fltk::fillrect(selr);
     fltk::pop_clip();
   }
 
-  fltk::Rectangle rect(0, 0, img.Width(), img.Height());
-  if (img.HasAlpha())
-    fltk::drawimage(img.Data(), fltk::RGBA, rect);
+  fltk::Rectangle rect(0, 0, img.width(), img.height());
+  if (img.has_alpha())
+    fltk::drawimage(img.data(), fltk::RGBA, rect);
   else
-    fltk::drawimage(img.Data(), fltk::RGBA, rect);
+    fltk::drawimage(img.data(), fltk::RGBA, rect);
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -126,8 +126,8 @@ void TextureBrowser::UpdatePositions(bool /*bRedraw*/) {
 
     if (!item->tex->IsLoaded()) continue;
 
-    int texWidth = item->tex->image.Width();
-    int texHeight = item->tex->image.Height();
+    int texWidth = item->tex->image.width();
+    int texHeight = item->tex->image.height();
 
     const int space = 5;
     if (x + texWidth + space > w()) {  // reserve 5 pixels for vertical scrollbar

@@ -55,8 +55,8 @@ bool Texture::Load(const std::string& fn, const std::string& hintpath) {
   }
 
   for (auto& path : paths) {
-    Image img(path);
-    if (img.HasError()) {
+    Image img;
+    if (!img.load(path)) {
       continue;
     }
 
@@ -68,7 +68,11 @@ bool Texture::Load(const std::string& fn, const std::string& hintpath) {
 }
 
 Texture::Texture(std::vector<uchar>& par_data, const std::string& par_name) : name(par_name), glIdent(0) {
-  Image img(par_data);
+  Image img;
+  if (!img.load(par_data)) {
+    spdlog::error("Failed to create an image from '{}'", par_name);
+    return;
+  }
   SetImage(img);
 }
 
@@ -82,18 +86,18 @@ Texture::~Texture() {
 }
 
 bool Texture::VideoInit() {
-  if (image.HasError()) {
+  if (image.has_error()) {
     return false;
   }
 
   glGenTextures(1, &glIdent);
   glBindTexture(GL_TEXTURE_2D, glIdent);
 
-  GLint const format = image.HasAlpha() ? GL_RGBA : GL_RGB;
+  GLint const format = image.has_alpha() ? GL_RGBA : GL_RGB;
 
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-  gluBuild2DMipmaps(GL_TEXTURE_2D, format, image.Width(), image.Height(), format, GL_UNSIGNED_BYTE, image.Data());
+  gluBuild2DMipmaps(GL_TEXTURE_2D, format, image.width(), image.height(), format, GL_UNSIGNED_BYTE, image.data());
   return true;
 }
 
@@ -323,15 +327,21 @@ TextureBinTree::Node::~Node() {
   SAFE_DELETE(child[1]);
 }
 
-TextureBinTree::TextureBinTree(int w, int h) : render_id(), tree(), image_(Image(w, h)) {};
+TextureBinTree::TextureBinTree(int par_width, int par_height) : render_id(), tree() {
+  image_ = Image();
+
+  if (!image_.create(par_width, par_height)) {
+    spdlog::error("Failed to create the atlas image with size '{}/{}'", par_width, par_height);
+  }
+};
 
 TextureBinTree::~TextureBinTree() { SAFE_DELETE(tree); }
 
 void TextureBinTree::StoreNode(Node* n, const Image& tex) {
-  n->img_w = tex.Width();
-  n->img_h = tex.Height();
+  n->img_w = tex.width();
+  n->img_h = tex.height();
 
-  image_.Blit(tex, n->x, n->y, 1, 0, 0, 1, tex.Width(), tex.Height(), 1);
+  image_.Blit(tex, n->x, n->y, 1, 0, 0, 1, tex.width(), tex.height(), 1);
 }
 
 TextureBinTree::Node* TextureBinTree::InsertNode(Node* n, int w, int h) {
@@ -371,14 +381,14 @@ TextureBinTree::Node* TextureBinTree::InsertNode(Node* n, int w, int h) {
 TextureBinTree::Node* TextureBinTree::AddNode(const Image& subtex) {
   if (tree == nullptr) {
     // create root node
-    if (subtex.Width() > image_.Width() || subtex.Height() > image_.Height()) {
+    if (subtex.width() > image_.width() || subtex.height() > image_.height()) {
       return nullptr;
     }
 
-    tree = new Node(0, 0, image_.Width(), image_.Height());
+    tree = new Node(0, 0, image_.width(), image_.height());
   }
 
-  auto *pn = InsertNode(tree, subtex.Width(), subtex.Height());
+  auto *pn = InsertNode(tree, subtex.width(), subtex.height());
   if (pn == nullptr) {
     return nullptr;
   }
