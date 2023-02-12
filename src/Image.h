@@ -1,154 +1,79 @@
-
-#ifndef CMD_IMAGE_H
-#define CMD_IMAGE_H
+#pragma once
 
 #include "EditorDef.h"
-#include "Referenced.h"
 
-struct ImgFormat {
-  // RGBA
-  uint mask[4];
-  uint shift[4];
-  uint loss[4];
-  uint bytesPerPixel;
-
-  enum Type {
-    UNDEF,
-    RGB,   // 24 bit
-    RGBA,  // 32 bit
-    BGR,
-    BGRA,
-    RGB565,
-    BGR565,
-    LUMINANCE,
-    LUMINANCE_ALPHA,
-    ABGR,
-    ARGB,
-  };
-  Type type;
-
-  ImgFormat(Type t = UNDEF);
-
-  bool HasAlpha() { return loss[3] != 8; }
-
-  uint Make(int* /*cols*/) {
-    uint r = 0;
-    for (int x = 0; x < 4; x++) r |= ((r << shift[0] >> loss[0]) & mask[0]);
-    return r;
-  }
-
-  uint Make(int r, int g, int b) {
-    return ((r << shift[0] >> loss[0]) & mask[0]) | ((g << shift[1] >> loss[1]) & mask[1]) |
-           ((b << shift[2] >> loss[2]) & mask[2]);
-  }
-
-  uint Make(int r, int g, int b, int /*a*/) {
-    return ((r << shift[0] >> loss[0]) & mask[0]) | ((g << shift[1] >> loss[1]) & mask[1]) |
-           ((b << shift[2] >> loss[2]) & mask[2]) | ((b << shift[3] >> loss[3]) & mask[3]);
-  }
-
-  uint R(uint v) { return (v & mask[0]) >> shift[0] << loss[0]; }
-  uint G(uint v) { return (v & mask[1]) >> shift[1] << loss[1]; }
-  uint B(uint v) { return (v & mask[2]) >> shift[2] << loss[2]; }
-  uint A(uint v) { return (v & mask[3]) >> shift[3] << loss[3]; }
-
-  void CalcLossShift();  // calculate loss and shift from mask
-  void CalcMask();       // calculate mask from loss and shift
-  void Swap4();          // RGBA <-> ABGR
-  void Swap3();          // RGB <-> BGR
-  void LoadRGBA32();
-  void LoadRGB24();
-  void LoadRGB16();
-  void LoadGrayscale();  // mask[R] = mask[G] = mask[B] = 255
-
-  void LoadABGR32() {
-    LoadRGBA32();
-    Swap4();
-  }
-
-  void SetShift(uint r, uint g, uint b, uint a) {
-    shift[0] = r;
-    shift[1] = g;
-    shift[2] = b;
-    shift[3] = a;
-  }
-  void SetMask(uint r, uint g, uint b, uint a) {
-    mask[0] = r;
-    mask[1] = g;
-    mask[2] = b;
-    mask[3] = a;
-  }
-  void SetLoss(uint r, uint g, uint b, uint a) {
-    loss[0] = r;
-    loss[1] = g;
-    loss[2] = b;
-    loss[3] = a;
-  }
-};
-
-class Image : public Referenced {
+class Image {
  public:
-  Image(const char* file);
-  Image();
-  Image(int _w, int _h, const ImgFormat& fmt);
-  ~Image();
+  // Constructors
+  Image()
+      : mILID(),
+        mHasError(true),
+        mError(),
+        mWidth(),
+        mHeight(),
+        mBytesPerPixel(),
+        mDeepth(),
+        mChannels(){};
+  Image(const std::vector<uchar>& pBuf);
+  Image(const std::string& pFile);
+  Image(int pWidth, int pHeight);
+  Image(int pWidth, int pHeight, float pRed, float pGreen, float pBlue);  // RGB
 
-  void Alloc(int _w, int _h, const ImgFormat& fmt);
+  // Destructor
+  virtual ~Image();
 
-  void Free();  // free image data
-  void Load(const char* file, bool IsGrayscale = false);
+  // Copy
+  Image(const Image& other) = default;
+  Image& operator=(const Image& other);
 
-  bool Save(const char* file);
-  void SaveTGA(const char* file);
+  // Move
+  Image(Image&& other) = default;
+  Image& operator=(Image&& other) noexcept;
 
-  void LoadFromMemory(void* data, int len);
-  void LoadGrayscale(void* data, int len);
-  void FromIL(uint id);
-  uint ToIL();
-  void DeleteIL(uint id);
+  // Error handling
+  inline const bool HasError() const { return mHasError; };
+  inline const std::string& Error() const { return mError; };
 
-  Image* Clone();
-  void FillAlpha();
-  void SetAlphaZero();
-  void SetNonAlphaZero();
-  void Mirror();
-  void Flip();
-  void FlipNonDDS(const std::string &path);
+  bool Save(const std::string& pFile) const;
 
-  void Convert(Image* dst);  // copy this to dst in dst.format
-  void Blit(Image* dst, int sx, int sy, int dx, int dy, int w, int h);
+  // Image info accessors
+  inline uint ID() const { return mILID; }
+  inline int Width() const { return mWidth; }
+  inline int Height() const { return mHeight; }
+  inline int BytesPerPixel() const { return mBytesPerPixel; }
+  inline int Deepth() const { return mDeepth; }
+  inline int Channels() const { return mChannels; }
+  inline bool HasAlpha() const { return mChannels > 3; }
 
-  void FillColor(uint rgba);
+  // Image Data
+  const std::uint8_t* Data() const;
+  inline uint Size() const { return static_cast<uint>(mWidth) * mHeight * mBytesPerPixel; }
 
-  // Slow fallback versions, converting to and from the format
-  void SetPixel(int x, int y, uint rgba);
-  uint GetPixel(int x, int y);  // return in RGBA format
+  /**
+   * Image manipulation
+   */
+  bool ClearColor(float pRed, float pGreen, float pBlue, float pAlpha);
 
-  // create a scaled version of this image in dst (2x as small)
-  // returns false if this is the smallest mipmap possible
-  // format can be 16 bit (565) or 32 bit (8888)
-  // the image must have proper dimensions (like 256x128 or 64x64)
-  bool GenMipmap(Image* dst);
+  bool SetAlphaZero();
+  bool SetNonAlphaZero();
+  bool Mirror();
+  bool Flip();
+  bool FlipNonDDS(const std::string& path);
 
-  /* ------------- Inlines ------------- */
-  inline int MemoryUse() { return w * h * format.bytesPerPixel + sizeof(Image); }
+  bool AddAlpha();
+  bool RemoveAlpha();
+  bool Blit(const Image& pSrc, int pDx, int pDy, int pDz, int pSx, int pSy, int pSz, int pWidth,
+            int pHeight, int pDepth);
 
-  inline uint GetPixel32(int x, int y) { return *(uint*)&data[(y * w + x) * 4]; }
+ protected:
+  uint mILID;
 
-  inline void SetPixel32(int x, int y, uint col) { *(uint*)&data[(y * w + x) * 4] = col; }
+  bool mHasError;
+  std::string mError;
 
-  inline ushort GetPixel16(int x, int y) { return *(ushort*)&data[(y * w + x) * 2]; }
+  int mWidth, mHeight, mBytesPerPixel, mDeepth, mChannels;
 
-  inline void SetPixel16(int x, int y, ushort col) { *(ushort*)&data[(y * w + x) * 2] = col; }
-
-  inline uchar GetPixel8(int x, int y) { return data[y * w + x]; }
-
-  inline void SetPixel8(int x, int y, uchar col) { data[y * w + x] = col; }
-
-  //-------------- Vars ----------------
-  uchar* data;
-  ImgFormat format;
-  int w, h;
+ private:
+  void LoadFromMemory_(const std::vector<uchar>& pBuf);
+  void GetImageInfos_();
 };
-
-#endif

@@ -157,10 +157,6 @@ class content_error : public std::exception {
   std::string errMsg;
 };
 
-inline void stringlwr(std::string& str) {
-  std::transform(str.begin(), str.end(), str.begin(), ::tolower);
-}
-
 bool FileSaveDlg(const char* msg, const char* pattern, std::string& fn);
 bool FileOpenDlg(const char* msg, const char* pattern, std::string& fn);
 bool SelectDirectory(const char* msg, std::string& dir);

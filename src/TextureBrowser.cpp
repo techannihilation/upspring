@@ -16,10 +16,9 @@
 // TextureBrowser::Item
 // ------------------------------------------------------------------------------------------------
 
-TextureBrowser::Item::Item(Texture* t) : fltk::Widget(0, 0, 50, 50), tex(t) {
+TextureBrowser::Item::Item(std::shared_ptr<Texture> par_texture) : fltk::Widget(0, 0, 50, 50), tex(par_texture), selected(false) {
   color((fltk::Color)0x1f1f1f00);
-  tooltip(t->name.c_str());
-  selected = false;
+  tooltip(par_texture->name.c_str());
 }
 
 int TextureBrowser::Item::handle(int event) {
@@ -38,21 +37,21 @@ void TextureBrowser::Item::draw() {
     return;
   }
 
-  Image* img = tex->image.Get();
+  auto img = tex->image;
 
   if (selected) {
-    fltk::Rectangle selr(-3, -3, img->w + 6, img->h + 6);
+    fltk::Rectangle selr(-3, -3, img.Width() + 6, img.Height() + 6);
     fltk::push_clip(selr);
     fltk::setcolor(fltk::BLUE);
     fltk::fillrect(selr);
     fltk::pop_clip();
   }
 
-  fltk::Rectangle rect(0, 0, img->w, img->h);
-  if (img->format.type == ImgFormat::RGB)
-    fltk::drawimage(img->data, fltk::RGB, rect);
+  fltk::Rectangle rect(0, 0, img.Width(), img.Height());
+  if (img.HasAlpha())
+    fltk::drawimage(img.Data(), fltk::RGBA, rect);
   else
-    fltk::drawimage(img->data, fltk::RGBA, rect);
+    fltk::drawimage(img.Data(), fltk::RGBA, rect);
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -76,9 +75,9 @@ void TextureBrowser::layout() {
   fltk::ScrollGroup::layout();
 }
 
-void TextureBrowser::AddTexture(Texture* t) { add(new Item(t)); }
+void TextureBrowser::AddTexture(std::shared_ptr<Texture> t) { add(new Item(t)); }
 
-void TextureBrowser::RemoveTexture(Texture* t) {
+void TextureBrowser::RemoveTexture(std::shared_ptr<Texture> t) {
   int nc = children();
   for (int a = 0; a < nc; a++) {
     Item* item = (Item*)child(a);
@@ -104,8 +103,8 @@ void TextureBrowser::SelectItem(Item* i) {
   redraw();
 }
 
-std::vector<Texture*> TextureBrowser::GetSelection() {
-  std::vector<Texture*> sel;
+std::vector<std::shared_ptr<Texture>> TextureBrowser::GetSelection() {
+  std::vector<std::shared_ptr<Texture>> sel;
 
   int nc = children();
   for (int a = 0; a < nc; a++) {
@@ -127,8 +126,8 @@ void TextureBrowser::UpdatePositions(bool /*bRedraw*/) {
 
     if (!item->tex->IsLoaded()) continue;
 
-    int texWidth = item->tex->image->w;
-    int texHeight = item->tex->image->h;
+    int texWidth = item->tex->image.Width();
+    int texHeight = item->tex->image.Height();
 
     const int space = 5;
     if (x + texWidth + space > w()) {  // reserve 5 pixels for vertical scrollbar

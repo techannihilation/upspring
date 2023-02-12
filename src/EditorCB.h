@@ -82,7 +82,7 @@ void SetTool(Tool* t);
 void RenderScene(IView* view);
 void SetMapping(int mapping);
 void BrowseForTexture(int index);
-void SetModelTexture(int index, Texture* tex);
+void SetModelTexture(int index, std::shared_ptr<Texture> par_texture);
 void ReloadTexture(int index);
 void ConvertToS3O();
 MdlObject* GetSingleSel();
@@ -119,7 +119,7 @@ class EditorCB : public IEditor {
   Tool* GetTool();
   void RenderScene(IView* view) { ui->RenderScene(view); }
   TextureHandler* GetTextureHandler() { return ui->textureHandler; }
-  void SetTextureSelectCallback(void (*cb)(Texture*, void*), void* d) {
+  void SetTextureSelectCallback(void (*cb)(std::shared_ptr<Texture>, void*), void* d) {
     ui->texBrowser->SetSelectCallback(cb, d);
   }
   float GetTime() { return ui->uiTimeline->GetTime(); }

@@ -8,7 +8,7 @@
 
 #include "Texture.h"
 
-typedef void (*TextureSelectCallback)(Texture* tex, void* data);
+typedef void (*TextureSelectCallback)(std::shared_ptr<Texture> tex, void* data);
 
 class TextureBrowser : public fltk::ScrollGroup {
  public:
@@ -18,18 +18,18 @@ class TextureBrowser : public fltk::ScrollGroup {
   void layout();
 
   struct Item : public fltk::Widget {
-    Item(Texture* t);
-    Texture* tex;
+    Item(std::shared_ptr<Texture> par_texture);
+    std::shared_ptr<Texture> tex;
     bool selected;
 
     int handle(int event);
     void draw();
   };
 
-  void AddTexture(Texture* t);
-  void RemoveTexture(Texture* t);
+  void AddTexture(std::shared_ptr<Texture> t);
+  void RemoveTexture(std::shared_ptr<Texture> t);
   void UpdatePositions(bool bRedraw = true);
-  std::vector<Texture*> GetSelection();
+  std::vector<std::shared_ptr<Texture>> GetSelection();
   void SelectAll();
   void SetSelectCallback(TextureSelectCallback cb, void* data);
 

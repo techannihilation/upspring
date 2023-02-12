@@ -9,21 +9,6 @@
 
 #include "View.h"
 
-struct FltkImage {
-  FltkImage() {
-    img = 0;
-    buffer = 0;
-  }
-  ~FltkImage() {
-    delete[] buffer;
-    delete img;
-  }
-  static FltkImage* Load(const char* filebuf, int filelen);
-
-  fltk::Image* img;
-  char* buffer;
-};
-
 class Tool {
  public:
   enum { map2d, map3d } maptype;
@@ -34,9 +19,8 @@ class Tool {
     isRadio = true;
     maptype = map2d;
     imageFile = 0;
-    image = 0;
   }
-  ~Tool() { delete image; }
+  ~Tool() { }
   // on a mapview
   // msg = fltk::PUSH, fltk::RELEASE, fltk::DRAG, fltk::MOVE
   virtual void mouse(EditorViewWindow* /*view*/, int /*msg*/, Point /*move*/) {
@@ -49,7 +33,6 @@ class Tool {
   bool isRadio;
   IEditor* editor;
   fltk::Button* button;
-  FltkImage* image;
   const char* imageFile;
 };
 

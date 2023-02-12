@@ -13,10 +13,16 @@
 #include "MeshIterators.h"
 #include "Util.h"
 
+#include "FileSystem/CZipArchive.h"
+
+#include "string_util.h"
+#include "spdlog/spdlog.h"
+
+#include <memory>
+
 #include <fltk/ColorChooser.h>
 #include <IL/il.h>
 #include <fltk/Image.h>
-#include <ZipFile.h>
 
 #ifdef _MSC_VER
 #include <float.h>
@@ -350,20 +356,20 @@ struct ETextureTool : Tool {
     enabled = false;
   }
 
-  static void applyTexture(MdlObject* o, Texture* tex) {
+  static void applyTexture(MdlObject* o, std::shared_ptr<Texture> par_tex) {
     PolyMesh* pm = o->GetPolyMesh();
     if (pm) {
       for (int a = 0; a < pm->poly.size(); a++) {
         if (pm->poly[a]->isSelected) {
-          pm->poly[a]->texture = tex;
-          pm->poly[a]->texname = tex->name;
+          pm->poly[a]->texture = par_tex;
+          pm->poly[a]->texname = par_tex->name;
         }
       }
     }
-    for (uint a = 0; a < o->childs.size(); a++) applyTexture(o->childs[a], tex);
+    for (uint a = 0; a < o->childs.size(); a++) applyTexture(o->childs[a], par_tex);
   }
 
-  static void callback(Texture* tex, void* data) {
+  static void callback(std::shared_ptr<Texture> tex, void* data) {
     ETextureTool* tool = (ETextureTool*)data;
     Model* model = tool->editor->GetMdl();
     if (model->root) applyTexture(model->root, tex);
@@ -504,73 +510,25 @@ void Tools::SetEditor(IEditor* editor) {
   for (uint a = 0; a < tools.size(); a++) tools[a]->editor = editor;
 }
 
-FltkImage* FltkImage::Load(const char* filebuf, int filelen) {
-  unsigned int id;
-  ilGenImages(1, &id);
-  ilBindImage(id);
-  if (!ilLoadL(IL_TYPE_UNKNOWN, (void*)filebuf, filelen)) {
-    ilDeleteImages(1, &id);
-    return 0;
-  }
-  ilConvertImage(IL_RGBA, IL_UNSIGNED_BYTE);
-  void* data = ilGetData();
-  int w, h;
-  ilGetIntegerv(IL_IMAGE_WIDTH, &w);
-  ilGetIntegerv(IL_IMAGE_HEIGHT, &h);
-
-  unsigned char* imageBuffer = new unsigned char[4 * w * h];
-  memcpy(imageBuffer, data, 4 * w * h);
-  fltk::Image* img = new fltk::Image(imageBuffer, fltk::RGBA, w, h);
-  ilDeleteImages(1, &id);
-
-  FltkImage* inst = new FltkImage;
-  inst->img = img;
-  inst->buffer = (char*)imageBuffer;
-
-  return inst;
-}
-
-void Tools::LoadImages() {
-  FILE* f = fopen("data/buttons.ups", "rb");
-  if (!f) {
-    fltk::message("Failed to load data/buttons.ups");
-  } else {
-    ZipFile zf;
-    zf.Init(f);
-
-    for (int a = 0; a < tools.size(); a++) {
-      if (!tools[a]->imageFile) continue;
-
-      std::string fn = tools[a]->imageFile;
-
-      int zipIndex = -1;
-      for (int fi = 0; fi < zf.GetNumFiles(); fi++) {
-        char zfn[64];
-        zf.GetFilename(fi, zfn, sizeof(zfn));
-        if (!STRCASECMP(zfn, fn.c_str())) {
-          zipIndex = fi;
-          break;
-        }
-      }
-
-      if (zipIndex >= 0) {
-        int len = zf.GetFileLen(zipIndex);
-        char* buf = new char[len];
-        zf.ReadFile(zipIndex, buf);
-
-        tools[a]->image = FltkImage::Load(buf, len);
-        if (!tools[a]->image) {
-          fltk::message("Failed to load texture %s from data/buttons.ups\n", fn.c_str());
-          delete[] buf;
-          continue;
-        }
-        delete[] buf;
-
-        tools[a]->button->image(tools[a]->image->img);
-        tools[a]->button->label("");
-      } else
-        fltk::message("Couldn't find %s in data/buttons.ups", fn.c_str());
+void Tools::LoadImages()
+{
+  auto archive = CZipArchive("data/buttons.ups");
+  for (auto &tool : tools) {
+    std::string const name = to_lower(tool->imageFile);
+    std::vector<std::uint8_t> buffer{};
+    if (!archive.GetFileByName(name, buffer)) {
+      spdlog::error("Failed to get tool image '{}' from 'data/buttons.ups'", tool->imageFile);
+      continue;
     }
-    fclose(f);
+
+    Image image(buffer);
+    if (!image.HasAlpha() && !image.AddAlpha()) {
+      spdlog::error("Failed to add alpha to tool image: '{}'", tool->imageFile);
+      continue;
+    }
+
+    fltk::Image* img = new fltk::Image(image.Data(), fltk::RGBA, image.Width(), image.Height());
+    tool->button->image(img);
+    tool->button->label("");
   }
 }

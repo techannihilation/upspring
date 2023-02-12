@@ -16,6 +16,8 @@
 
 #include <filesystem>
 
+#include "spdlog/spdlog.h"
+
 #define S3O_ID "Spring unit"
 
 static void MirrorX(MdlObject* o) {
@@ -144,14 +146,13 @@ bool Model::LoadS3O(const char* filename, IProgressCtl& /*progctl*/) {
   }
 
   if (memcmp(header.magic, S3O_ID, 12)) {
-    logger.Trace(NL_Error, "S3O model %s has wrong identification", filename);
+    spdlog::error("S3O model '{}' has a wrong identification", filename);
     fclose(file);
     return false;
   }
 
   if (header.version != 0) {
-    logger.Trace(NL_Error, "S3O model %s has wrong version (%d, wanted: %d)", filename,
-                 header.version, 0);
+    spdlog::error("S3O model '{}' has a wrong version ({}, wanted: {})", filename, header.version, 0);
     fclose(file);
     return false;
   }
@@ -173,13 +174,13 @@ bool Model::LoadS3O(const char* filename, IProgressCtl& /*progctl*/) {
     TextureBinding& tb = texBindings.back();
 
     tb.name = Readstring(tex == 1 ? header.texture2 : header.texture1, file);
-    tb.texture = new Texture(tb.name, mdlPath);
+    tb.texture = std::make_shared<Texture>(tb.name, mdlPath);
     if (!tb.texture->IsLoaded()) {
       tb.texture = nullptr;
       continue;
     }
 
-    tb.texture->image->FlipNonDDS(tb.name);
+    tb.texture->image.FlipNonDDS(tb.name);
   }
 
   mapping = MAPPING_S3O;

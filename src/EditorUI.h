@@ -610,18 +610,4 @@ class EditorUI {
 #include "EditorCB.h"
 };
 
-class BackupViewerUI {
- public:
-  fltk::Window* CreateUI();
-  fltk::Window* window;
-  fltk::Button* cmdSetBufferSize;
-
- private:
-  inline void cb_cmdSetBufferSize_i(fltk::Button*, void*);
-  static void cb_cmdSetBufferSize(fltk::Button*, void*);
-
- public:
-  fltk::Browser* bufferView;
-#include "BackupViewerCB.h"
-};
 #endif

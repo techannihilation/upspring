@@ -37,11 +37,16 @@
 #include "FileSearch.h"
 #include "MeshIterators.h"
 
+#include "spdlog/spdlog.h"
+#include "spdlog/sinks/callback_sink.h"
+
 extern "C" {
 #include "lua.h"
 #include "lualib.h"
 #include "lauxlib.h"
 }
+
+#include <memory>
 
 #include "swig/ScriptInterface.h"
 
@@ -67,17 +72,20 @@ const char* FileChooserPattern =
 // ------------------------------------------------------------------------------------------------
 
 bool ArchiveList::Load() {
-  std::string fn = applicationPath + ArchiveListFile;
+  std::string const fn = applicationPath + ArchiveListFile;
   CfgList* cfg = CfgValue::LoadFile(fn.c_str());
 
-  if (!cfg) return false;
+  if (cfg == nullptr) {
+    return false;
+  }
 
-  CfgList* archs = dynamic_cast<CfgList*>(cfg->GetValue("Archives"));
-  if (archs) {
-    for (std::list<CfgListElem>::iterator i = archs->childs.begin(); i != archs->childs.end();
-         ++i) {
-      CfgLiteral* lit = dynamic_cast<CfgLiteral*>(i->value);
-      if (lit) archives.insert(lit->value);
+  auto* archs = dynamic_cast<CfgList*>(cfg->GetValue("Archives"));
+  if (archs != nullptr) {
+    for (auto& child : archs->childs) {
+      auto* lit = dynamic_cast<CfgLiteral*>(child.value);
+      if (lit != nullptr) {
+        archives.insert(lit->value);
+      }
     }
   }
   delete cfg;
@@ -85,15 +93,17 @@ bool ArchiveList::Load() {
 }
 
 bool ArchiveList::Save() {
-  std::string fn = applicationPath + ArchiveListFile;
+  std::string const fn = applicationPath + ArchiveListFile;
   CfgWriter writer(fn.c_str());
-  if (writer.IsFailed()) return false;
+  if (writer.IsFailed()) {
+    return false;
+  }
 
   CfgList cfg;
-  CfgList* archs = new CfgList;
+  auto* archs = new CfgList;
   cfg.AddValue("Archives", archs);
   int index = 0;
-  for (std::set<std::string>::iterator s = archives.begin(); s != archives.end(); ++s, index++) {
+  for (auto s = archives.begin(); s != archives.end(); ++s, index++) {
     char tmp[20];
     sprintf(tmp, "arch%d", index);
     archs->AddLiteral(tmp, s->c_str());
@@ -107,17 +117,27 @@ bool ArchiveList::Save() {
 
 std::vector<EditorViewWindow*> EditorUI::EditorCB::GetViews() {
   std::vector<EditorViewWindow*> vl;
-  for (int a = 0; a < ui->viewsGroup->children(); ++a)
-    vl.push_back((EditorViewWindow*)ui->viewsGroup->child(a));
+  vl.reserve(ui->viewsGroup->children());
+  for (int a = 0; a < ui->viewsGroup->children(); ++a) {
+    vl.push_back(dynamic_cast<EditorViewWindow*>(ui->viewsGroup->child(a)));
+  }
   return vl;
 }
 
 void EditorUI::EditorCB::MergeView(EditorViewWindow* own, EditorViewWindow* other) {
   /*int w = other->w ();*/
-  if (own->x() > other->x()) own->set_x(other->x());
-  if (own->y() > other->y()) own->set_y(other->y());
-  if (own->r() < other->r()) own->set_r(other->r());
-  if (own->b() < other->b()) own->set_b(other->b());
+  if (own->x() > other->x()) {
+    own->set_x(other->x());
+  }
+  if (own->y() > other->y()) {
+    own->set_y(other->y());
+  }
+  if (own->r() < other->r()) {
+    own->set_r(other->r());
+  }
+  if (own->b() < other->b()) {
+    own->set_b(other->b());
+  }
   delete other;
   ui->Update();
 }
@@ -129,7 +149,9 @@ void EditorUI::EditorCB::AddView(EditorViewWindow* v) {
 }
 
 Tool* EditorUI::EditorCB::GetTool() {
-  if (ui->currentTool) ui->currentTool->editor = this;
+  if (ui->currentTool != nullptr) {
+    ui->currentTool->editor = this;
+  }
   return ui->currentTool;
 }
 
@@ -138,13 +160,9 @@ Tool* EditorUI::EditorCB::GetTool() {
 // ------------------------------------------------------------------------------------------------
 
 static void EditorUIProgressCallback(float part, void* data) {
-  EditorUI* ui = (EditorUI*)data;
+  auto* ui = static_cast<EditorUI*>(data);
   ui->progress->position(part);
   ui->progress->redraw();
-}
-
-static void LogCallbackProc(LogNotifyLevel level, const char* str, void* /*user_data*/) {
-  if (level == NL_Warn || level == NL_Error) fltk::message(str);
 }
 
 void EditorUI::Initialize() {
@@ -180,15 +198,15 @@ void EditorUI::Initialize() {
 
   currentTool = tools.GetDefaultTool();
   modelDrawer = new ModelDrawer;
-  model = 0;
+  model = nullptr;
   SetModel(new Model);
   UpdateTitle();
 
   textureHandler = new TextureHandler();
 
-  for (std::set<std::string>::iterator arch = archives.archives.begin();
-       arch != archives.archives.end(); ++arch)
-    textureHandler->Load(arch->c_str());
+  for (auto arch = archives.archives.begin(); arch != archives.archives.end(); ++arch) {
+    textureHandler->Load3DO(arch->c_str());
+  }
 
   textureGroupHandler = new TextureGroupHandler(textureHandler);
   textureGroupHandler->Load((applicationPath + TextureGroupConfig).c_str());
@@ -197,25 +215,29 @@ void EditorUI::Initialize() {
   InitTexBrowser();
 
   uiMapping = new MappingUI(&callback);
-  uiTexBuilder = new TexBuilderUI(0, 0);
+  uiTexBuilder = new TexBuilderUI(nullptr, nullptr);
 
   LoadSettings();
 
   // create 4 views if no views were specified in the config (ie: there was no config)
-  if (!viewsGroup->children()) {
+  if (viewsGroup->children() == 0) {
     viewsGroup->begin();
 
     EditorViewWindow* views[4];
-    int vw = viewsGroup->w();
-    int vh = viewsGroup->h();
+    int const vw = viewsGroup->w();
+    int const vh = viewsGroup->h();
 
     for (int a = 0; a < 4; a++) {
-      int Xofs = (a & 1) * vw / 2;
-      int Yofs = (a & 2) * vh / 4;
+      int const Xofs = (a & 1) * vw / 2;
+      int const Yofs = (a & 2) * vh / 4;
       int W = vw / 2;
       int H = vh / 2;
-      if (Xofs) W = vw - Xofs;
-      if (Yofs) H = vh - Yofs;
+      if (Xofs != 0) {
+        W = vw - Xofs;
+      }
+      if (Yofs != 0) {
+        H = vh - Yofs;
+      }
       views[a] = new EditorViewWindow(Xofs, Yofs, W, H, &callback);
       views[a]->SetMode(a);
       views[a]->bDrawRadius = false;
@@ -227,7 +249,9 @@ void EditorUI::Initialize() {
 }
 
 void EditorUI::Show(bool initial) {
-  if (initial) viewsGroup->suppressRescale = true;
+  if (initial) {
+    viewsGroup->suppressRescale = true;
+  }
   window->show();
   viewsGroup->suppressRescale = false;
   Update();
@@ -241,10 +265,10 @@ EditorUI::~EditorUI() {
   SAFE_DELETE(uiAnimTrackEditor);
   SAFE_DELETE(uiRotator);
 
-  if (textureGroupHandler) {
+  if (textureGroupHandler != nullptr) {
     textureGroupHandler->Save((applicationPath + TextureGroupConfig).c_str());
     delete textureGroupHandler;
-    textureGroupHandler = 0;
+    textureGroupHandler = nullptr;
   }
 
   SAFE_DELETE(textureHandler);
@@ -257,7 +281,7 @@ EditorUI::~EditorUI() {
 }
 
 fltk::Color EditorUI::SetTeamColor() {
-  fltk::Color r;
+  fltk::Color r = 0;
   if (fltk::color_chooser("Set team color:", r)) {
     teamColor = r;
     return r;
@@ -270,20 +294,24 @@ void EditorUI::uiSetRenderMethod(RenderMethod rm) {
   viewsGroup->redraw();
 }
 
-static void CollectTextures(MdlObject* o, std::set<Texture*>& textures) {
-  PolyMesh* pm = o->GetPolyMesh();
-  if (pm) {
-    for (unsigned int a = 0; a < pm->poly.size(); a++) {
-      if (pm->poly[a]->texture) textures.insert(pm->poly[a]->texture.Get());
+static void CollectTextures(MdlObject* par_object, std::set<std::shared_ptr<Texture>>& par_textures) {
+  PolyMesh* pm = par_object->GetPolyMesh();
+  if (pm != nullptr) {
+    for (auto& a : pm->poly) {
+      if (a->texture) {
+        par_textures.emplace(a->texture);
+      }
     }
   }
-  for (unsigned int a = 0; a < o->childs.size(); a++) CollectTextures(o->childs[a], textures);
+  for (auto& child : par_object->childs) {
+    CollectTextures(child, par_textures);
+  }
 }
 
 void EditorUI::uiAddUnitTextures() {
   // go through all the textures used by the unit
   TextureGroup* cur = GetCurrentTexGroup();
-  if (cur && model->root) {
+  if ((cur != nullptr) && (model->root != nullptr)) {
     CollectTextures(model->root, cur->textures);
     InitTexBrowser();
   }
@@ -302,11 +330,11 @@ void EditorUI::uiCopy() {
 
 void EditorUI::uiPaste() {
   std::vector<MdlObject*> sel = model->GetSelectedObjects();
-  MdlObject* where = 0;
+  MdlObject* where = nullptr;
   if (!sel.empty()) {
-    if (sel.size() == 1)
+    if (sel.size() == 1) {
       where = sel.front();
-    else {
+    } else {
       fltk::message("You can't select multiple objects to paste in.");
       return;
     }
@@ -318,22 +346,23 @@ void EditorUI::uiPaste() {
 }
 
 void EditorUI::uiAddObject() {
-  const char* r = fltk::input("Add empty object", 0);
-  if (r) {
-    MdlObject* obj = new MdlObject;
+  const char* r = fltk::input("Add empty object", nullptr);
+  if (r != nullptr) {
+    auto* obj = new MdlObject;
     obj->name = r;
 
-    if (model->root) {
+    if (model->root != nullptr) {
       MdlObject* parent = GetSingleSel();
-      if (!parent)
+      if (parent == nullptr) {
         delete obj;
-      else {
+      } else {
         obj->parent = parent;
         parent->childs.push_back(obj);
         parent->isOpen = true;
       }
-    } else
+    } else {
       model->root = obj;
+    }
 
     Update();
   }
@@ -341,39 +370,42 @@ void EditorUI::uiAddObject() {
 
 void EditorUI::uiDeleteSelection() {
   if (currentTool->needsPolySelect()) {
-    std::vector<MdlObject*> objects = model->GetObjectList();
-    for (unsigned int a = 0; a < objects.size(); a++) {
-      PolyMesh* pm = objects[a]->GetPolyMesh();
+    std::vector<MdlObject*> const objects = model->GetObjectList();
+    for (const auto& object : objects) {
+      PolyMesh* pm = object->GetPolyMesh();
 
-      if (pm) {
+      if (pm != nullptr) {
         std::vector<Poly*> polygons;
-        for (unsigned int b = 0; b < pm->poly.size(); b++) {
-          Poly* pl = pm->poly[b];
-          if (!pl->isSelected)
+        for (auto* pl : pm->poly) {
+          if (!pl->isSelected) {
             polygons.push_back(pl);
-          else
+          } else {
             delete pl;
+          }
         }
         pm->poly = polygons;
       }
     }
   } else {
-    std::vector<MdlObject*> objects = model->GetSelectedObjects();
+    std::vector<MdlObject*> const objects = model->GetSelectedObjects();
     std::vector<MdlObject*> filtered;
-    for (unsigned int a = 0; a < objects.size(); a++) {
-      if (objects[a]->HasSelectedParent()) continue;
-      filtered.push_back(objects[a]);
+    for (const auto& object : objects) {
+      if (object->HasSelectedParent()) {
+        continue;
+      }
+      filtered.push_back(object);
     }
-    for (unsigned int a = 0; a < filtered.size(); a++) model->DeleteObject(filtered[a]);
+    for (auto& a : filtered) {
+      model->DeleteObject(a);
+    }
   }
   Update();
 }
 
 void EditorUI::uiApplyTransform() {
   // apply the transformation of each object onto itself, and remove the orientation+offset
-  std::vector<MdlObject*> sel = model->GetSelectedObjects();
-  for (unsigned int a = 0; a < sel.size(); a++) {
-    MdlObject* o = sel[a];
+  std::vector<MdlObject*> const sel = model->GetSelectedObjects();
+  for (auto* o : sel) {
     o->ApplyTransform(true, true, true);
   }
 
@@ -381,17 +413,21 @@ void EditorUI::uiApplyTransform() {
 }
 
 void EditorUI::uiUniformScale() {
-  std::vector<MdlObject*> sel = model->GetSelectedObjects();
-  if (sel.empty()) return;
+  std::vector<MdlObject*> const sel = model->GetSelectedObjects();
+  if (sel.empty()) {
+    return;
+  }
 
   const char* scalestr = fltk::input("Scale selected objects with this factor", "1");
-  if (scalestr) {
-    float scale = atof(scalestr);
+  if (scalestr != nullptr) {
+    float const scale = atof(scalestr);
 
-    for (unsigned int a = 0; a < sel.size(); a++) {
-      if (sel[a]->HasSelectedParent()) continue;
+    for (const auto& a : sel) {
+      if (a->HasSelectedParent()) {
+        continue;
+      }
 
-      sel[a]->scale *= scale;
+      a->scale *= scale;
     }
 
     Update();
@@ -399,18 +435,20 @@ void EditorUI::uiUniformScale() {
 }
 
 void EditorUI::uiRotate3DOTex() {
-  if (!currentTool->needsPolySelect())
+  if (!currentTool->needsPolySelect()) {
     fltk::message("Use the polygon selection tool first to select the polygons");
-  else {
-    std::vector<MdlObject*> obj = model->GetObjectList();
-    for (std::vector<MdlObject*>::iterator o = obj.begin(); o != obj.end(); ++o) {
-      PolyMesh* pm = (*o)->GetPolyMesh();
+  } else {
+    std::vector<MdlObject*> const obj = model->GetObjectList();
+    for (const auto& o : obj) {
+      PolyMesh* pm = o->GetPolyMesh();
 
-      if (pm)
-        for (unsigned int a = 0; a < pm->poly.size(); a++) {
-          Poly* pl = pm->poly[a];
-          if (pl->isSelected) pl->RotateVerts();
+      if (pm != nullptr) {
+        for (auto* pl : pm->poly) {
+          if (pl->isSelected) {
+            pl->RotateVerts();
+          }
         }
+      }
     }
 
     Update();
@@ -434,16 +472,17 @@ void EditorUI::uiSwapObjects() {
 void EditorUI::uiObjectPositionChanged(int axis, fltk::Input* o) {
   MdlObject* sel = GetSingleSel();
 
-  if (sel) {
-    float val = atof(o->value());
+  if (sel != nullptr) {
+    float const val = atof(o->value());
 
     if (chkOnlyMoveOrigin->value()) {
       Vector3 newPos = sel->position;
       newPos[axis] = val;
 
       sel->MoveOrigin(newPos - sel->position);
-    } else
+    } else {
       sel->position[axis] = val;
+    }
 
     Update();
   }
@@ -453,8 +492,8 @@ void EditorUI::uiObjectStateChanged(Vector3 MdlObject::*state, float Vector3::*a
                                     float scale) {
   MdlObject* sel = GetSingleSel();
 
-  if (sel) {
-    float val = atof(o->value());
+  if (sel != nullptr) {
+    float const val = atof(o->value());
     (sel->*state).*axis = val * scale;
 
     Update();
@@ -464,7 +503,7 @@ void EditorUI::uiObjectStateChanged(Vector3 MdlObject::*state, float Vector3::*a
 void EditorUI::uiObjectRotationChanged(int axis, fltk::Input* o) {
   MdlObject* sel = GetSingleSel();
 
-  if (sel) {
+  if (sel != nullptr) {
     Vector3 euler = sel->rotation.GetEuler();
     euler.v[axis] = atof(o->value()) * DegreesToRadians;
     sel->rotation.SetEuler(euler);
@@ -493,17 +532,21 @@ void EditorUI::uiCalculateRadius() {
 
 void EditorUI::menuObjectApproxOffset() {
   std::vector<MdlObject*> sel = model->GetSelectedObjects();
-  for (unsigned int a = 0; a < sel.size(); a++) sel[a]->ApproximateOffset();
+  for (auto& a : sel) {
+    a->ApproximateOffset();
+  }
 
   Update();
 }
 
 void EditorUI::browserSetObjectName(MdlObject* obj) {
-  if (!obj) return;
+  if (obj == nullptr) {
+    return;
+  }
 
   const char* r = fltk::input("Set object name", obj->name.c_str());
-  if (r) {
-    std::string prev = obj->name;
+  if (r != nullptr) {
+    std::string const prev = obj->name;
     obj->name = r;
     objectTree->redraw();
   }
@@ -519,20 +562,22 @@ void EditorUI::SelectionUpdated() {
             "MdlObject %s selected: position=(%4.1f,%4.1f,%4.1f) scale=(%3.2f,%3.2f,%3.2f) "
             "polycount=%lu vertexcount=%lu",
             f->name.c_str(), f->position.x, f->position.y, f->position.z, f->scale.x, f->scale.y,
-            f->scale.z, pm ? pm->poly.size() : 0, pm ? pm->verts.size() : 0);
+            f->scale.z, pm != nullptr ? pm->poly.size() : 0, pm != nullptr ? pm->verts.size() : 0);
   } else if (sel.size() > 1) {
-    int plcount = 0, vcount = 0;
-    for (unsigned int a = 0; a < sel.size(); a++) {
-      PolyMesh* pm = sel[a]->GetPolyMesh();
-      if (pm) {
+    int plcount = 0;
+    int vcount = 0;
+    for (auto& a : sel) {
+      PolyMesh* pm = a->GetPolyMesh();
+      if (pm != nullptr) {
         plcount += pm->poly.size();
         vcount += pm->verts.size();
       }
     }
     sprintf(label, "Multiple objects selected. Total polycount: %d, Total vertexcount: %d", plcount,
             vcount);
-  } else
+  } else {
     label[0] = 0;
+  }
   status->value(label);
   status->redraw();
 
@@ -553,20 +598,23 @@ void EditorUI::Update() {
                            inputScaleZ, inputRotX, inputRotY, inputRotZ};
   if (sel.size() == 1) {
     MdlObject* s = sel.front();
-    for (unsigned int a = 0; a < sizeof(inputs) / sizeof(fltk::Input*); a++) inputs[a]->activate();
+    for (auto& input : inputs) {
+      input->activate();
+    }
     inputPosX->value(s->position.x);
     inputPosY->value(s->position.y);
     inputPosZ->value(s->position.z);
     inputScaleX->value(s->scale.x);
     inputScaleY->value(s->scale.y);
     inputScaleZ->value(s->scale.z);
-    Vector3 euler = s->rotation.GetEuler();
+    Vector3 const euler = s->rotation.GetEuler();
     inputRotX->value(euler.x / DegreesToRadians);
     inputRotY->value(euler.y / DegreesToRadians);
     inputRotZ->value(euler.z / DegreesToRadians);
   } else {
-    for (unsigned int a = 0; a < sizeof(inputs) / sizeof(fltk::Input*); a++)
-      inputs[a]->deactivate();
+    for (auto& input : inputs) {
+      input->deactivate();
+    }
   }
   // model inputs
   inputRadius->value(model->radius);
@@ -577,10 +625,10 @@ void EditorUI::Update() {
 }
 
 void EditorUI::RenderScene(IView* view) {
-  if (model) {
-    const float m = 1 / 255.0f;
-    Vector3 teamc((teamColor & 0xff000000) >> 24, (teamColor & 0xff0000) >> 16,
-                  (teamColor & 0xff00) >> 8);
+  if (model != nullptr) {
+    const float m = 1 / 255.0F;
+    Vector3 const teamc((teamColor & 0xff000000) >> 24, (teamColor & 0xff0000) >> 16,
+                        (teamColor & 0xff00) >> 8);
     modelDrawer->Render(model, view, teamc * m);
   }
 }
@@ -591,7 +639,7 @@ MdlObject* EditorUI::GetSingleSel() {
 
   if (sel.size() != 1) {
     fltk::message("Select a single object");
-    return 0;
+    return nullptr;
   }
   return sel.front();
 }
@@ -621,65 +669,68 @@ void EditorUI::SetModel(Model* mdl) {
   mappingChooser->value(mdl->mapping);
   SetMapping(mdl->mapping);
 
-  inputTexture1->value(0);
-  inputTexture2->value(0);
+  inputTexture1->value(nullptr);
+  inputTexture2->value(nullptr);
 
-  for (unsigned int a = 0; a < mdl->texBindings.size(); a++)
-    SetModelTexture(a, mdl->texBindings[a].texture.Get());
+  for (unsigned int a = 0; a < mdl->texBindings.size(); a++) {
+    SetModelTexture(a, mdl->texBindings[a].texture);
+  }
 
   Update();
 }
 
 void EditorUI::SetTool(Tool* t) {
-  if (t) {
+  if (t != nullptr) {
     t->editor = &callback;
     if (t->isToggle) {
       currentTool = t;
       tools.Disable();
       t->toggle(true);
-    } else
+    } else {
       t->click();
+    }
     viewsGroup->redraw();
   }
 }
 
-void EditorUI::SetModelTexture(int index, Texture* tex) {
-  model->SetTexture(index, tex);
+void EditorUI::SetModelTexture(int index, std::shared_ptr<Texture> par_texture) {
+  model->SetTexture(index, par_texture);
 
-  if (tex && !tex->glIdent) {
-    ((EditorViewWindow*)viewsGroup->child(0))->make_current();
-    tex->VideoInit();
+  if ((par_texture != nullptr) && (par_texture->glIdent == 0U)) {
+    (dynamic_cast<EditorViewWindow*>(viewsGroup->child(0)))->make_current();
+    par_texture->VideoInit();
   }
 
   if (index < 2) {
-    fltk::FileInput* input = index ? inputTexture2 : inputTexture1;
-    input->value(tex ? tex->name.c_str() : "");
+    fltk::FileInput* input = index != 0 ? inputTexture2 : inputTexture1;
+    input->value(par_texture != nullptr ? par_texture->name.c_str() : "");
   }
 }
 
 void EditorUI::BrowseForTexture(int textureIndex) {
   static std::string fn;
   if (FileOpenDlg("Select texture:", ImageFileExt, fn)) {
-    Texture* tex = new Texture(fn);
-    if (!tex->IsLoaded()) {
-      delete tex;
-    } else {
-      tex->image->FlipNonDDS(fn);
+    auto tex = std::make_shared<Texture>(fn);
+    if (tex->IsLoaded()) {
+      tex->image.FlipNonDDS(fn);
       SetModelTexture(textureIndex, tex);
+      Update();
     }
-
-    Update();
   }
 }
 
 void EditorUI::ReloadTexture(int index) {
   // fltk::FileInput *input = index ? inputTexture2 : inputTexture1;
 
-  if (model->texBindings.size() <= (uint)index) model->texBindings.resize(index + 1);
+  if (model->texBindings.size() <= static_cast<uint>(index)) {
+    model->texBindings.resize(index + 1);
+  }
 
-  TextureBinding& tb = model->texBindings[index];
-  RefPtr<Texture> tex = new Texture(tb.name);
-  SetModelTexture(index, tex->IsLoaded() ? tex.Get() : 0);
+  TextureBinding const& tb = model->texBindings[index];
+  auto const tex = std::make_shared<Texture>(tb.name);
+  if (tex->IsLoaded()) {
+    SetModelTexture(index, tex);
+  }
 
   Update();
 }
@@ -690,11 +741,11 @@ void EditorUI::ConvertToS3O() {
 
   texW = atoi(fltk::input("Enter texture width: ", SPrintf("%d", texW).c_str()));
   texH = atoi(fltk::input("Enter texture height: ", SPrintf("%d", texH).c_str()));
-  std::string name_ext = fltk::filename_name(filename.c_str());
-  std::string name(name_ext.c_str(), fltk::filename_ext(name_ext.c_str()));
+  std::string const name_ext = fltk::filename_name(filename.c_str());
+  std::string const name(name_ext.c_str(), fltk::filename_ext(name_ext.c_str()));
   if (model->ConvertToS3O(GetFilePath(filename) + "/" + name + "_tex", texW, texH)) {
     // Update the UI
-    SetModelTexture(0, model->texBindings[0].texture.Get());
+    SetModelTexture(0, model->texBindings[0].texture);
     SetMapping(MAPPING_S3O);
   }
   Update();
@@ -704,10 +755,11 @@ void EditorUI::ConvertToS3O() {
 void EditorUI::UpdateTitle() {
   const char* baseTitle = "Upspring Model Editor - ";
 
-  if (filename.empty())
+  if (filename.empty()) {
     windowTitle = baseTitle + std::string("unnamed model");
-  else
+  } else {
     windowTitle = baseTitle + filename;
+  }
 
   window->label(windowTitle.c_str());
 }
@@ -715,9 +767,8 @@ void EditorUI::UpdateTitle() {
 void EditorUI::UpdateTextureGroups() {
   textureGroupMenu->clear();
 
-  for (unsigned int a = 0; a < textureGroupHandler->groups.size(); a++) {
-    TextureGroup* tg = textureGroupHandler->groups[a];
-    textureGroupMenu->add(tg->name.c_str(), 0, 0, tg);
+  for (auto* tg : textureGroupHandler->groups) {
+    textureGroupMenu->add(tg->name.c_str(), 0, nullptr, tg);
   }
   textureGroupMenu->redraw();
 }
@@ -726,23 +777,28 @@ void EditorUI::SelectTextureGroup(fltk::Widget* /*w*/, void* /*d*/) { InitTexBro
 
 TextureGroup* EditorUI::GetCurrentTexGroup() {
   assert(textureGroupHandler->groups.size() == (uint)textureGroupMenu->children());
-  if (textureGroupHandler->groups.empty()) return 0;
+  if (textureGroupHandler->groups.empty()) {
+    return nullptr;
+  }
 
   fltk::Widget* s = textureGroupMenu->child(textureGroupMenu->value());
-  if (s) {
-    TextureGroup* tg = (TextureGroup*)s->user_data();
+  if (s != nullptr) {
+    auto* tg = static_cast<TextureGroup*>(s->user_data());
     return tg;
   }
-  return 0;
+  return nullptr;
 }
 
 void EditorUI::InitTexBrowser() {
   texBrowser->clear();
 
   TextureGroup* tg = GetCurrentTexGroup();
-  if (!tg) return;
-  for (std::set<Texture*>::iterator t = tg->textures.begin(); t != tg->textures.end(); ++t)
-    texBrowser->AddTexture(*t);
+  if (tg == nullptr) {
+    return;
+  }
+  for (auto texture : tg->textures) {
+    texBrowser->AddTexture(texture);
+  }
   texBrowser->UpdatePositions();
   texBrowser->redraw();
 }
@@ -750,7 +806,7 @@ void EditorUI::InitTexBrowser() {
 bool EditorUI::Load(const std::string& fn) {
   Model* mdl = Model::Load(fn, optimizeOnLoad);
 
-  if (mdl) {
+  if (mdl != nullptr) {
     filename = fn;
     SetModel(mdl);
 
@@ -758,17 +814,21 @@ bool EditorUI::Load(const std::string& fn) {
   } else {
     delete mdl;
   }
-  return mdl != 0;
+  return mdl != nullptr;
 }
 
 void EditorUI::menuObjectLoad() {
   MdlObject* obj = GetSingleSel();
-  if (!obj) return;
+  if (obj == nullptr) {
+    return;
+  }
 
   static std::string fn;
   if (FileOpenDlg("Load object:", FileChooserPattern, fn)) {
     Model* submdl = Model::Load(fn);
-    if (submdl) model->InsertModel(obj, submdl);
+    if (submdl != nullptr) {
+      model->InsertModel(obj, submdl);
+    }
 
     delete submdl;
 
@@ -778,32 +838,36 @@ void EditorUI::menuObjectLoad() {
 
 void EditorUI::menuObjectSave() {
   MdlObject* sel = GetSingleSel();
-  if (!sel) return;
+  if (sel == nullptr) {
+    return;
+  }
   static std::string fn;
   char fnl[256];
   strncpy(fnl, fn.c_str(), sizeof(fnl));
   strncpy(fltk::filename_name(fnl), sel->name.c_str(), sizeof(fnl));
   fn = fnl;
   if (FileSaveDlg("Save object:", FileChooserPattern, fn)) {
-    Model* submdl = new Model;
+    auto* submdl = new Model;
     submdl->root = sel;
     Model::Save(submdl, fn);
-    submdl->root = 0;
+    submdl->root = nullptr;
     delete submdl;
   }
 }
 
 void EditorUI::menuObjectReplace() {
   MdlObject* old = GetSingleSel();
-  if (!old) return;
+  if (old == nullptr) {
+    return;
+  }
   char buf[128];
   sprintf(buf, "Select model to replace \'%s\' ", old->name.c_str());
   static std::string fn;
   if (FileOpenDlg(buf, FileChooserPattern, fn)) {
     Model* submdl = Model::Load(fn);
-    if (submdl) {
+    if (submdl != nullptr) {
       model->ReplaceObject(old, submdl->root);
-      submdl->root = 0;
+      submdl->root = nullptr;
 
       Update();
     }
@@ -812,62 +876,70 @@ void EditorUI::menuObjectReplace() {
 }
 
 void EditorUI::menuObjectMerge() {
-  std::vector<MdlObject*> sel = model->GetSelectedObjects();
+  std::vector<MdlObject*> const sel = model->GetSelectedObjects();
 
-  for (unsigned int a = 0; a < sel.size(); a++) {
-    MdlObject* parent = sel[a]->parent;
-    if (parent) parent->MergeChild(sel[a]);
+  for (const auto& a : sel) {
+    MdlObject* parent = a->parent;
+    if (parent != nullptr) {
+      parent->MergeChild(a);
+    }
   }
 
   Update();
 }
 
 void EditorUI::menuObjectFlipPolygons() {
-  std::vector<MdlObject*> sel = model->GetSelectedObjects();
-  for (unsigned int a = 0; a < sel.size(); a++) {
-    for (PolyIterator pi(sel[a]); !pi.End(); pi.Next()) pi->Flip();
+  std::vector<MdlObject*> const sel = model->GetSelectedObjects();
+  for (const auto& a : sel) {
+    for (PolyIterator pi(a); !pi.End(); pi.Next()) {
+      pi->Flip();
+    }
 
-    sel[a]->InvalidateRenderData();
+    a->InvalidateRenderData();
   }
 
   Update();
 }
 
 void EditorUI::menuObjectRecalcNormals() {
-  std::vector<MdlObject*> sel = model->GetSelectedObjects();
-  for (unsigned int a = 0; a < sel.size(); a++) {
-    PolyMesh* pm = sel[a]->GetPolyMesh();
-    if (pm) pm->CalculateNormals();
+  std::vector<MdlObject*> const sel = model->GetSelectedObjects();
+  for (const auto& a : sel) {
+    PolyMesh* pm = a->GetPolyMesh();
+    if (pm != nullptr) {
+      pm->CalculateNormals();
+    }
 
-    sel[a]->InvalidateRenderData();
+    a->InvalidateRenderData();
   }
 
   Update();
 }
 
 void EditorUI::menuObjectResetScaleRot() {
-  std::vector<MdlObject*> sel = model->GetSelectedObjects();
-  for (unsigned int a = 0; a < sel.size(); a++) {
-    sel[a]->rotation = Rotator();
-    sel[a]->scale.set(1, 1, 1);
+  std::vector<MdlObject*> const sel = model->GetSelectedObjects();
+  for (const auto& a : sel) {
+    a->rotation = Rotator();
+    a->scale.set(1, 1, 1);
   }
   Update();
 }
 
 void EditorUI::menuObjectResetTransform() {
-  std::vector<MdlObject*> sel = model->GetSelectedObjects();
-  for (unsigned int a = 0; a < sel.size(); a++) {
-    sel[a]->position = Vector3();
-    sel[a]->rotation = Rotator();
-    sel[a]->scale.set(1, 1, 1);
+  std::vector<MdlObject*> const sel = model->GetSelectedObjects();
+  for (const auto& a : sel) {
+    a->position = Vector3();
+    a->rotation = Rotator();
+    a->scale.set(1, 1, 1);
   }
 
   Update();
 }
 
 void EditorUI::menuObjectResetPos() {
-  std::vector<MdlObject*> sel = model->GetSelectedObjects();
-  for (unsigned int a = 0; a < sel.size(); a++) sel[a]->position = Vector3();
+  std::vector<MdlObject*> const sel = model->GetSelectedObjects();
+  for (const auto& a : sel) {
+    a->position = Vector3();
+  }
 
   Update();
 }
@@ -878,27 +950,31 @@ void EditorUI::menuObjectShowAnimWindows() {
 }
 
 void EditorUI::menuObjectGenCSurf() {
-  std::vector<MdlObject*> sel = model->GetSelectedObjects();
-  for (unsigned int a = 0; a < sel.size(); a++) {
-    delete sel[a]->csurfobj;
+  std::vector<MdlObject*> const sel = model->GetSelectedObjects();
+  for (const auto& a : sel) {
+    delete a->csurfobj;
 
-    sel[a]->csurfobj = new csurf::Object;
-    sel[a]->csurfobj->GenerateFromPolyMesh(sel[a]->GetPolyMesh());
+    a->csurfobj = new csurf::Object;
+    a->csurfobj->GenerateFromPolyMesh(a->GetPolyMesh());
   }
 }
 
 void EditorUI::menuEditOptimizeAll() {
-  std::vector<MdlObject*> objects = model->GetObjectList();
-  for (uint i = 0; i < objects.size(); i++)
-    if (objects[i]->GetPolyMesh())
-      objects[i]->GetPolyMesh()->Optimize(PolyMesh::IsEqualVertexTCNormal);
+  std::vector<MdlObject*> const objects = model->GetObjectList();
+  for (const auto& object : objects) {
+    if (object->GetPolyMesh() != nullptr) {
+      object->GetPolyMesh()->Optimize(PolyMesh::IsEqualVertexTCNormal);
+    }
+  }
 }
 
 void EditorUI::menuEditOptimizeSelected() {
-  std::vector<MdlObject*> objects = model->GetObjectList();
-  for (uint i = 0; i < objects.size(); i++)
-    if (objects[i]->isSelected && objects[i]->GetPolyMesh())
-      objects[i]->GetPolyMesh()->Optimize(PolyMesh::IsEqualVertexTCNormal);
+  std::vector<MdlObject*> const objects = model->GetObjectList();
+  for (const auto& object : objects) {
+    if (object->isSelected && (object->GetPolyMesh() != nullptr)) {
+      object->GetPolyMesh()->Optimize(PolyMesh::IsEqualVertexTCNormal);
+    }
+  }
 }
 
 void EditorUI::menuFileSaveAs() {
@@ -938,7 +1014,7 @@ void EditorUI::menuFileSave() {
     return;
   }
 
-  Model::Save(model, filename.c_str());
+  Model::Save(model, filename);
 }
 
 void EditorUI::menuSettingsShowArchiveList() {
@@ -947,15 +1023,15 @@ void EditorUI::menuSettingsShowArchiveList() {
     archives = sui.settings;
     archives.Save();
 
-    for (std::set<std::string>::iterator arch = archives.archives.begin();
-         arch != archives.archives.end(); ++arch)
-      textureHandler->Load(arch->c_str());
+    for (auto arch = archives.archives.begin(); arch != archives.archives.end(); ++arch) {
+      textureHandler->Load3DO(arch->c_str());
+    }
   }
 }
 
 // Show texture group window
 void EditorUI::menuSettingsTextureGroups() {
-  TexGroupUI texGroupUI(textureGroupHandler, textureHandler);
+  TexGroupUI const texGroupUI(textureGroupHandler, textureHandler);
   textureGroupHandler->Save((applicationPath + TextureGroupConfig).c_str());
 
   UpdateTextureGroups();
@@ -965,8 +1041,9 @@ void EditorUI::menuSettingsTextureGroups() {
 void EditorUI::menuSettingsSetBgColor() {
   Vector3 col;
   if (fltk::color_chooser("Select view background color:", col.x, col.y, col.z)) {
-    for (int a = 0; a < viewsGroup->children(); ++a)
-      ((EditorViewWindow*)viewsGroup->child(a))->backgroundColor = col;
+    for (int a = 0; a < viewsGroup->children(); ++a) {
+      (dynamic_cast<EditorViewWindow*>(viewsGroup->child(a)))->backgroundColor = col;
+    }
     viewsGroup->redraw();
   }
 }
@@ -981,7 +1058,7 @@ void EditorUI::menuSetSpringDir() {
 void EditorUI::menuSettingsRestoreViews() { LoadSettings(); }
 
 void EditorUI::SaveSettings() {
-  std::string path = applicationPath + ViewSettingsFile;
+  std::string const path = applicationPath + ViewSettingsFile;
   CfgWriter writer(path.c_str());
   if (writer.IsFailed()) {
     fltk::message("Failed to open %s for writing view settings", path.c_str());
@@ -993,26 +1070,34 @@ void EditorUI::SaveSettings() {
 }
 
 void EditorUI::LoadSettings() {
-  std::string path = applicationPath + ViewSettingsFile;
+  std::string const path = applicationPath + ViewSettingsFile;
   CfgList* cfg = CfgValue::LoadFile(path.c_str());
-  if (cfg) {
+  if (cfg != nullptr) {
     SerializeConfig(*cfg, false);
     delete cfg;
   }
 }
 
 void EditorUI::LoadToolWindowSettings() {
-  std::string path = applicationPath + ViewSettingsFile;
+  std::string const path = applicationPath + ViewSettingsFile;
   CfgList* cfg = CfgValue::LoadFile(path.c_str());
-  if (cfg) {
+  if (cfg != nullptr) {
     // tool window visibility
-    bool showTimeline, showTrackEdit, showIK;
+    bool showTimeline = false;
+    bool showTrackEdit = false;
+    bool showIK = false;
     CFG_LOAD(*cfg, showTimeline);
     CFG_LOAD(*cfg, showTrackEdit);
     CFG_LOAD(*cfg, showIK);
-    if (showTrackEdit) uiAnimTrackEditor->Show();
-    if (showIK) uiIK->Show();
-    if (showTimeline) uiTimeline->Show();
+    if (showTrackEdit) {
+      uiAnimTrackEditor->Show();
+    }
+    if (showIK) {
+      uiIK->Show();
+    }
+    if (showTimeline) {
+      uiTimeline->Show();
+    }
 
     delete cfg;
   }
@@ -1020,7 +1105,10 @@ void EditorUI::LoadToolWindowSettings() {
 
 void EditorUI::SerializeConfig(CfgList& cfg, bool store) {
   // Serialize editor window properties
-  int x = window->x(), y = window->y(), width = window->w(), height = window->h();
+  int x = window->x();
+  int y = window->y();
+  int width = window->w();
+  int height = window->h();
   std::string& springTexDir = Texture::textureLoadDir;
   if (store) {
     CFG_STOREN(cfg, x);
@@ -1029,11 +1117,11 @@ void EditorUI::SerializeConfig(CfgList& cfg, bool store) {
     CFG_STOREN(cfg, height);
     CFG_STORE(cfg, springTexDir);
     CFG_STORE(cfg, optimizeOnLoad);
-    bool showTimeline = uiTimeline->window->visible();
+    bool const showTimeline = uiTimeline->window->visible();
     CFG_STORE(cfg, showTimeline);
-    bool showTrackEdit = uiAnimTrackEditor->window->visible();
+    bool const showTrackEdit = uiAnimTrackEditor->window->visible();
     CFG_STORE(cfg, showTrackEdit);
-    bool showIK = uiIK->window->visible();
+    bool const showIK = uiIK->window->visible();
     CFG_STORE(cfg, showIK);
   } else {
     CFG_LOADN(cfg, x);
@@ -1051,17 +1139,17 @@ void EditorUI::SerializeConfig(CfgList& cfg, bool store) {
     CFG_STOREN(cfg, numViews);
   } else {
     CFG_LOADN(cfg, numViews);
-    int nv = numViews - viewsGroup->children();
+    int const nv = numViews - viewsGroup->children();
     if (nv > 0) {
       viewsGroup->begin();
       for (int a = 0; a < nv; a++) {
-        EditorViewWindow* wnd = new EditorViewWindow(0, 0, 0, 0, &callback);
+        auto* wnd = new EditorViewWindow(0, 0, 0, 0, &callback);
         wnd->SetMode(a % 4);
       }
       viewsGroup->end();
     } else {
       for (int a = viewsGroup->children() - 1; a >= numViews; a--) {
-        EditorViewWindow* wnd = (EditorViewWindow*)viewsGroup->child(a);
+        auto* wnd = dynamic_cast<EditorViewWindow*>(viewsGroup->child(a));
         viewsGroup->remove(wnd);
         delete wnd;
       }
@@ -1072,13 +1160,16 @@ void EditorUI::SerializeConfig(CfgList& cfg, bool store) {
   char viewName[16];
   for (int a = 0; a < viewsGroup->children(); ++a) {
     sprintf(viewName, "View%d", viewIndex++);
-    CfgList* viewcfg;
+    CfgList* viewcfg = nullptr;
     if (store) {
       viewcfg = new CfgList;
       cfg.AddValue(viewName, viewcfg);
-    } else
+    } else {
       viewcfg = dynamic_cast<CfgList*>(cfg.GetValue(viewName));
-    if (viewcfg) ((EditorViewWindow*)viewsGroup->child(a))->Serialize(*viewcfg, store);
+    }
+    if (viewcfg != nullptr) {
+      (dynamic_cast<EditorViewWindow*>(viewsGroup->child(a)))->Serialize(*viewcfg, store);
+    }
   }
 }
 
@@ -1090,8 +1181,8 @@ void EditorUI::menuMappingImportUV() {
     progctl.cb = EditorUIProgressCallback;
     progctl.data = this;
 
-    progress->range(0.0f, 1.0f, 0.01f);
-    progress->position(0.0f);
+    progress->range(0.0F, 1.0F, 0.01F);
+    progress->position(0.0F);
     progress->show();
     model->ImportUVMesh(fn.c_str(), progctl);
     progress->hide();
@@ -1100,8 +1191,9 @@ void EditorUI::menuMappingImportUV() {
 
 void EditorUI::menuMappingExportUV() {
   static std::string fn;
-  if (FileSaveDlg("Save merged model for UV mapping:", FileChooserPattern, fn))
+  if (FileSaveDlg("Save merged model for UV mapping:", FileChooserPattern, fn)) {
     model->ExportUVMesh(fn.c_str());
+  }
 }
 
 void EditorUI::menuMappingShow() { uiMapping->Show(); }
@@ -1120,10 +1212,10 @@ void EditorUI::menuScriptLoad() {
   }
 }
 
-static EditorUI* editorUI = 0;
+static EditorUI* editorUI = nullptr;
 
 static void scriptClickCB(fltk::Widget* /*w*/, void* d) {
-  ScriptedMenuItem* s = (ScriptedMenuItem*)d;
+  auto* s = static_cast<ScriptedMenuItem*>(d);
 
   char buf[64];
   SNPRINTF(buf, sizeof(buf), "%s()", s->funcName.c_str());
@@ -1136,7 +1228,7 @@ static void scriptClickCB(fltk::Widget* /*w*/, void* d) {
 }
 
 void upsAddMenuItem(const char* name, const char* funcName) {
-  ScriptedMenuItem* s = new ScriptedMenuItem;
+  auto* s = new ScriptedMenuItem;
   s->funcName = funcName;
   editorUI->scripts.push_back(s);
 
@@ -1176,17 +1268,17 @@ void PrintCmdLine() {
 
 std::string ReadTextFile(const char* name) {
   FILE* f = fopen(name, "rb");
-  if (!f) {
-    logger.Trace(NL_Error, "Can't open file %s\n", name);
+  if (f == nullptr) {
+    spdlog::error("Can't open file {}", name);
     return std::string();
   }
-  int l;
+  int l = 0;
   fseek(f, 0, SEEK_END);
   l = ftell(f);
   fseek(f, 0, SEEK_SET);
   std::string r;
   r.resize(l);
-  if (fread(&r[0], l, 1, f)) {
+  if (fread(r.data(), l, 1, f) != 0U) {
   }
   fclose(f);
 
@@ -1249,17 +1341,18 @@ int main(int argc, char* argv[]) {
     applicationPath = __argv[0];
     applicationPath.erase(applicationPath.find_last_of('\\') + 1, applicationPath.size());
   }
+  PHSYSFS_init("");
 #else
-  if (argv[0]) {
+  if (argv[0] != nullptr) {
     applicationPath = argv[0];
     applicationPath.erase(applicationPath.find_last_of('/') + 1, applicationPath.size());
   }
 #endif
 
-  // Setup logger callback, so error messages are reported with fltk::message
-  logger.AddCallback(LogCallbackProc, 0);
-#ifdef _DEBUG
-  logger.SetDebugMode(true);
+#ifdef DEBUG
+  spdlog::set_level(spdlog::level::debug);
+#else
+  spdlog::set_level(spdlog::level::info);
 #endif
 
   //	math_test();
@@ -1285,6 +1378,15 @@ int main(int argc, char* argv[]) {
       fltk::message("Error while executing init.lua: %s", err);
     }
 
+    // Setup logger callback, so error messages are reported with fltk::message
+    spdlog::callback_logger_st("custom_callback_logger", [](const spdlog::details::log_msg& msg) {
+      if (msg.level != spdlog::level::err && msg.level != spdlog::level::warn) {
+        return;
+      }
+
+      fltk::message(msg.payload.data());
+    });
+
     // NOTE: the "scripts/plugins" literal was changed to "scripts/plugins/"
     std::list<std::string>* luaFiles = FindFiles("*.lua", false,
 #ifdef WIN32
@@ -1293,7 +1395,7 @@ int main(int argc, char* argv[]) {
                                                  "scripts/plugins/");
 #endif
 
-    for (std::list<std::string>::iterator i = luaFiles->begin(); i != luaFiles->end(); ++i) {
+    for (auto i = luaFiles->begin(); i != luaFiles->end(); ++i) {
       if (luaL_dofile(L, i->c_str()) != 0) {
         const char* err = lua_tostring(L, -1);
         fltk::message("Error while executing \'%s\': %s", i->c_str(), err);

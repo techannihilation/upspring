@@ -24,5 +24,5 @@ set_target_properties(upspring PROPERTIES
     SWIG_USE_TARGET_INCLUDE_DIRECTORIES ON
 )
 
-target_link_libraries(upspring fltk2)
+target_link_libraries(upspring fltk2 TXPKCore spdlog)
 target_link_libraries(Upspring upspring)

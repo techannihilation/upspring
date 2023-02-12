@@ -162,13 +162,6 @@ bool MdlObject::IsEmpty() {
   return pm ? pm->poly.empty() : true;
 }
 
-void MdlObject::Dump(int r) {
-  for (uint a = 0; a < r; a++) logger.Print("  ");
-  logger.Trace(NL_Debug, "MdlObject \'%s\'\n", name.c_str());
-
-  for (uint a = 0; a < childs.size(); a++) childs[a]->Dump(r + 1);
-}
-
 void MdlObject::GetTransform(Matrix& mat) {
   Matrix scaling;
   scaling.scale(scale);
@@ -220,11 +213,7 @@ void MdlObject::Load3DOTextures(TextureHandler* th) {
   if (!bTexturesLoaded) {
     for (PolyIterator p(this); !p.End(); p.Next()) {
       if (!p->texture && !p->texname.empty()) {
-        p->texture = th->GetTexture(p->texname.c_str());
-        // if (p->texture)
-        // 	p->texture->VideoInit();
-        // else
-        // 	p->texname.clear();
+        p->texture = th->GetTexture(p->texname);
       }
     }
     bTexturesLoaded = true;

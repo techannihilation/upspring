@@ -12,6 +12,8 @@
 #include "Texture.h"
 #include "VertexBuffer.h"
 
+#include <memory>
+
 #define MAPPING_S3O 0
 #define MAPPING_3DO 1
 
@@ -52,7 +54,7 @@ struct Poly {
   std::string texname;
   Vector3 color;
   int taColor;  // TA indexed color
-  RefPtr<Texture> texture;
+  std::shared_ptr<Texture> texture;
 
   bool isCurved;  // this polygon should get a curved surface at the next csurf update
   bool isSelected;
@@ -169,7 +171,6 @@ struct MdlObject {
   virtual ~MdlObject();
 
   bool IsEmpty();
-  void Dump(int r = 0);
   void MergeChild(MdlObject* ch);
   void FullMerge();                   // merge all childs and their subchilds
   void GetTransform(Matrix& tr);      // calculates the object space -> parent space transform
@@ -274,12 +275,10 @@ struct IProgressCtl {
 
 struct TextureBinding {
   std::string name;
-#ifndef SWIG
-  RefPtr<Texture> texture;
-#endif
-  // swig helpers
-  void SetTexture(Texture* t) { texture = t; }
-  Texture* GetTexture() { return texture.Get(); }
+  std::shared_ptr<Texture> texture;
+
+  void SetTexture(std::shared_ptr<Texture> par_tex) { texture = par_tex; }
+  std::shared_ptr<Texture>& GetTexture() { return texture; }
 };
 
 // NOTE: g++ disallows references to temporary objects, so...
@@ -322,7 +321,7 @@ struct Model {
   unsigned long ObjectSelectionHash();
 
   void SetTextureName(uint index, const char* name);
-  void SetTexture(uint index, Texture* tex);
+  void SetTexture(uint index, std::shared_ptr<Texture> par_tex);
 
   bool ConvertToS3O(std::string texName, int texw, int texh);
 

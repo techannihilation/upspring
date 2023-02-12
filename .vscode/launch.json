@@ -48,6 +48,29 @@
       "preLaunchTask": "build-debug-gcc"
     },
     {
+      "name": "Debug gcc -run runscripts/atlas.lua",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/out/build/gcc-debug/src/Upspring",
+      "args": ["-run", "runscripts/atlas.lua"],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "setupCommands": [
+        {
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        },
+        {
+          "text": "-gdb-set disassembly-flavor intel",
+          "ignoreFailures": true
+        }
+      ],
+      "preLaunchTask": "build-debug-gcc"
+    },
+    {
       "name": "Debug gcc -run runscripts/convert.lua",
       "type": "cppdbg",
       "request": "launch",

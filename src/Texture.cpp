@@ -6,10 +6,12 @@
 #include "EditorIncl.h"
 #include "EditorDef.h"
 #include "Texture.h"
-#include "ZipFile.h"
 #include "Util.h"
-#include "CfgParser.h"
 #include "Image.h"
+#include "CfgParser.h"
+
+#include "FileSystem/CSevenZipArchive.h"
+#include "FileSystem/CZipArchive.h"
 
 #include <IL/il.h>
 #include <IL/ilu.h>
@@ -18,9 +20,11 @@
 #include <GL/gl.h>
 #include <GL/glu.h>
 
-#include <filesystem>
+#include "string_util.h"
+#include "spdlog/spdlog.h"
 
-namespace fs = std::filesystem;
+#include <filesystem>
+#include <utility>
 
 // ------------------------------------------------------------------------------------------------
 // Texture
@@ -28,11 +32,13 @@ namespace fs = std::filesystem;
 
 std::string Texture::textureLoadDir;
 
-Texture::Texture() { glIdent = 0; }
+Texture::Texture() : glIdent() {}
 
-Texture::Texture(const std::string& fn) { Load(fn, std::string()); }
+Texture::Texture(const std::string& fn) : glIdent() { Load(fn, std::string()); }
 
-Texture::Texture(const std::string& fn, const std::string& hintpath) { Load(fn, hintpath); }
+Texture::Texture(const std::string& fn, const std::string& hintpath) : glIdent() {
+  Load(fn, hintpath);
+}
 
 bool Texture::Load(const std::string& fn, const std::string& hintpath) {
   name = fltk::filename_name(fn.c_str());
@@ -41,93 +47,53 @@ bool Texture::Load(const std::string& fn, const std::string& hintpath) {
   std::vector<std::string> paths;
   paths.push_back(fn);
   if (!hintpath.empty()) {
-    paths.push_back(fs::path(hintpath).parent_path().append("unittextures").append(fn).string());
-    paths.push_back(fs::path(hintpath).append(fn).string());
+    paths.push_back(std::filesystem::path(hintpath).parent_path().append("unittextures").append(fn).string());
+    paths.push_back(std::filesystem::path(hintpath).append(fn).string());
   }
-  if (!textureLoadDir.empty()) paths.push_back(fs::path(textureLoadDir).append(fn).string());
+  if (!textureLoadDir.empty()) {
+    paths.push_back(std::filesystem::path(textureLoadDir).append(fn).string());
+  }
 
-  bool succes = true;
-  for (uint a = 0; a < paths.size(); a++) {
-    Image* img = new Image;
-    try {
-      img->Load(paths[a].c_str());
-      succes = true;
-    } catch (content_error& e) {
-      logger.Print("Failed to load texture: %s\n", e.errMsg.c_str());
-      succes = false;
-      delete img;
+  for (auto& path : paths) {
+    Image img(path);
+    if (img.HasError()) {
+      continue;
     }
-    if (succes) {
-      SetImage(img);
-      break;
-    }
+
+    SetImage(img);
+    return true;
   }
-  return succes;
+
+  return false;
 }
 
-Texture::Texture(void* buf, int len, const char* _name) {
-  name = _name;
-  glIdent = 0;
-
-  Image* img = new Image();
-  try {
-    img->LoadFromMemory(buf, len);
-  } catch (content_error& e) {
-    delete img;
-    logger.Trace(NL_Error, "Image loading exception: %s\n", e.what());
-    return;
-  }
+Texture::Texture(std::vector<uchar>& par_data, const std::string& par_name) : name(par_name), glIdent(0) {
+  Image img(par_data);
   SetImage(img);
 }
 
-void Texture::SetImage(Image* img) { image = img; }
+void Texture::SetImage(Image& img) { image = img; }
 
 Texture::~Texture() {
-  if (glIdent) {
+  if (glIdent != 0) {
     glDeleteTextures(1, &glIdent);
     glIdent = 0;
   }
 }
 
 bool Texture::VideoInit() {
-  if (!image) return false;
-
-  bool mipmapped = true;
-  GLenum linear = true;
+  if (image.HasError()) {
+    return false;
+  }
 
   glGenTextures(1, &glIdent);
   glBindTexture(GL_TEXTURE_2D, glIdent);
 
-  GLenum format = image->format.HasAlpha() ? GL_RGBA : GL_RGB;
+  GLint const format = image.HasAlpha() ? GL_RGBA : GL_RGB;
 
-  if ((format == GL_RGBA && image->format.type != ImgFormat::RGBA) ||
-      (format == GL_RGB && image->format.type != ImgFormat::RGB)) {
-    Image* conv = new Image;
-    conv->format = ImgFormat(format == GL_RGBA ? ImgFormat::RGBA : ImgFormat::RGB);
-    image->Convert(conv);
-    image = conv;
-  }
-
-  GLenum internalFormat = format;
-
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, linear ? GL_LINEAR : GL_NEAREST);
-  if (mipmapped) {
-    if (linear)
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    else
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
-
-    gluBuild2DMipmaps(GL_TEXTURE_2D, internalFormat, image->w, image->h, format, GL_UNSIGNED_BYTE,
-                      image->data);
-  } else {
-    if (linear)
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    else
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-
-    glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, image->w, image->h, 0, format, GL_UNSIGNED_BYTE,
-                 image->data);
-  }
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+  gluBuild2DMipmaps(GL_TEXTURE_2D, format, image.Width(), image.Height(), format, GL_UNSIGNED_BYTE, image.Data());
   return true;
 }
 
@@ -135,159 +101,118 @@ bool Texture::VideoInit() {
 // TextureHandler
 // ------------------------------------------------------------------------------------------------
 
-TextureHandler::TextureHandler() {}
+TextureHandler::TextureHandler() = default;
 
-TextureHandler::~TextureHandler() {
-  for (uint a = 0; a < zips.size(); a++) {
-    delete zips[a];
-  }
-  zips.clear();
-  textures.clear();
-}
+TextureHandler::~TextureHandler() { textures.clear(); }
 
-Texture* TextureHandler::GetTexture(const char* name) {
-  std::string tmp = name;
-  transform(tmp.begin(), tmp.end(), tmp.begin(), ::tolower);
+std::shared_ptr<Texture> TextureHandler::GetTexture(const std::string& name) {
+  std::string tmp = to_lower(name);
 
-  auto ti = textures.find(tmp);
-  if (ti == textures.end()) {
+  auto ti_it = textures.find(tmp);
+  if (ti_it == textures.end()) {
     tmp += "00";
-    ti = textures.find(tmp);
-    if (ti == textures.end()) {
-      logger.Trace(NL_Debug, "Texture %s not found.\n", tmp.c_str());
-      return 0;
+    ti_it = textures.find(tmp);
+    if (ti_it == textures.end()) {
+      spdlog::debug("Texture '{}' not found", tmp);
+      return nullptr;
     }
-    ti->second.texture->name = name;  // HACK: start using the name without the 00 now
-    return ti->second.texture.Get();
+    return ti_it->second;
   }
 
-  return ti->second.texture.Get();
+  return ti_it->second;
 }
 
-Texture* TextureHandler::LoadTexture(ZipFile* zf, int index, const char* name) {
-  int len = zf->GetFileLen(index);
-  char* buf = new char[len];
-  TError r = zf->ReadFile(index, buf);
+std::shared_ptr<Texture> TextureHandler::LoadTexture(std::shared_ptr<IArchive>& par_archive,
+                                                     const uint& par_fid,
+                                                     const std::string& par_name) {
+  std::vector<uchar> buf;
+  par_archive->GetFile(par_fid, buf);
 
-  if (r == RET_FAIL) {
-    logger.Trace(NL_Debug, "Failed to read texture file %s from zip\n", name);
-    delete[] buf;
-    return 0;
+  if (buf.empty()) {
+    spdlog::debug("Failed to read texture file '{}' from the archive", par_name);
+    return nullptr;
   }
 
-  Texture* tex = new Texture(buf, len, name);
+  auto tex = std::make_shared<Texture>(buf, par_name);
   if (!tex->IsLoaded()) {
-    delete[] buf;
-    delete tex;
-    return 0;
+    return nullptr;
   }
 
-  // logger.Trace(NL_Debug, "Texture %s loaded.\n", name);
-
-  delete[] buf;
   return tex;
 }
 
-// NOTE: replacement for strlwr() which is non-ANSI
-void str2lwr(char* s) {
-  for (int i = 0; s[i] != '\0'; i++) s[i] = tolower(s[i]);
-}
+bool TextureHandler::LoadFiltered(const std::string& par_archive_path,
+                                  std::function<const std::string(const std::string&)>&& par_filter) {
+  auto ext = std::filesystem::path(par_archive_path).extension();
 
-static char* FixTextureName(char* temp) {
-// make it lowercase
-#ifdef WIN32
-  strlwr(temp);
-#else
-  str2lwr(temp);
-#endif
-
-  // remove extension
-  int i = strlen(temp) - 1;
-  char* ext = 0;
-  while (i > 0) {
-    if (temp[i] == '.') {
-      temp[i] = 0;
-      ext = &temp[i + 1];
-      break;
-    }
-    i--;
+  std::shared_ptr<IArchive> archive;
+  if (ext == ".7z" or ext == ".sd7") {
+    archive = std::make_shared<CSevenZipArchive>(par_archive_path);
+  } else if (ext == ".zip") {
+    archive = std::make_shared<CZipArchive>(par_archive_path);
+  } else {
+    spdlog::error("Unknown archive '{}'", par_archive_path);
   }
 
-  std::string fn;
-
-  i = strlen(temp) - 1;
-  while (i > 0) {
-    if (temp[i] == '/' || temp[i] == '\\') {
-      fn = &temp[i + 1];
-      break;
-    }
-    i--;
+  if (archive->NumFiles() == 0) {
+    return false;
   }
-  strcpy(temp, fn.c_str());
-  return ext;
-}
 
-bool TextureHandler::Load(const char* zip) {
-  FILE* f = fopen(zip, "rb");
+  for (uint i = 0; i < archive->NumFiles(); i++) {
+    std::string name;
+    int size = 0;
+    int mode = 0;
 
-  if (f) {
-    ZipFile* zf = new ZipFile;
-    if (zf->Init(f) == RET_FAIL) {
-      logger.Trace(NL_Error, "Failed to load zip archive %s\n", zip);
-      fclose(f);
+    archive->FileInfo(i, name, size, mode);
+
+    if (size < 1) {
+      continue;
+    }
+
+    // All lowercase
+    std::string const tmp = to_lower(name);
+
+    // Extension checking
+    auto myExt = std::filesystem::path(tmp).extension();
+    if (myExt.empty()) {
+      continue;
+    }
+    if (mSupportedExtensions.find(myExt) == mSupportedExtensions.end()) {
+      // Not a supported file.
+      continue;
+    }
+
+    // Apply filter
+    auto internal_name = par_filter(tmp);
+    if (internal_name.empty()) {
+      continue;
+    }
+
+    if (textures.find(internal_name) != textures.end()) {
+      spdlog::debug("Skipping texture '{}' its already known", internal_name);
+      continue;
+    }
+
+    auto tex = LoadTexture(archive, i, internal_name);
+    if (!tex) {
       return false;
     }
 
-    const char* imgExt[] = {"bmp", "jpg", "tga", "png", "dds", "pcx", "pic", "gif", "ico", 0};
-
-    // Add the zip entries to the texture set
-    for (int a = 0; a < zf->GetNumFiles(); a++) {
-      char tempFile[64];
-      zf->GetFilename(a, tempFile, sizeof(tempFile));
-
-      char* ext = FixTextureName(tempFile);
-      if (ext) {
-        int x = 0;
-        for (x = 0; imgExt[x]; x++)
-          if (!strcmp(imgExt[x], ext)) break;
-
-        if (!imgExt[x]) continue;
-
-        if (textures.find(tempFile) != textures.end()) continue;
-
-        TexRef ref;
-        ref.zip = zips.size();
-        ref.index = a;
-        ref.texture = LoadTexture(zf, a, tempFile);
-
-        if (textures.find(tempFile) != textures.end())
-          logger.Trace(NL_Debug, "Texture %s already loaded\n", tempFile);
-
-        TexRef& tr = textures[tempFile];
-        tr.texture = ref.texture;
-        tr.index = a;
-        ;
-        tr.zip = zips.size();
-      }
-    }
-
-    fclose(f);
-
-    zips.push_back(zf);
+    textures[tex->name] = tex;
   }
 
-  return false;
+  return true;
 }
 
 // ------------------------------------------------------------------------------------------------
 // TextureGroupHandler
 // ------------------------------------------------------------------------------------------------
 
-TextureGroupHandler::TextureGroupHandler(TextureHandler* th) { textureHandler = th; }
+TextureGroupHandler::TextureGroupHandler(TextureHandler* par_handler) : textureHandler(par_handler) {}
 
 TextureGroupHandler::~TextureGroupHandler() {
-  for (uint a = 0; a < groups.size(); a++) {
-    delete groups[a];
+  for (auto& group : groups) {
+    delete group;
   }
   groups.clear();
 }
@@ -295,11 +220,15 @@ TextureGroupHandler::~TextureGroupHandler() {
 bool TextureGroupHandler::Load(const char* fn) {
   CfgList* cfg = CfgValue::LoadFile(fn);
 
-  if (!cfg) return false;
+  if (cfg == nullptr) {
+    return false;
+  }
 
-  for (std::list<CfgListElem>::iterator li = cfg->childs.begin(); li != cfg->childs.end(); ++li) {
-    CfgList* gc = dynamic_cast<CfgList*>(li->value);
-    if (!gc) continue;
+  for (auto& child : cfg->childs) {
+    auto* gc = dynamic_cast<CfgList*>(child.value);
+    if (gc == nullptr) {
+      continue;
+    }
 
     LoadGroup(gc);
   }
@@ -332,21 +261,22 @@ bool TextureGroupHandler::Save(const char* fn) {
 }
 
 TextureGroup* TextureGroupHandler::LoadGroup(CfgList* gc) {
-  CfgList* texlist = dynamic_cast<CfgList*>(gc->GetValue("textures"));
-  if (!texlist) return 0;
+  auto* texlist = dynamic_cast<CfgList*>(gc->GetValue("textures"));
+  if (texlist == nullptr) {
+    return nullptr;
+  }
 
-  TextureGroup* texGroup = new TextureGroup;
+  auto* texGroup = new TextureGroup;
   texGroup->name = gc->GetLiteral("name", "unnamed");
 
-  for (std::list<CfgListElem>::iterator i = texlist->childs.begin(); i != texlist->childs.end();
-       i++) {
-    CfgLiteral* l = dynamic_cast<CfgLiteral*>(i->value);
-    if (l && !l->value.empty()) {
-      Texture* texture = textureHandler->GetTexture(l->value.c_str());
-      if (texture)
-        texGroup->textures.insert(texture);
-      else {
-        logger.Trace(NL_Debug, "Discarded texture name: %s\n", l->value.c_str());
+  for (auto& child : texlist->childs) {
+    auto* l = dynamic_cast<CfgLiteral*>(child.value);
+    if ((l != nullptr) && !l->value.empty()) {
+      auto texture = textureHandler->GetTexture(l->value);
+      if (texture != nullptr) {
+        texGroup->textures.emplace(texture);
+      } else {
+        spdlog::debug("Discarded texture name: {}", l->value);
       }
     }
   }
@@ -355,83 +285,19 @@ TextureGroup* TextureGroupHandler::LoadGroup(CfgList* gc) {
 }
 
 CfgList* TextureGroupHandler::MakeConfig(TextureGroup* tg) {
-  CfgList* gc = new CfgList;
+  auto* gc = new CfgList;
   char n[10];
 
-  CfgList* texlist = new CfgList;
+  auto* texlist = new CfgList;
   int index = 0;
-  for (std::set<Texture*>::iterator t = tg->textures.begin(); t != tg->textures.end(); ++t) {
+  for (auto texture : tg->textures) {
     sprintf(n, "tex%d", index++);
-    texlist->AddLiteral(n, (*t)->name.c_str());
+    texlist->AddLiteral(n, texture->name.c_str());
   }
   gc->AddValue("textures", texlist);
   gc->AddLiteral("name", tg->name.c_str());
   return gc;
 }
-
-/*
-TextureAtlas::TextureAtlas()
-{
-}
-
-static int texCompareFunc(Texture *a, Texture *b)
-{
-        return a->height - b->height;
-}
-
-Texture* TextureAtlas::Process(int w, int h, const std::vector<Texture*>& src)
-{
-        std::map <int, std::vector <Texture*> > texmth;
-
-        for (int a=0;a<src.size();a++)
-                texmth [src[a]->height].push_back (src[a]);
-
-        int surf = 0;
-
-        if (w < 0 || h < 0) {
-                for (int a=0;a<src.size();a++)
-                {
-                        Texture * t = src[a];
-                        surf += t->width * t->height;
-                }
-                w = sqrtf (surf);
-                h = sqrtf (surf);
-
-                int x=1,y=1;
-                while (x < w) x*=2;
-                while (y < h) y*=2;
-        }
-
-        this->w = w;
-        this->h = h;
-
-        for (int a=0;a<sorted.size();a++)
-                AddTexture (sorted[a]);
-
-        return 0;
-}
-
-TextureAtlas::Slot* TextureAtlas::AddTexture(Texture *t)
-{
-        HeightSet& s = hs [t->height];
-
-        if (s.totalw + t->width > w) {
-                s.row ++;
-                s.totalw = 0;
-        }
-        Slot slot;
-        slot.x = totalw;
-        slot.w = t->width;
-        slot.h = t->height;
-        s.slots.push_back (slot);
-
-        totalw += slot.w;
-
-        return &s.slots.back();
-}
-
-
-*/
 
 // ------------------------------------------------------------------------------------------------
 // Texture storage class based on a binary tree
@@ -457,17 +323,15 @@ TextureBinTree::Node::~Node() {
   SAFE_DELETE(child[1]);
 }
 
-TextureBinTree::TextureBinTree() { tree = 0; }
+TextureBinTree::TextureBinTree(int w, int h) : render_id(), tree(), image_(Image(w, h)) {};
 
 TextureBinTree::~TextureBinTree() { SAFE_DELETE(tree); }
 
-void TextureBinTree::Init(int w, int h, ImgFormat* fmt) { texture.Alloc(w, h, *fmt); }
+void TextureBinTree::StoreNode(Node* n, const Image& tex) {
+  n->img_w = tex.Width();
+  n->img_h = tex.Height();
 
-void TextureBinTree::StoreNode(Node* n, Image* tex) {
-  n->img_w = tex->w;
-  n->img_h = tex->h;
-
-  tex->Blit(&texture, 0, 0, n->x, n->y, tex->w, tex->h);
+  image_.Blit(tex, n->x, n->y, 1, 0, 0, 1, tex.Width(), tex.Height(), 1);
 }
 
 TextureBinTree::Node* TextureBinTree::InsertNode(Node* n, int w, int h) {
@@ -504,18 +368,20 @@ TextureBinTree::Node* TextureBinTree::InsertNode(Node* n, int w, int h) {
   return 0;
 }
 
-TextureBinTree::Node* TextureBinTree::AddNode(Image* subtex) {
-  Node* pn;
-
-  if (!tree) {
+TextureBinTree::Node* TextureBinTree::AddNode(const Image& subtex) {
+  if (tree == nullptr) {
     // create root node
-    if (subtex->w > texture.w || subtex->h > texture.h) return 0;
+    if (subtex.Width() > image_.Width() || subtex.Height() > image_.Height()) {
+      return nullptr;
+    }
 
-    tree = new Node(0, 0, texture.w, texture.h);
+    tree = new Node(0, 0, image_.Width(), image_.Height());
   }
 
-  pn = InsertNode(tree, subtex->w, subtex->h);
-  if (!pn) return 0;
+  auto *pn = InsertNode(tree, subtex.Width(), subtex.Height());
+  if (pn == nullptr) {
+    return nullptr;
+  }
 
   StoreNode(pn, subtex);
   return pn;

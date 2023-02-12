@@ -183,7 +183,6 @@ void ViewWindow::Select(float sx, float sy, int w, int h, bool box) {
     Vector3 pos;
     if (!box) {
       pos = FindSelCoords(sx + w / 2, sy + h / 2);
-      logger.Trace(NL_Msg, "SelPos: %d, %d, %d\n", (int)pos.x, (int)pos.y, (int)pos.z);
     }
 
     uint* pBuf = buffer;

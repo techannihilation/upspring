@@ -1,3 +1,9 @@
 [submodule "src/lib3ds"]
 	path = vendor/lib3ds
 	url = https://github.com/techannihilation/lib3ds.git
+[submodule "vendor/spdlog"]
+	path = vendor/spdlog
+	url = https://github.com/gabime/spdlog.git
+[submodule "vendor/minzip-ng"]
+	path = vendor/minizip-ng
+	url = https://github.com/zlib-ng/minizip-ng.git

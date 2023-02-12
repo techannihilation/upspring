@@ -21,6 +21,8 @@
 #include "../Model.h"
 #include "../DebugTrace.h"
 #include "../Texture.h"
+#include "../Util.h"
+#include "spdlog/spdlog.h"
 
 #include <iostream>
 %}
@@ -115,10 +117,15 @@ namespace UpsScript {
 		archives.Load();
 
 		for (auto it = archives.archives.begin(); it !=archives.archives.end(); ++it) {
-			std::cout << "Loading archive: " << it->c_str() << std::endl;
-			textureHandler->Load (it->c_str());
+			std::cout << "Loading 3DO textures from archive: " << it->c_str() << std::endl;
+			textureHandler->Load3DO(it->c_str());
 		}
 	};
+
+	void LoadArchive(const std::string &pArchive) {
+		std::cout << "Loading 3DO textures from archive: " << pArchive << std::endl;
+		textureHandler->Load3DO(pArchive.c_str());
+	}
 
 	void TexturesToModel(Model *pModel) {
 		pModel->root->Load3DOTextures(textureHandler);
@@ -128,5 +135,6 @@ namespace UpsScript {
 
 namespace UpsScript {
 	void LoadArchives() {};
+	void LoadArchive(const std::string &pArchive) {};
 	void TexturesToModel(Model *pModel) {};
 }

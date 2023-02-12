@@ -17,6 +17,8 @@
 #include <GL/glew.h>
 #include <GL/gl.h>
 
+#include "spdlog/spdlog.h"
+
 #include "Spline.h"
 #include "MeshIterators.h"
 
@@ -28,7 +30,7 @@ uint LoadFragmentProgram(std::string fn);
 void TestGLError() {
   GLenum err = glGetError();
   if (err != GL_NO_ERROR) {
-    logger.Trace(NL_Msg, "GL Error: %s\n", gluErrorString(err));
+    spdlog::error("GL Error: {}", (const char *)gluErrorString(err));
   }
 }
 

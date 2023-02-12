@@ -51,7 +51,6 @@ class CfgValue {
   virtual ~CfgValue() {}
 
   virtual bool Parse(InputBuffer& buf) = 0;
-  virtual void dbgPrint(int depth);
   virtual void Write(CfgWriter& w) = 0;
 
   static char Lookahead(InputBuffer& buf);
@@ -85,8 +84,6 @@ class CfgList : public CfgValue {
   bool Parse(InputBuffer& buf) { return Parse(buf, false); }
   void Write(CfgWriter& w) { Write(w, false); }
   void Write(CfgWriter& w, bool root);
-
-  void dbgPrint(int depth);
 
   CfgValue* GetValue(const char* name);
   double GetNumeric(const char* name, double def = 0.0f);
@@ -136,7 +133,6 @@ class CfgLiteral : public CfgValue {
   CfgLiteral() { ident = false; }
   bool Parse(InputBuffer& buf);
   void Write(CfgWriter& w);
-  void dbgPrint(int depth);
 
   bool ident;
   std::string value;
@@ -147,7 +143,6 @@ class CfgNumeric : public CfgValue {
   CfgNumeric() { value = 0.0; }
   bool Parse(InputBuffer& buf);
   void Write(CfgWriter& w);
-  void dbgPrint(int depth);
 
   double value;
 };

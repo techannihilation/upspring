@@ -62,8 +62,6 @@ void CfgWriter::MakeIndent(char c) {
 // CfgValue - base config parsing class
 //-------------------------------------------------------------------------
 
-void CfgValue::dbgPrint(int /*depth*/) { logger.Trace(NL_Debug, "??\n"); }
-
 void CfgValue::AddValueClass(CfgValueClass* vc) {
   if (find(classes.begin(), classes.end(), vc) == classes.end()) classes.push_back(vc);
 }
@@ -141,7 +139,6 @@ CfgList* CfgValue::LoadFile(const char* name) {
 
   FILE* f = fopen(name, "rb");
   if (!f) {
-    logger.Trace(NL_Debug, "Failed to open file %s\n", name);
     return 0;
   }
 
@@ -150,7 +147,6 @@ CfgList* CfgValue::LoadFile(const char* name) {
   buf.data = new char[buf.len];
   fseek(f, 0, SEEK_SET);
   if (!fread(buf.data, buf.len, 1, f)) {
-    logger.Trace(NL_Debug, "Failed to read file %s\n", name);
     fclose(f);
     delete[] buf.data;
     return 0;
@@ -205,8 +201,6 @@ bool CfgNumeric::Parse(InputBuffer& buf) {
   return true;
 }
 
-void CfgNumeric::dbgPrint(int /*depth*/) { logger.Trace(NL_Debug, "%g\n", value); }
-
 void CfgNumeric::Write(CfgWriter& w) {
   CfgValue::Write(w);
 
@@ -242,8 +236,6 @@ bool CfgLiteral::Parse(InputBuffer& buf) {
   return true;
 }
 
-void CfgLiteral::dbgPrint(int /*depth*/) { logger.Trace(NL_Debug, "%s\n", value.c_str()); }
-
 void CfgLiteral::Write(CfgWriter& w) {
   if (ident)
     w << value;
@@ -257,7 +249,6 @@ void CfgLiteral::Write(CfgWriter& w) {
 
 bool CfgListElem::Parse(InputBuffer& buf) {
   if (buf.SkipWhitespace()) {
-    logger.Trace(NL_Debug, "%d: Unexpected end of file in list element\n", buf.line);
     return false;
   }
 
@@ -308,7 +299,6 @@ bool CfgList::Parse(InputBuffer& buf, bool root) {
   }
 
   if (!root && buf.end()) {
-    buf.ShowLocation(), logger.Trace(NL_Debug, "Unexpected end of node at line\n");
     return false;
   }
 
@@ -353,21 +343,6 @@ const char* CfgList::GetLiteral(const char* name, const char* def) {
   if (!n) return def;
 
   return n->value.c_str();
-}
-
-void CfgList::dbgPrint(int depth) {
-  int n = 0;
-  if (depth) logger.Trace(NL_Debug, "list of %d elements\n", childs.size());
-
-  for (std::list<CfgListElem>::iterator i = childs.begin(); i != childs.end(); ++i) {
-    for (int a = 0; a < depth; a++) logger.Trace(NL_Debug, "  ");
-    logger.Trace(NL_Debug, "List element(%d): %s", n++, i->name.c_str());
-    if (i->value) {
-      logger.Trace(NL_Debug, " = ");
-      i->value->dbgPrint(depth + 1);
-    } else
-      logger.Trace(NL_Debug, "\n");
-  }
 }
 
 void CfgList::AddLiteral(const char* name, const char* val) {

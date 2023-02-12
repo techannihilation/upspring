@@ -82,12 +82,35 @@
     "shared_mutex": "cpp",
     "csignal": "cpp",
     "utf.h": "c",
-    "dirent.h": "c"
+    "dirent.h": "c",
+    "cassert": "cpp",
+    "cerrno": "cpp",
+    "cfloat": "cpp",
+    "charconv": "cpp",
+    "ciso646": "cpp",
+    "climits": "cpp",
+    "cstdbool": "cpp",
+    "future": "cpp",
+    "ios": "cpp",
+    "locale": "cpp",
+    "queue": "cpp",
+    "span": "cpp",
+    "stack": "cpp",
+    "version": "cpp",
+    "strstream": "cpp",
+    "*.ipp": "cpp",
+    "*.xpm": "cpp",
+    "coroutine": "cpp",
+    "test.h": "c",
+    "test_common.h": "c"
   },
   "cmake.copyCompileCommands": "${workspaceFolder}/compile_commands.json",
   "C_Cpp.default.compileCommands": "${workspaceFolder}/compile_commands.json",
   "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
   "cmake.useCMakePresets": "always",
   "C_Cpp.default.cppStandard": "c++20",
-  "C_Cpp.default.cStandard": "c99"
+  "C_Cpp.default.cStandard": "c99",
+  "C_Cpp.codeAnalysis.clangTidy.args": [
+    "--extra-arg=-fcoroutines"
+  ]
 }

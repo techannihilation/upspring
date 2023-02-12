@@ -16,11 +16,15 @@
 #include <iostream>
 #include <stdexcept>
 
+#include "string_util.h"
+
 #include "math/hash.h"
 
 #include "CurvedSurface.h"
 
 #include "MeshIterators.h"
+
+#include "spdlog/spdlog.h"
 
 #include <unordered_map>
 
@@ -44,11 +48,11 @@ void Model::SetTextureName(uint index, const char* name) {
   texBindings[index].name = name;
 }
 
-void Model::SetTexture(uint index, Texture* tex) {
+void Model::SetTexture(uint index, std::shared_ptr<Texture> par_tex) {
   if (texBindings.size() <= index) texBindings.resize(index + 1);
 
-  texBindings[index].texture = tex;
-  texBindings[index].name = tex ? tex->name : "";
+  texBindings[index].texture = par_tex;
+  texBindings[index].name = par_tex ? par_tex->name : "";
 }
 
 void Model::InsertModel(MdlObject* obj, Model* sub) {
@@ -383,7 +387,7 @@ void Model::PostLoad() {
   for (uint t = 0; t < texBindings.size(); t++) {
     if (texBindings[t].name.empty()) continue;
 
-    texBindings[t].texture = new Texture(texBindings[t].name);
+    texBindings[t].texture = std::make_shared<Texture>(texBindings[t].name);
     if (!texBindings[t].texture->IsLoaded()) texBindings[t].texture = 0;
   }
 }
@@ -420,75 +424,66 @@ uint Vector3ToRGB(Vector3 v) {
 }
 
 bool Model::ConvertToS3O(std::string textureName, int texw, int texh) {
-  // collect all textures used by the model
-  std::set<Texture*> textures;
-  std::map<uint, RefPtr<Texture>> coltextures;
+  std::unordered_map<std::string, std::shared_ptr<Texture>> textures;
 
   std::vector<PolyMesh*> pmlist = GetPolyMeshList();
-  std::vector<Poly*> polygons = GetElementList(&PolyMesh::poly, pmlist.begin(), pmlist.end());
+  for (auto& polymesh : pmlist) {
+    for (auto& poly : polymesh->poly) {
+      if (poly->texture) {
+        if (textures.find(poly->texname) != textures.end()) {
+          continue;
+        }
+        textures.insert({poly->texname, poly->texture});
 
-  for (auto& pm : pmlist) {
-    for (auto& pl : pm->poly) {
-      if (pl->texture) {
-        textures.insert(pl->texture.Get());
-      } else {  // create a new color texture
-        if (pm->verts.size() < 3) {
+      } else if (poly->color.x != 0.0F) {  // create a new color texture
+        const std::string color_name(SPrintf("Color%d", Vector3ToRGB(poly->color)));
+
+        auto ci_ti = textures.find(color_name);
+        if (ci_ti != textures.end()) {
+          poly->texture = ci_ti->second;
           continue;
         }
 
-        auto size = pl->CalcPlane(pm->verts).GetVector() * 0.01f;
-        Texture* ct = new Texture();
-        Image* cimg = new Image(size.x, size.y, ImgFormat(ImgFormat::RGBA));
-        cimg->FillColor(0x00000FF);
-        ct->SetImage(cimg);
-        pl->texture = ct;
-        textures.insert(ct);
+        Image color_image(1, 1, poly->color.x, poly->color.y, poly->color.z);
+        auto color_tex = std::make_shared<Texture>(color_image, color_name);
+        textures.insert({color_name, color_tex});
+
+      } else {
+        continue;
       }
     }
   }
 
-  TextureBinTree tree;
-  ImgFormat fmt(ImgFormat::RGBA);
-  tree.Init(texw, texh, &fmt);
+  TextureBinTree tree(texw, texh);
+  std::map<std::string, TextureBinTree::Node*> texToNode;
 
-  std::map<Texture*, TextureBinTree::Node*> texToNode;
-
-  for (std::set<Texture*>::iterator ti = textures.begin(); ti != textures.end(); ++ti) {
-    auto conv = new Image();
-
-    if ((*ti)->image->format.type != ImgFormat::RGBA) {
-      conv->format = ImgFormat(ImgFormat::RGBA);
-      auto id = (*ti)->image->ToIL();
-      conv->FromIL(id);
-      conv->DeleteIL(id);
-    } else {
-      conv = (*ti)->image->Clone();
-    }
+  for (auto &texmap_entry : textures) {
+    Image clone(texmap_entry.second->image);
 
     // Everything that has a alpha color is "teamcolor", everything else "normal".
-    if ((*ti)->image->format.HasAlpha()) {
-      conv->SetNonAlphaZero();
+    if (clone.HasAlpha()) {
+      clone.SetNonAlphaZero();
     } else {
-      conv->SetAlphaZero();
+      clone.SetAlphaZero();
     }
 
-    TextureBinTree::Node* node = tree.AddNode(conv);
+    TextureBinTree::Node* node = tree.AddNode(clone);
 
-    if (!node) {
-      std::cout << "-- Not enough texture space for all 3DO textures." << std::endl;
+    if (node == nullptr) {
+      spdlog::error("Not enough texture space for all 3DO textures");
       return false;
     }
 
-    texToNode[*ti] = node;
+    texToNode.insert({texmap_entry.first, node});
   }
 
-  auto *img = tree.GetResult()->Clone();
+  auto img = tree.GetResult();
   auto saveName = textureName + "1.png";
-  img->FlipNonDDS(saveName);
-  img->Save(saveName.c_str());
-  img->FlipNonDDS(saveName);
+  img.FlipNonDDS(saveName);
+  img.Save(saveName);
+  img.FlipNonDDS(saveName);
 
-  auto *tex1 = new Texture();
+  auto tex1 = std::make_shared<Texture>();
   tex1->SetImage(img);
   tex1->name = saveName;
   SetTexture(0, tex1);
@@ -496,40 +491,38 @@ bool Model::ConvertToS3O(std::string textureName, int texw, int texh) {
   // now set new texture coordinates.
   // Vertices might need to be split, so vertices are calculated per frame and then optimized again
 
-  for (std::vector<PolyMesh*>::iterator pmi = pmlist.begin(); pmi != pmlist.end(); ++pmi) {
-    PolyMesh* pm = *pmi;
+  for (auto &polymesh : pmlist) {
     std::vector<Vertex> vertices;
 
-    for (uint a = 0; a < pm->poly.size(); a++) {
-      Poly* pl = pm->poly[a];
-      TextureBinTree::Node* tnode = texToNode[pl->texture.Get()];
+    for (auto& poly : polymesh->poly) {
+      auto *tnode = texToNode[poly->texname];
 
-      if (pl->verts.size() <= 4) {
+      if (poly->verts.size() <= 4) {
         const float tc[] = {0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f};
 
-        for (uint v = 0; v < pl->verts.size(); v++) {
-          vertices.push_back(pm->verts[pl->verts[v]]);
+        for (uint v = 0; v < poly->verts.size(); v++) {
+          vertices.push_back(polymesh->verts[poly->verts[v]]);
           Vertex& vrt = vertices.back();
           // convert to texturebintree UV coords:
-          if (tnode) {
+          if (tnode != nullptr) {
             vrt.tc[0].x = tree.GetU(tnode, tc[v * 2 + 0]);
             vrt.tc[0].y = tree.GetV(tnode, tc[v * 2 + 1]);
           }
 
-          pl->verts[v] = vertices.size() - 1;
+          poly->verts[v] = vertices.size() - 1;
         }
       } else {
-        for (uint v = 0; v < pl->verts.size(); v++) {
-          vertices.push_back(pm->verts[pl->verts[v]]);
+        for (uint v = 0; v < poly->verts.size(); v++) {
+          vertices.push_back(polymesh->verts[poly->verts[v]]);
           Vertex& vrt = vertices.back();
           vrt.tc[0].x = vrt.tc[0].y = 0.0f;
-          pl->verts[v] = vertices.size() - 1;
+          poly->verts[v] = vertices.size() - 1;
         }
       }
     }
 
-    pm->verts = vertices;
-    pm->Optimize(&PolyMesh::IsEqualVertexTC);
+    polymesh->verts = vertices;
+    polymesh->Optimize(&PolyMesh::IsEqualVertexTC);
   }
 
   mapping = MAPPING_S3O;
@@ -652,7 +645,6 @@ void Model::AllLowerCaseNames() {
   // convert to lowecase names
   auto objlist = GetObjectList();
   for (auto& obj : objlist) {
-    std::transform(obj->name.begin(), obj->name.end(), obj->name.begin(),
-                   [](unsigned char c) { return std::tolower(c); });
+    obj->name = to_lower(obj->name);
   }
 }

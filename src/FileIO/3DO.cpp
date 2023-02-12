@@ -8,6 +8,8 @@
 #include "Model.h"
 #include "Util.h"
 
+#include "spdlog/spdlog.h"
+
 class CTAPalette {
  public:
   CTAPalette() {
@@ -19,7 +21,9 @@ class CTAPalette {
     std::string fn = applicationPath + "data/palette.pal";
     FILE* f = fopen(fn.c_str(), "rb");
     if (!f) {
-      if (!error) logger.Trace(NL_Error, "Failed to load data/palette.pal");
+      if (!error) {
+        spdlog::error("Failed to load data/palette.pal");
+      }
       error = true;
     } else {
       for (int c = 0; c < 256; c++) {
@@ -103,7 +107,7 @@ static MdlObject* load_object(int ofs, FILE* f, MdlObject* parent, int r = 0) {
   if (read_result != (size_t)1) throw std::runtime_error("Couldn't read 3DO header.");
 
   if (obj.VersionSignature != 1) {
-    logger.Trace(NL_Error, "Wrong version. Only version 1 is supported");
+    spdlog::error("Wrong version. Only version 1 is supported");
     return 0;
   }
 
@@ -143,8 +147,10 @@ static MdlObject* load_object(int ofs, FILE* f, MdlObject* parent, int r = 0) {
     p->taColor = tapl[a].PaletteIndex;
     p->color = palette.GetColor(tapl[a].PaletteIndex);
 
-    fseek(f, tapl[a].TexnameOfs, SEEK_SET);
-    p->texname = ReadZStr(f);
+    if (tapl[a].TexnameOfs != 0) {
+      fseek(f, tapl[a].TexnameOfs, SEEK_SET);
+      p->texname = ReadZStr(f);
+    }
 
     pm->poly.push_back(p);
   }
@@ -158,7 +164,7 @@ static MdlObject* load_object(int ofs, FILE* f, MdlObject* parent, int r = 0) {
 
   if (obj.OffsetToSiblingObject) {
     if (!parent) {
-      logger.Trace(NL_Error, "Error: Root object can not have sibling nodes.\n");
+      spdlog::error("Error: Root object can not have sibling nodes.");
     } else {
       MdlObject* sibling = load_object(obj.OffsetToSiblingObject, f, parent);
 
