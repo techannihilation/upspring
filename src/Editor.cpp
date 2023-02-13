@@ -1337,14 +1337,14 @@ int main(int argc, char* argv[]) {
     editor.LoadToolWindowSettings();
 
     // Initialise Lua
-    lua_State* L = luaL_newstate();
-    luaL_openlibs(L);
-    luaopen_upspring(L);
+    lua_State* lua_state = luaL_newstate();
+    luaL_openlibs(lua_state);
+    luaopen_upspring(lua_state);
 
-    editor.luaState = L;
+    editor.luaState = lua_state;
 
-    if (luaL_dofile(L, "scripts/init.lua") != 0) {
-      const char* err = lua_tostring(L, -1);
+    if (luaL_dofile(lua_state, "scripts/init.lua") != 0) {
+      const char* err = lua_tostring(lua_state, -1);
       fltk::message("Error while executing init.lua: %s", err);
     }
 
@@ -1357,18 +1357,11 @@ int main(int argc, char* argv[]) {
       fltk::message(msg.payload.data());
     });
 
-    // NOTE: the "scripts/plugins" literal was changed to "scripts/plugins/"
-    std::list<std::string>* luaFiles = FindFiles("*.lua", false,
-  #ifdef WIN32
-                                                  "scripts\\plugins");
-  #else
-                                                  "scripts/plugins/");
-  #endif
-
-    for (auto i = luaFiles->begin(); i != luaFiles->end(); ++i) {
-      if (luaL_dofile(L, i->c_str()) != 0) {
-        const char* err = lua_tostring(L, -1);
-        fltk::message("Error while executing \'%s\': %s", i->c_str(), err);
+    auto lsps = find_files(ups::config::get().app_path() / "scripts" / "plugins", [](const std::filesystem::path& par_path) -> bool { return par_path.extension() == ".lua"; }, false);
+    for (auto &lsp : lsps) {
+      if (luaL_dofile(lua_state, lsp.c_str()) != 0) {
+        const char* err = lua_tostring(lua_state, -1);
+        fltk::message("Error while executing \'%s\': %s", lsp.c_str(), err);
       }
     }
 

@@ -95,7 +95,6 @@ target_sources(${PROJECT_NAME} PRIVATE
     EditorUI.cpp
     EditorUI.h
     FileDialog.cpp
-    FileSearch.cpp
     FileSearch.h
     Fltk.h
     IEditor.h
