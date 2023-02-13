@@ -5,7 +5,28 @@ Upspring is a model editor for .3do and .s3o files, it's able to convert from .3
 ## Features
 
 - Model editing and texturing via it's GUI.
+- Lot's of helpers which make you the life in the GUI easier.
 - LUA API via the "--run" option as well as lua plugins.
+
+## Install
+
+- Linux
+
+    Build it on your own, it's easy to so with cmake.
+
+    ```bash
+    git clone --recursive https://github.com/techannihilation/upspring.git
+    cd upspring
+    cmake --preset gcc-release && cmake --build --preset gcc-release
+    ./out/build/gcc-release/src/Upspring
+    ```
+
+    I need to check which dependecies you need.
+
+- Windows
+
+    Download from the [releases](https://github.com/techannihilation/upspring/releases) page.
+
 
 ## CMD usage
 
@@ -32,17 +53,14 @@ Upspring is a model editor for .3do and .s3o files, it's able to convert from .3
 
 ## License
 
-GPLv2
-
-We use parts from [spring](https://github.com/spring/spring) which is GPL v2 licensed.
-
-And the following libraries:
-
-| Name                                                 | License       |
-|------------------------------------------------------|---------------|
-| [7zip](https://7-zip.org/sdk.html)                   | public domain |
-| [CLI11](https://github.com/CLIUtils/CLI11)           | BSD 3-Clause  |
-| [fltk2](vendor/fltk2/COPYING)                        | LGPL-2.1      |
-| [lib3ds](https://github.com/techannihilation/lib3ds) | LGPL-2.1      |
-| [minizip-ng](https://github.com/zlib-ng/minizip-ng)  | zlib license  |
-| [spdlog](https://github.com/gabime/spdlog)           | MIT           |
+- GPL-2.0
+- We use parts from [spring](https://github.com/spring/spring) which is GPL-2.0 licensed.
+- And the following libraries:
+    | Name                                                 | License       |
+    |------------------------------------------------------|---------------|
+    | [7zip](https://7-zip.org/sdk.html)                   | public domain |
+    | [CLI11](https://github.com/CLIUtils/CLI11)           | BSD 3-Clause  |
+    | [fltk2](vendor/fltk2/COPYING)                        | LGPL-2.1      |
+    | [lib3ds](https://github.com/techannihilation/lib3ds) | LGPL-2.1      |
+    | [minizip-ng](https://github.com/zlib-ng/minizip-ng)  | zlib license  |
+    | [spdlog](https://github.com/gabime/spdlog)           | MIT           |
