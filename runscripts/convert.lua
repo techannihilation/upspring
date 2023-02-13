@@ -7,16 +7,10 @@ package.path = package.path .. ";" .. script_path .. "?/init.lua" .. ";" .. scri
 
 lib = require("lib")
 
-LoadArchives()
+upspring.LoadArchives()
 
 ---------------------------------
 -- Actual code
 ---------------------------------
-io.write(".3do file to import: ")
-local input = io.read()
 
-if not lib.utils.is_file(input) then
-    error("ERROR: File '" .. input .. "' doesn't exist.")
-end
-
-lib.model.Convert3DOToS3O(input)
+lib.model.Convert3DOToS3O(arg[1])

@@ -6,16 +6,16 @@ function model.Convert3DOToS3O(input)
 
     print("Converting model '" .. input .. "':")
 
-    local model = Model()
+    local model = upspring.Model()
     local ok = model:Load3DO(input)
     if ok then
         print("-- Loaded the 3do")
     else
-        print("-- ERROR: Load failed.")
+        error("load failed.")
         return;
     end
 
-    TexturesToModel(model)
+    upspring.TexturesToModel(model)
 
     local lfs = require('lfs')
     local _oldDir = lfs.currentdir()
@@ -31,7 +31,7 @@ function model.Convert3DOToS3O(input)
     if ok then
         print("-- Converted to S3O, wrote textures to: '" .. _texOutPath .. "'")
     else
-        print("-- ERROR: Convert failed.")
+        error("convert failed.")
         return
     end
     lfs.chdir(_oldDir)

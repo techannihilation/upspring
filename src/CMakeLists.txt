@@ -76,6 +76,8 @@ target_sources(${PROJECT_NAME} PRIVATE
     AVIGenerator.h
     CfgParser.cpp
     CfgParser.h
+    config.cpp
+    config.h
     AnimKeyTrackView.h
     AnimTrackEditor.cpp
     AnimTrackEditorCB.h
