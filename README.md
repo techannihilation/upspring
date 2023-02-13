@@ -1,33 +1,49 @@
 # Upspring the Spring RTS model editor
 
-## February 3, 2023 [jochumdev]
+## Unreleased
+
+- Upspring now open's your Models over "Open with...".
+- The commandline has been reworked, you can now do:
+
+  ```bash
+  Upspring -r runscripts/convert.lua -- ~/.spring/games/TA.sdd/objects3d/cdevastator.3do
+  ```
+
+  ```bash
+  Upspring ~/.spring/games/TA.sdd/objects3d/cdevastator.3do
+  ```
+
+- A lot of refactoring has been done, soon you will see a converter which allows you to convert many units to a single atlas.
+
+## v0.0.11
 
 Added support for MSYS2 Mingw64 builds
 
-Install msys2 x86_64, then install these packages in the msys mingw64 cmd:
+  - Install msys2 x86_64
+  - Then install these packages
 
-```bash
-pacman -S pactoys
-pacboy -S \
-  toolchain:p \
-  ninja:p \
-  cmake:p \
-  glew:p \
-  freeglut:p \
-  devil:p \
-  boost:p \
-  lua:p \
-  swig:p
-```
+    ```bash
+    pacman -S pactoys
+    pacboy -S \
+      toolchain:p \
+      ninja:p \
+      cmake:p \
+      glew:p \
+      freeglut:p \
+      devil:p \
+      boost:p \
+      lua:p \
+      swig:p
+    ```
 
-Now you can use vs-code for example with cmake-tools and build it.
+  - Now you can use vs-code for example with cmake-tools and build it.
 
 To relase Upspring.exe you need to copy:
 
-- a lot .dll's
-- scripts/\*
-- data/\*
-- runscripts/\*.
+  - a lot .dll's
+  - scripts/\*
+  - data/\*
+  - runscripts/\*.
 
 ## January 25, 2023 [jochumdev]
 
