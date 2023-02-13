@@ -55,23 +55,23 @@ Image& Image::operator=(const Image& rhs) {
 }
 
 Image& Image::operator=(Image&& rhs) noexcept {
-    if (this == &rhs) {
-      return *this;
-    }
-
-    if (rhs.has_error()) {
-      has_error_ = true;
-      error_ = rhs.error();
-      return *this;
-    }
-
-    ilid_ = rhs.ilid_;
-    width_ = rhs.width_;
-    height_ = rhs.height_;
-    bpp_ = rhs.bpp_;
-    deepth_ = rhs.deepth_;
-    channels_ = rhs.channels_;
+  if (this == &rhs) {
     return *this;
+  }
+
+  if (rhs.has_error()) {
+    has_error_ = true;
+    error_ = rhs.error();
+    return *this;
+  }
+
+  ilid_ = rhs.ilid_;
+  width_ = rhs.width_;
+  height_ = rhs.height_;
+  bpp_ = rhs.bpp_;
+  deepth_ = rhs.deepth_;
+  channels_ = rhs.channels_;
+  return *this;
 }
 
 bool Image::load(const std::vector<std::uint8_t>& par_buffer) {
@@ -174,7 +174,6 @@ bool Image::add_alpha() {
   return true;
 }
 
-// trunk-ignore(clang-tidy/readability-make-member-function-const)
 bool Image::alpha_to_zero() {
   if (has_error() or !has_alpha()) {
     return false;
@@ -183,7 +182,6 @@ bool Image::alpha_to_zero() {
   return clear_color(0.0F, 0.0F, 0.0F, 1.0F);
 }
 
-// trunk-ignore(clang-tidy/readability-make-member-function-const)
 bool Image::non_alpha_to_zero() {
   if (has_error() or !has_alpha()) {
     return false;
@@ -231,8 +229,8 @@ it is just a way to copy certain parts of an image.
 The formats have to be exactly the same
 */
 // trunk-ignore(clang-tidy/readability-make-member-function-const)
-bool Image::blit(const Image& pSrc, int pDx, int pDy, int pDz, int pSx, int pSy, int pSz, int pWidth,
-                 int pHeight, int pDepth) {
+bool Image::blit(const Image& pSrc, int pDx, int pDy, int pDz, int pSx, int pSy, int pSz,
+                 int pWidth, int pHeight, int pDepth) {
   if (has_error() or pSrc.has_error()) {
     return false;
   }
@@ -241,7 +239,7 @@ bool Image::blit(const Image& pSrc, int pDx, int pDy, int pDz, int pSx, int pSy,
   return ilBlit(pSrc.id(), pDx, pDy, pDz, pSx, pSy, pSz, pWidth, pHeight, pDepth) == IL_TRUE;
 }
 
-bool Image::load_from_memory_(const std::vector<std::uint8_t>& pBuf) {
+bool Image::load_from_memory_(const std::vector<std::uint8_t>& par_buffer) {
   if (ilid_ != 0) {
     ilDeleteImage(ilid_);
   }
@@ -255,7 +253,7 @@ bool Image::load_from_memory_(const std::vector<std::uint8_t>& pBuf) {
   // ilOriginFunc(IL_ORIGIN_LOWER_LEFT);
   // ilEnable(IL_ORIGIN_SET);
 
-  auto ret = ilLoadL(IL_TYPE_UNKNOWN, pBuf.data(), pBuf.size());
+  auto ret = ilLoadL(IL_TYPE_UNKNOWN, par_buffer.data(), par_buffer.size());
   if (ret == IL_FALSE) {
     has_error_ = true;
     error_ = std::string(iluErrorString(ilGetError()));
@@ -269,8 +267,7 @@ bool Image::load_from_memory_(const std::vector<std::uint8_t>& pBuf) {
   return true;
 }
 
-void Image::image_infos_()
-{
+void Image::image_infos_() {
   if (has_error()) {
     return;
   }

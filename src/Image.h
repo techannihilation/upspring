@@ -21,7 +21,8 @@ class Image {
   bool load(const std::string& par_file);
 
   bool create(int par_width, int par_height);
-  bool create(int par_width, int par_height, float par_red, float par_green, float par_blue);  // RGB
+  bool create(int par_width, int par_height, float par_red, float par_green,
+              float par_blue);  // RGB
 
   // Destructor
   virtual ~Image();
@@ -38,7 +39,7 @@ class Image {
   inline const bool has_error() const { return has_error_; };
   inline const std::string& error() const { return error_; };
 
-  bool save(const std::string& pFile) const;
+  bool save(const std::string& par_file) const;
 
   // Image info accessors
   inline uint id() const { return ilid_; }
