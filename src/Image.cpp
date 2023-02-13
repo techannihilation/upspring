@@ -42,9 +42,11 @@ Image& Image::operator=(const Image& rhs) {
     return *this;
   }
 
+  // Copy the image with libDevil
   ilid_ = ilGenImage();
   ilBindImage(ilid_);
   ilCopyImage(rhs.id());
+
   width_ = rhs.width_;
   height_ = rhs.height_;
   bpp_ = rhs.bpp_;
@@ -226,7 +228,6 @@ bool Image::FlipNonDDS(const std::string& path) {
 /*
 This function is not intended to actually draw things (it doesn't do any clipping),
 it is just a way to copy certain parts of an image.
-The formats have to be exactly the same
 */
 // trunk-ignore(clang-tidy/readability-make-member-function-const)
 bool Image::blit(const Image& pSrc, int pDx, int pDy, int pDz, int pSx, int pSy, int pSz,

@@ -46,6 +46,8 @@ extern "C" {
 #include "lauxlib.h"
 }
 
+#include "CLI/App.hpp"
+#include "CLI/Argv.hpp"
 #include <memory>
 
 #include "swig/ScriptInterface.h"
@@ -1249,17 +1251,6 @@ void EditorUI::menuHelpAbout() {
 // Application Entry Point
 // ------------------------------------------------------------------------------------------------
 
-/*#ifdef WIN32
-
-int APIENTRY WinMain(HINSTANCE hInstance,HINSTANCE hPrevInstance,LPSTR lpCmdLine,int nCmdShow)
-{
-        EditorUI editor;
-        editor.Show();
-        return fltk::run ();
-}
-
-#else*/
-
 void PrintCmdLine() {
   printf(
       "Upspring command line:\n"
@@ -1289,123 +1280,102 @@ extern "C" {
 int luaopen_upspring(lua_State* L);
 }
 
-void RunScript(const std::string& pScriptFile) {
+void run_script(const std::string& par_script_file) {
   // Initialise Lua
-  lua_State* L = luaL_newstate();
-  luaL_openlibs(L);
-  luaopen_upspring(L);
+  lua_State* lua_state = luaL_newstate();
+  luaL_openlibs(lua_state);
+  luaopen_upspring(lua_state);
 
-  if (luaL_dofile(L, "scripts/init.lua") != 0) {
-    const char* err = lua_tostring(L, -1);
-    std::cout << "Error while executing init.lua: " << err << std::endl;
+  if (luaL_dofile(lua_state, "scripts/init.lua") != 0) {
+    const char* err = lua_tostring(lua_state, -1);
+    spdlog::error("executing init.lua: {}", err);
+    std::exit(1);
     return;
   }
 
-  int status = luaL_loadfile(L, pScriptFile.c_str());
+  int status = luaL_loadfile(lua_state, par_script_file.c_str());
   if (status == LUA_OK) {
-    status = lua_pcall(L, 0, 0, 0);
+    status = lua_pcall(lua_state, 0, 0, 0);
   }
   if (status != LUA_OK) {
-    const char* err = lua_tostring(L, -1);
-    std::cout << "Error while executing '" << pScriptFile << "': " << err << std::endl;
-    lua_close(L);
-    lua_pop(L, 1);
-    return;
+    const char* err = lua_tostring(lua_state, -1);
+    spdlog::error("executing '{}': {}", par_script_file, err);
+    lua_close(lua_state);
+    lua_pop(lua_state, 1);
+    return std::exit(1);
   }
 
-  lua_close(L);
+  lua_close(lua_state);
+
+  std::exit(0);
 }
-
-bool ParseCmdLine(int argc, char* argv[], int& /*r*/) {
-  for (int a = 1; a < argc; a++) {
-    if (!STRCASECMP(argv[a], "-run")) {
-      if (a == argc - 1) {
-        PrintCmdLine();
-        return false;
-      }
-
-      auto scriptFile = std::string(argv[a + 1]);
-      RunScript(scriptFile);
-      return false;
-    }
-  }
-
-  return true;
-}
-
-extern void math_test();
 
 int main(int argc, char* argv[]) {
-#ifdef WIN32
-  if (__argv[0]) {
-    applicationPath = __argv[0];
-    applicationPath.erase(applicationPath.find_last_of('\\') + 1, applicationPath.size());
-  }
-  PHSYSFS_init("");
-#else
-  if (argv[0] != nullptr) {
-    applicationPath = argv[0];
-    applicationPath.erase(applicationPath.find_last_of('/') + 1, applicationPath.size());
-  }
-#endif
-
 #ifdef DEBUG
   spdlog::set_level(spdlog::level::debug);
 #else
   spdlog::set_level(spdlog::level::info);
 #endif
 
-  //	math_test();
-  // fltk::message( "path: %s", applicationPath.c_str() );
+  CLI::App app{"Upspring - the Spring RTS model editor", "Upspring"};
+  app.set_version_flag("--version", std::string(UPSPRING_VERSION));
 
-  int r = 0;
-  if (ParseCmdLine(argc, argv, r)) {
-    // Bring up the main editor dialog
-    EditorUI editor;
-    editorUI = &editor;
-    editor.Show(true);
-    editor.LoadToolWindowSettings();
+  app.add_option_function<std::string>("--run,-r", run_script, "Run a lua script file");
 
-    // Initialise Lua
-    lua_State* L = luaL_newstate();
-    luaL_openlibs(L);
-    luaopen_upspring(L);
+  try {
+    (app).parse(argc, argv);
+  } catch (const CLI::ParseError& e) {
+    return (app).exit(e);
+  }
 
-    editor.luaState = L;
 
-    if (luaL_dofile(L, "scripts/init.lua") != 0) {
-      const char* err = lua_tostring(L, -1);
-      fltk::message("Error while executing init.lua: %s", err);
+  /**
+   * Normal app start
+   */
+
+  // Bring up the main editor dialog
+  EditorUI editor;
+  editorUI = &editor;
+  editor.Show(true);
+  editor.LoadToolWindowSettings();
+
+  // Initialise Lua
+  lua_State* L = luaL_newstate();
+  luaL_openlibs(L);
+  luaopen_upspring(L);
+
+  editor.luaState = L;
+
+  if (luaL_dofile(L, "scripts/init.lua") != 0) {
+    const char* err = lua_tostring(L, -1);
+    fltk::message("Error while executing init.lua: %s", err);
+  }
+
+  // Setup logger callback, so error messages are reported with fltk::message
+  spdlog::callback_logger_st("custom_callback_logger", [](const spdlog::details::log_msg& msg) {
+    if (msg.level != spdlog::level::err && msg.level != spdlog::level::warn) {
+      return;
     }
 
-    // Setup logger callback, so error messages are reported with fltk::message
-    spdlog::callback_logger_st("custom_callback_logger", [](const spdlog::details::log_msg& msg) {
-      if (msg.level != spdlog::level::err && msg.level != spdlog::level::warn) {
-        return;
-      }
+    fltk::message(msg.payload.data());
+  });
 
-      fltk::message(msg.payload.data());
-    });
-
-    // NOTE: the "scripts/plugins" literal was changed to "scripts/plugins/"
-    std::list<std::string>* luaFiles = FindFiles("*.lua", false,
+  // NOTE: the "scripts/plugins" literal was changed to "scripts/plugins/"
+  std::list<std::string>* luaFiles = FindFiles("*.lua", false,
 #ifdef WIN32
                                                  "scripts\\plugins");
 #else
                                                  "scripts/plugins/");
 #endif
 
-    for (auto i = luaFiles->begin(); i != luaFiles->end(); ++i) {
-      if (luaL_dofile(L, i->c_str()) != 0) {
-        const char* err = lua_tostring(L, -1);
-        fltk::message("Error while executing \'%s\': %s", i->c_str(), err);
-      }
+  for (auto i = luaFiles->begin(); i != luaFiles->end(); ++i) {
+    if (luaL_dofile(L, i->c_str()) != 0) {
+      const char* err = lua_tostring(L, -1);
+      fltk::message("Error while executing \'%s\': %s", i->c_str(), err);
     }
-
-    fltk::run();
   }
 
-  return r;
+  std::exit(fltk::run());
 }
 
 // #endif

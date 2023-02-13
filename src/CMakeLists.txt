@@ -1,5 +1,9 @@
 project(Upspring)
 
+# Git Version
+include(GetGitRevisionDescription)
+git_describe(UPSPRING_VERSION)
+
 add_executable (${PROJECT_NAME})
 
 set(CXX_STANDARD_REQUIRED ON)
@@ -9,6 +13,8 @@ set(CXX_EXTENSIONS ON)
 if (WIN32)
     target_compile_definitions(${PROJECT_NAME} PUBLIC _HAS_STD_BYTE=0)
 endif ()
+
+target_compile_definitions(${PROJECT_NAME} PUBLIC UPSPRING_VERSION="${UPSPRING_VERSION}")
 
 find_package(GLEW REQUIRED)
 find_package(DevIL REQUIRED)
@@ -36,6 +42,7 @@ target_link_libraries (${PROJECT_NAME}
     7zip
     minizip-ng
     spdlog
+    CLI11
 )
 
 target_link_libraries (${PROJECT_NAME}
@@ -136,3 +143,5 @@ target_sources(${PROJECT_NAME} PRIVATE
     ptrvec.h
     swig/ScriptInterface.h
 )
+
+message(STATUS "Build Upspring: ${UPSPRING_VERSION}")
