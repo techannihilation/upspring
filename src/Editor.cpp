@@ -1256,6 +1256,20 @@ int luaopen_upspring(lua_State* lua_state);
 }
 
 void run_script(CLI::App &app, const std::string& par_script_file) {
+  /**
+   * Config
+   */
+  ups::config::get().app_path(std::filesystem::path(CLI::argv()[0]).remove_filename());
+
+  auto script_file = par_script_file;
+  if (!std::filesystem::exists(par_script_file)) {
+    script_file = ups::config::get().app_path() / par_script_file;
+    if (!std::filesystem::exists(script_file)) {
+      spdlog::error("Haven't found script '{}', last try was: '{}'", par_script_file, script_file);
+      std::exit(1);
+    }
+  }
+
   // Initialise Lua
   lua_State* lua_state = luaL_newstate();
   luaL_openlibs(lua_state);
@@ -1269,8 +1283,8 @@ void run_script(CLI::App &app, const std::string& par_script_file) {
       std::exit(1);
     }
 
-    lua_createtable(lua_state, remaining.size(), remaining.size());
-    lua_pushstring(lua_state, par_script_file.c_str());
+    lua_createtable(lua_state, static_cast<int>(remaining.size()), static_cast<int>(remaining.size()));
+    lua_pushstring(lua_state, script_file.c_str());
     lua_rawseti(lua_state, -2, 0);
     for (std::size_t i = 1; i < remaining.size(); ++i) {
       lua_pushstring(lua_state, remaining[i].c_str());
@@ -1280,18 +1294,18 @@ void run_script(CLI::App &app, const std::string& par_script_file) {
     lua_setglobal(lua_state, "arg");
   } else {
     lua_createtable(lua_state, 1, 1);
-    lua_pushstring(lua_state, par_script_file.c_str());
+    lua_pushstring(lua_state, script_file.c_str());
     lua_rawseti(lua_state, -2, 0);
     lua_setglobal(lua_state, "arg");
   }
 
-  int status = luaL_loadfile(lua_state, par_script_file.c_str());
+  int status = luaL_loadfile(lua_state, script_file.c_str());
   if (status == LUA_OK) {
     status = lua_pcall(lua_state, 0, 0, 0);
   }
   if (status != LUA_OK) {
     const char* err = lua_tostring(lua_state, -1);
-    spdlog::error("executing '{}': {}", par_script_file, err);
+    spdlog::error("executing '{}': {}", script_file, err);
     lua_close(lua_state);
     lua_pop(lua_state, 1);
     return std::exit(1);
