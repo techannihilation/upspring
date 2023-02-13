@@ -36,6 +36,7 @@
 #include "swig/ScriptInterface.h"
 #include "string_util.h"
 
+
 extern "C" {
 #include "lua.h"
 #include "lualib.h"
@@ -57,8 +58,6 @@ const char* ViewSettingsFile = "data/views.cfg";
 const char* ArchiveListFile = "data/archives.cfg";
 const char* TextureGroupConfig = "data/texgroups.cfg";
 
-std::string applicationPath;
-
 /*
  * 	"All Supported (*.{bmp,gif,jpg,png})"
         "All Files (*)\0"
@@ -75,7 +74,7 @@ const char* FileChooserPattern =
 // ------------------------------------------------------------------------------------------------
 
 bool ArchiveList::Load() {
-  std::string const fn = applicationPath + ArchiveListFile;
+  std::string const fn = ups::config::get().app_path() / ArchiveListFile;
   CfgList* cfg = CfgValue::LoadFile(fn.c_str());
 
   if (cfg == nullptr) {
@@ -96,7 +95,7 @@ bool ArchiveList::Load() {
 }
 
 bool ArchiveList::Save() {
-  std::string const fn = applicationPath + ArchiveListFile;
+  std::string const fn = ups::config::get().app_path() / ArchiveListFile;
   CfgWriter writer(fn.c_str());
   if (writer.IsFailed()) {
     return false;
@@ -212,7 +211,7 @@ void EditorUI::Initialize() {
   }
 
   textureGroupHandler = new TextureGroupHandler(textureHandler);
-  textureGroupHandler->Load((applicationPath + TextureGroupConfig).c_str());
+  textureGroupHandler->Load((ups::config::get().app_path() / TextureGroupConfig).c_str());
 
   UpdateTextureGroups();
   InitTexBrowser();
@@ -269,7 +268,7 @@ EditorUI::~EditorUI() {
   SAFE_DELETE(uiRotator);
 
   if (textureGroupHandler != nullptr) {
-    textureGroupHandler->Save((applicationPath + TextureGroupConfig).c_str());
+    textureGroupHandler->Save((ups::config::get().app_path() / TextureGroupConfig).c_str());
     delete textureGroupHandler;
     textureGroupHandler = nullptr;
   }
@@ -1035,7 +1034,7 @@ void EditorUI::menuSettingsShowArchiveList() {
 // Show texture group window
 void EditorUI::menuSettingsTextureGroups() {
   TexGroupUI const texGroupUI(textureGroupHandler, textureHandler);
-  textureGroupHandler->Save((applicationPath + TextureGroupConfig).c_str());
+  textureGroupHandler->Save((ups::config::get().app_path() /  TextureGroupConfig).c_str());
 
   UpdateTextureGroups();
   InitTexBrowser();
@@ -1061,7 +1060,7 @@ void EditorUI::menuSetSpringDir() {
 void EditorUI::menuSettingsRestoreViews() { LoadSettings(); }
 
 void EditorUI::SaveSettings() {
-  std::string const path = applicationPath + ViewSettingsFile;
+  std::string const path = ups::config::get().app_path() /  ViewSettingsFile;
   CfgWriter writer(path.c_str());
   if (writer.IsFailed()) {
     fltk::message("Failed to open %s for writing view settings", path.c_str());
@@ -1073,7 +1072,7 @@ void EditorUI::SaveSettings() {
 }
 
 void EditorUI::LoadSettings() {
-  std::string const path = applicationPath + ViewSettingsFile;
+  std::string const path = ups::config::get().app_path() / ViewSettingsFile;
   CfgList* cfg = CfgValue::LoadFile(path.c_str());
   if (cfg != nullptr) {
     SerializeConfig(*cfg, false);
@@ -1082,7 +1081,7 @@ void EditorUI::LoadSettings() {
 }
 
 void EditorUI::LoadToolWindowSettings() {
-  std::string const path = applicationPath + ViewSettingsFile;
+  std::string const path = ups::config::get().app_path() / ViewSettingsFile;
   CfgList* cfg = CfgValue::LoadFile(path.c_str());
   if (cfg != nullptr) {
     // tool window visibility
@@ -1321,6 +1320,11 @@ int main(int argc, char* argv[]) {
     std::string model_file;
     subApp.add_option("file", model_file, "Model file to load");
     subApp.parse(app.remaining_for_passthrough());
+
+    /**
+     * Config
+     */
+    ups::config::get().app_path(std::filesystem::path(CLI::argv()[0]).remove_filename());
 
     /**
      * Normal app start

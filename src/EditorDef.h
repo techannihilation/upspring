@@ -161,8 +161,6 @@ bool FileSaveDlg(const char* msg, const char* pattern, std::string& fn);
 bool FileOpenDlg(const char* msg, const char* pattern, std::string& fn);
 bool SelectDirectory(const char* msg, std::string& dir);
 
-extern std::string applicationPath;
-
 template <typename InputIterator, typename EqualityComparable>
 int element_index(InputIterator first, InputIterator last, const EqualityComparable& value) {
   // NOTE: g++ rejects   <type1> i = <val1>, <type2> j = <val2>   style loop-init

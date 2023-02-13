@@ -7,6 +7,7 @@
 #include "EditorIncl.h"
 #include "Model.h"
 #include "Util.h"
+#include "config.h"
 
 #include "spdlog/spdlog.h"
 
@@ -18,7 +19,7 @@ class CTAPalette {
   }
 
   void Init() {
-    std::string fn = applicationPath + "data/palette.pal";
+    std::string fn = ups::config::get().app_path() / "data" / "palette.pal";
     FILE* f = fopen(fn.c_str(), "rb");
     if (!f) {
       if (!error) {
