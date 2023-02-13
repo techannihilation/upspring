@@ -7,11 +7,9 @@ plugins:
       ref: v0.0.9
       uri: https://github.com/trunk-io/plugins
 lint:
-  disabled:
-    - clang-tidy
   definitions:
     # https://github.com/trunk-io/plugins/blob/main/linters/clang-tidy/plugin.yaml
-    - name: my-clang-tidy
+    - name: clang-tidy
       files: [c/c++-source]
       commands:
         - name: lint
@@ -32,7 +30,7 @@ lint:
     - black@23.1.0
     - markdownlint@0.33.0
     - gitleaks@8.15.3
-    - my-clang-tidy@SYSTEM
+    - clang-tidy@SYSTEM
     - clang-format@14.0.1
 runtimes:
   enabled:

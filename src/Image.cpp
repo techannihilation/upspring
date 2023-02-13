@@ -128,7 +128,7 @@ bool Image::save(const std::string& par_file) const {
   return ilSaveImage(static_cast<const ILstring>(par_file.c_str())) == IL_TRUE;
 }
 
-// trunk-ignore(my-clang-tidy/readability-make-member-function-const)
+// trunk-ignore(clang-tidy/readability-make-member-function-const)
 std::uint8_t* Image::data() {
   if (has_error()) {
     return nullptr;
@@ -147,7 +147,7 @@ const std::uint8_t* Image::data() const {
   return ilGetData();
 }
 
-// trunk-ignore(my-clang-tidy/readability-make-member-function-const)
+// trunk-ignore(clang-tidy/readability-make-member-function-const)
 bool Image::clear_color(float pRed, float pGreen, float pBlue, float pAlpha) {
   if (has_error()) {
     return false;
@@ -163,7 +163,7 @@ bool Image::clear_color(float pRed, float pGreen, float pBlue, float pAlpha) {
 /*
 Add/Remove alpha channel
 */
-// trunk-ignore(my-clang-tidy/readability-make-member-function-const)
+// trunk-ignore(clang-tidy/readability-make-member-function-const)
 bool Image::add_alpha() {
   if (has_error() or has_alpha()) {
     return false;
@@ -174,7 +174,7 @@ bool Image::add_alpha() {
   return true;
 }
 
-// trunk-ignore(my-clang-tidy/readability-make-member-function-const)
+// trunk-ignore(clang-tidy/readability-make-member-function-const)
 bool Image::alpha_to_zero() {
   if (has_error() or !has_alpha()) {
     return false;
@@ -183,7 +183,7 @@ bool Image::alpha_to_zero() {
   return clear_color(0.0F, 0.0F, 0.0F, 1.0F);
 }
 
-// trunk-ignore(my-clang-tidy/readability-make-member-function-const)
+// trunk-ignore(clang-tidy/readability-make-member-function-const)
 bool Image::non_alpha_to_zero() {
   if (has_error() or !has_alpha()) {
     return false;
@@ -192,7 +192,7 @@ bool Image::non_alpha_to_zero() {
   return clear_color(1.0F, 1.0F, 1.0F, 0.0F);
 }
 
-// trunk-ignore(my-clang-tidy/readability-make-member-function-const)
+// trunk-ignore(clang-tidy/readability-make-member-function-const)
 bool Image::mirror() {
   if (has_error()) {
     return false;
@@ -204,7 +204,7 @@ bool Image::mirror() {
   return true;
 }
 
-// trunk-ignore(my-clang-tidy/readability-make-member-function-const)
+// trunk-ignore(clang-tidy/readability-make-member-function-const)
 bool Image::flip() {
   if (has_error()) {
     return false;
@@ -230,7 +230,7 @@ This function is not intended to actually draw things (it doesn't do any clippin
 it is just a way to copy certain parts of an image.
 The formats have to be exactly the same
 */
-// trunk-ignore(my-clang-tidy/readability-make-member-function-const)
+// trunk-ignore(clang-tidy/readability-make-member-function-const)
 bool Image::blit(const Image& pSrc, int pDx, int pDy, int pDz, int pSx, int pSy, int pSz, int pWidth,
                  int pHeight, int pDepth) {
   if (has_error() or pSrc.has_error()) {
