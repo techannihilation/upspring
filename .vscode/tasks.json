@@ -7,9 +7,9 @@
       "command": "cmake --preset gcc-debug"
     },
     {
-      "label": "build-debug-gcc",
+      "label": "build-gcc-debug",
       "type": "shell",
-      "command": "cmake --build --preset gcc-debug"
+      "command": "cmake --build --preset gcc-debug --target Upspring"
     },
     {
       "label": "msys2-mingw64-debug",

@@ -22,14 +22,14 @@
           "ignoreFailures": true
         }
       ],
-      "preLaunchTask": "build-debug-gcc"
+      "preLaunchTask": "build-gcc-debug"
     },
     {
       "name": "Debug gcc -run runscripts/local.lua",
       "type": "cppdbg",
       "request": "launch",
       "program": "${workspaceFolder}/out/build/gcc-debug/src/Upspring",
-      "args": ["-run", "runscripts/local.lua"],
+      "args": ["--run", "runscripts/local.lua"],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",
       "environment": [],
@@ -45,14 +45,14 @@
           "ignoreFailures": true
         }
       ],
-      "preLaunchTask": "build-debug-gcc"
+      "preLaunchTask": "build-gcc-debug"
     },
     {
       "name": "Debug gcc -run runscripts/atlas.lua",
       "type": "cppdbg",
       "request": "launch",
       "program": "${workspaceFolder}/out/build/gcc-debug/src/Upspring",
-      "args": ["-run", "runscripts/atlas.lua"],
+      "args": ["--run", "runscripts/atlas.lua"],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",
       "environment": [],
@@ -68,14 +68,14 @@
           "ignoreFailures": true
         }
       ],
-      "preLaunchTask": "build-debug-gcc"
+      "preLaunchTask": "build-gcc-debug"
     },
     {
       "name": "Debug gcc -run runscripts/convert.lua",
       "type": "cppdbg",
       "request": "launch",
       "program": "${workspaceFolder}/out/build/gcc-debug/src/Upspring",
-      "args": ["-run", "runscripts/convert.lua"],
+      "args": ["--run", "runscripts/convert.lua"],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",
       "environment": [],
@@ -91,7 +91,30 @@
           "ignoreFailures": true
         }
       ],
-      "preLaunchTask": "build-debug-gcc"
+      "preLaunchTask": "build-gcc-debug"
+    },
+    {
+      "name": "Debug gcc - cdevastator.3do",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/out/build/gcc-debug/src/Upspring",
+      "args": ["~/.spring/games/TA.sdd/objects3d/cdevastator.3do"],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "setupCommands": [
+        {
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        },
+        {
+          "text": "-gdb-set disassembly-flavor intel",
+          "ignoreFailures": true
+        }
+      ],
+      "preLaunchTask": "build-gcc-debug"
     },
     {
       "name": "Debug mingw build with gdb",
