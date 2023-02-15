@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <memory>
 #include <vector>
 #include <string>
 
@@ -9,37 +10,40 @@ class Image {
   // Constructors
   Image()
       : ilid_(),
-        has_error_(true),
-        error_("not loaded/created"),
+        has_error_(),
+        error_(),
         width_(),
         height_(),
         bpp_(),
         deepth_(),
-        channels_(){};
+        channels_(),
+        name_(),
+        path_() {};
+
+  virtual ~Image();
 
   bool load(const std::vector<std::uint8_t>& par_buffer);
   bool load(const std::string& par_file);
 
-  bool create(int par_width, int par_height);
+  bool create(int par_width, int par_height, int par_channels = 4);
   bool create(int par_width, int par_height, float par_red, float par_green,
               float par_blue);  // RGB
 
-  // Destructor
-  virtual ~Image();
+  std::shared_ptr<Image> clone() const;
+
+  bool save(const std::string& par_file);
 
   // Copy
-  Image(const Image& rhs) = default;
-  Image& operator=(const Image& rhs);
+  Image(const Image& rhs) = delete;
+  Image& operator=(const Image& rhs)= delete;
 
   // Move
-  Image(Image&& rhs) = default;
-  Image& operator=(Image&& rhs) noexcept;
+  Image(Image&& rhs) noexcept = delete;
+  Image& operator=(Image&& rhs) noexcept = delete;
 
   // Error handling
-  inline const bool has_error() const { return has_error_; };
+  inline const bool has_error() const { return this == nullptr or has_error_; };
   inline const std::string& error() const { return error_; };
-
-  bool save(const std::string& par_file) const;
 
   // Image info accessors
   inline uint id() const { return ilid_; }
@@ -52,7 +56,6 @@ class Image {
 
   // Image Data
   std::uint8_t* data();
-  const std::uint8_t* data() const;
   inline uint size() const { return static_cast<uint>(width_) * height_ * bpp_; }
 
   /**
@@ -60,15 +63,24 @@ class Image {
    */
   bool clear_color(float pRed, float pGreen, float pBlue, float pAlpha);
 
-  bool alpha_to_zero();
-  bool non_alpha_to_zero();
+  bool add_alpha();
+  bool clear_none_alpha();
+  bool add_transparent_alpha();
+
   bool mirror();
   bool flip();
-  bool FlipNonDDS(const std::string& path);
 
-  bool add_alpha();
-  bool blit(const Image& pSrc, int pDx, int pDy, int pDz, int pSx, int pSy, int pSz, int pWidth,
-            int pHeight, int pDepth);
+  bool blit(const std::shared_ptr<Image> par_src, int par_dx, int par_dy, int par_dz, int par_sx, int par_sy, int par_sz,
+            int par_width, int par_height, int par_depth);
+
+  /**
+   * Name/path getter/setter
+   */
+ void name(const std::string& par_name) { name_ = par_name; }
+ const std::string& name() const { return name_; }
+
+ void path(const std::string& par_path) { path_ = par_path; }
+ const std::string& path() const { return path_; }
 
  protected:
   uint ilid_;
@@ -77,6 +89,8 @@ class Image {
   std::string error_;
 
   int width_, height_, bpp_, deepth_, channels_;
+
+  std::string name_, path_;
 
   bool load_from_memory_(const std::vector<std::uint8_t>& par_buffer);
   void image_infos_();

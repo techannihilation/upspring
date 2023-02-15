@@ -710,11 +710,11 @@ void EditorUI::SetModelTexture(int index, std::shared_ptr<Texture> par_texture) 
 }
 
 void EditorUI::BrowseForTexture(int textureIndex) {
-  static std::string fn;
-  if (FileOpenDlg("Select texture:", ImageFileExt, fn)) {
-    auto tex = std::make_shared<Texture>(fn);
-    if (tex->IsLoaded()) {
-      tex->image.FlipNonDDS(fn);
+  static std::string filename;
+  if (FileOpenDlg("Select texture:", ImageFileExt, filename)) {
+    auto tex = std::make_shared<Texture>(filename);
+    if (!tex->HasError()) {
+      tex->image->flip();
       SetModelTexture(textureIndex, tex);
       Update();
     }
@@ -730,7 +730,7 @@ void EditorUI::ReloadTexture(int index) {
 
   TextureBinding const& tb = model->texBindings[index];
   auto const tex = std::make_shared<Texture>(tb.name);
-  if (tex->IsLoaded()) {
+  if (tex->HasError()) {
     SetModelTexture(index, tex);
   }
 
@@ -745,7 +745,7 @@ void EditorUI::ConvertToS3O() {
   texH = atoi(fltk::input("Enter texture height: ", SPrintf("%d", texH).c_str()));
   std::string const name_ext = fltk::filename_name(filename.c_str());
   std::string const name(name_ext.c_str(), fltk::filename_ext(name_ext.c_str()));
-  if (model->ConvertToS3O(GetFilePath(filename) + "/" + name + "_tex", texW, texH)) {
+  if (model->ConvertToS3O(GetFilePath(filename) + "/" + name + "_tex1.dds", texW, texH)) {
     // Update the UI
     SetModelTexture(0, model->texBindings[0].texture);
     SetMapping(MAPPING_S3O);
@@ -1256,11 +1256,10 @@ int luaopen_upspring(lua_State* lua_state);
 }
 
 void run_script(CLI::App &app, const std::string& par_script_file) {
-  /**
-   * Config
-   */
+  // Config
   ups::config::get().app_path(std::filesystem::path(CLI::argv()[0]).remove_filename());
 
+  // Find script
   auto script_file = par_script_file;
   if (!std::filesystem::exists(par_script_file)) {
     script_file = ups::config::get().app_path() / par_script_file;
@@ -1280,7 +1279,10 @@ void run_script(CLI::App &app, const std::string& par_script_file) {
   if (!remaining.empty()) {
     if (remaining[0] != "--") {
       spdlog::error("no -- delimiter for arguments found");
+
+      lua_close(lua_state);
       std::exit(1);
+      return;
     }
 
     lua_createtable(lua_state, static_cast<int>(remaining.size()), static_cast<int>(remaining.size()));
@@ -1289,7 +1291,6 @@ void run_script(CLI::App &app, const std::string& par_script_file) {
     for (std::size_t i = 1; i < remaining.size(); ++i) {
       lua_pushstring(lua_state, remaining[i].c_str());
       lua_rawseti(lua_state, -2, static_cast<int64_t>(i));
-      spdlog::debug("{}: {}", i, remaining[i]);
     }
     lua_setglobal(lua_state, "arg");
   } else {
@@ -1299,20 +1300,23 @@ void run_script(CLI::App &app, const std::string& par_script_file) {
     lua_setglobal(lua_state, "arg");
   }
 
+  // Run
   int status = luaL_loadfile(lua_state, script_file.c_str());
   if (status == LUA_OK) {
     status = lua_pcall(lua_state, 0, 0, 0);
   }
+
+  // Exit handling
   if (status != LUA_OK) {
     const char* err = lua_tostring(lua_state, -1);
     spdlog::error("executing '{}': {}", script_file, err);
     lua_close(lua_state);
     lua_pop(lua_state, 1);
-    return std::exit(1);
+    std::exit(1);
+    return;
   }
 
   lua_close(lua_state);
-
   std::exit(0);
 }
 

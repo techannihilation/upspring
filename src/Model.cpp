@@ -388,7 +388,7 @@ void Model::PostLoad() {
     if (texBindings[t].name.empty()) continue;
 
     texBindings[t].texture = std::make_shared<Texture>(texBindings[t].name);
-    if (!texBindings[t].texture->IsLoaded()) texBindings[t].texture = 0;
+    if (texBindings[t].texture->HasError()) texBindings[t].texture = 0;
   }
 }
 
@@ -444,11 +444,13 @@ bool Model::ConvertToS3O(std::string textureName, int texw, int texh) {
           continue;
         }
 
-        Image color_image;
-        if (!color_image.create(1, 1, poly->color.x, poly->color.y, poly->color.z)) {
-          spdlog::error("Failed to create a color image, error was: {}", color_image.error());
+        auto color_image = std::make_shared<Image>();
+        color_image->name(color_name);
+        if (!color_image->create(1, 1, poly->color.x, poly->color.y, poly->color.z)) {
+          spdlog::error("Failed to create a color image, error was: {}", color_image->error());
           continue;
         }
+
         auto color_tex = std::make_shared<Texture>(color_image, color_name);
         textures.insert({color_name, color_tex});
 
@@ -462,14 +464,21 @@ bool Model::ConvertToS3O(std::string textureName, int texw, int texh) {
   std::map<std::string, TextureBinTree::Node*> texToNode;
 
   for (auto &texmap_entry : textures) {
-    Image clone(texmap_entry.second->image);
+    auto clone = texmap_entry.second->image->clone();
 
     // Everything that has a alpha color is "teamcolor", everything else "normal".
-    if (clone.has_alpha()) {
-      clone.non_alpha_to_zero();
+    if (clone->has_alpha()) {
+      if (!clone->clear_none_alpha()) {
+        spdlog::error("non_alpha_to_zero failed, error was: {}", clone->error());
+        continue;
+      }
     } else {
-      clone.alpha_to_zero();
+      if (!clone->add_transparent_alpha()) {
+        spdlog::error("alpha_to_zero failed, error was: {}", clone->error());
+        continue;
+      }
     }
+    // clone->save("/tmp/" + clone->name() + ".bmp");
 
     TextureBinTree::Node* node = tree.AddNode(clone);
 
@@ -482,14 +491,21 @@ bool Model::ConvertToS3O(std::string textureName, int texw, int texh) {
   }
 
   auto img = tree.GetResult();
-  auto saveName = textureName + "1.png";
-  img.FlipNonDDS(saveName);
-  img.save(saveName);
-  img.FlipNonDDS(saveName);
+  auto ext = std::filesystem::path(textureName).extension();
+
+  if (!img->flip()) {
+    spdlog::error("Failed to flip the atlas, error was: {}", img->error());
+    return false;
+  }
+
+  if (!img->save(textureName)) {
+    spdlog::error("Failed to save the atlas");
+    return false;
+  }
 
   auto tex1 = std::make_shared<Texture>();
   tex1->SetImage(img);
-  tex1->name = saveName;
+  tex1->name = std::filesystem::path(textureName).stem();
   SetTexture(0, tex1);
 
   // now set new texture coordinates.
@@ -548,8 +564,7 @@ void removeDuplicatedChildPolys(MdlObject* pObj,
       continue;
     }
 
-  std:
-    size_t hash = HASH_SEED;
+    std::size_t hash = HASH_SEED;
     // Add the position to the hash
     hash_combine<float>(hash, obj->position.x, obj->position.y, obj->position.z);
 

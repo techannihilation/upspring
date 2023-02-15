@@ -25,9 +25,9 @@ function model.Convert3DOToS3O(input)
         lfs.chdir(_unittexturesDir)
     end
 
-    local _texOut =  _fileName .. "_tex"
-    local _texOutPath = lib.utils.join_paths(lfs.currentdir(), _texOut) .. "1.png"
-    local ok = model:ConvertToS3O(_texOut, 1024, 1024)
+    local _texOut =  _fileName .. "_tex1.dds"
+    local _texOutPath = lib.utils.join_paths(lfs.currentdir(), _texOut)
+    local ok = model:ConvertToS3O(_texOutPath, 512, 512)
     if ok then
         print("-- Converted to S3O, wrote textures to: '" .. _texOutPath .. "'")
     else

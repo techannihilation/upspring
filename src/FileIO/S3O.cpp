@@ -164,7 +164,7 @@ bool Model::LoadS3O(const char* filename, IProgressCtl& /*progctl*/) {
   root = S3O_LoadObject(file, header.rootPiece);
   MirrorX(root);
 
-  std::string mdlPath = GetFilePath(filename);
+  std::string mdlPath = std::filesystem::path(filename).parent_path().string();
 
   // load textures
   for (int tex = 0; tex < 2; tex++) {
@@ -174,13 +174,13 @@ bool Model::LoadS3O(const char* filename, IProgressCtl& /*progctl*/) {
     TextureBinding& tb = texBindings.back();
 
     tb.name = Readstring(tex == 1 ? header.texture2 : header.texture1, file);
-    tb.texture = std::make_shared<Texture>(tb.name, mdlPath);
-    if (!tb.texture->IsLoaded()) {
+    tb.texture = std::make_shared<Texture>();
+    if (!tb.texture->Load(tb.name, mdlPath) or tb.texture->HasError()) {
       tb.texture = nullptr;
       continue;
     }
 
-    tb.texture->image.FlipNonDDS(tb.name);
+    tb.texture->image->flip();
   }
 
   mapping = MAPPING_S3O;

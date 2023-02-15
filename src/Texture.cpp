@@ -34,49 +34,75 @@ std::string Texture::textureLoadDir;
 
 Texture::Texture() : glIdent() {}
 
-Texture::Texture(const std::string& fn) : glIdent() { Load(fn, std::string()); }
-
-Texture::Texture(const std::string& fn, const std::string& hintpath) : glIdent() {
-  Load(fn, hintpath);
+Texture::Texture(const std::string& par_filename) : glIdent()
+{
+  Load(par_filename, std::string());
 }
 
-bool Texture::Load(const std::string& fn, const std::string& hintpath) {
-  name = fltk::filename_name(fn.c_str());
-  glIdent = 0;
-
-  std::vector<std::string> paths;
-  paths.push_back(fn);
-  if (!hintpath.empty()) {
-    paths.push_back(std::filesystem::path(hintpath).parent_path().append("unittextures").append(fn).string());
-    paths.push_back(std::filesystem::path(hintpath).append(fn).string());
-  }
-  if (!textureLoadDir.empty()) {
-    paths.push_back(std::filesystem::path(textureLoadDir).append(fn).string());
-  }
-
-  for (auto& path : paths) {
-    Image img;
-    if (!img.load(path)) {
-      continue;
-    }
-
-    SetImage(img);
-    return true;
-  }
-
-  return false;
+Texture::Texture(const std::string& par_filename, const std::string& hintpath) : glIdent()
+{
+  Load(par_filename, hintpath);
 }
 
-Texture::Texture(std::vector<uchar>& par_data, const std::string& par_name) : name(par_name), glIdent(0) {
-  Image img;
-  if (!img.load(par_data)) {
+
+Texture::Texture(std::vector<uchar>& par_data, const std::string& par_path, const std::string& par_name) : name(par_name), glIdent(0) {
+  auto img = std::make_shared<Image>();
+  img->path(par_path);
+  img->name(par_name);
+  if (!img->load(par_data)) {
     spdlog::error("Failed to create an image from '{}'", par_name);
     return;
   }
-  SetImage(img);
+  image = img;
 }
 
-void Texture::SetImage(Image& img) { image = img; }
+bool Texture::Load(const std::string& par_filename, const std::string& par_hintpath) {
+  name = fltk::filename_name(par_filename.c_str());
+  glIdent = 0;
+
+  bool found = false;
+  std::filesystem::path filename;
+  if (!par_hintpath.empty()) {
+    // Direct
+    filename = std::filesystem::path(par_hintpath) / par_filename;
+    if (std::filesystem::exists(filename)) {
+      found = true;
+    } else {
+      std::filesystem::path my_hp(par_hintpath);
+      for (int i = 0; i <= 3; ++i) {
+        filename = my_hp / "unittextures" / par_filename;
+        if (std::filesystem::exists(filename)) {
+          found = true;
+          break;
+        }
+
+        // Search on parent_path for "unittextures/<filename>".
+        my_hp = my_hp.parent_path();
+      }
+    }
+  }
+  if (!found && !textureLoadDir.empty()) {
+    filename = std::filesystem::path(textureLoadDir).append(par_filename);
+    if (std::filesystem::exists(filename)) {
+      found = true;
+    }
+  }
+
+  if (!found) {
+    return false;
+  }
+
+  auto img = std::make_shared<Image>();
+  spdlog::debug("Loading {}", filename.string());
+  if (!img->load(filename)) {
+    return false;
+  }
+
+  image = img;
+  return true;
+}
+
+void Texture::SetImage(std::shared_ptr<Image> img) { image = img; }
 
 Texture::~Texture() {
   if (glIdent != 0) {
@@ -86,18 +112,18 @@ Texture::~Texture() {
 }
 
 bool Texture::VideoInit() {
-  if (image.has_error()) {
+  if (image == nullptr or image->has_error()) {
     return false;
   }
 
   glGenTextures(1, &glIdent);
   glBindTexture(GL_TEXTURE_2D, glIdent);
 
-  GLint const format = image.has_alpha() ? GL_RGBA : GL_RGB;
+  GLint const format = image->has_alpha() ? GL_RGBA : GL_RGB;
 
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-  gluBuild2DMipmaps(GL_TEXTURE_2D, format, image.width(), image.height(), format, GL_UNSIGNED_BYTE, image.data());
+  gluBuild2DMipmaps(GL_TEXTURE_2D, format, image->width(), image->height(), format, GL_UNSIGNED_BYTE, image->data());
   return true;
 }
 
@@ -117,32 +143,13 @@ std::shared_ptr<Texture> TextureHandler::GetTexture(const std::string& name) {
     tmp += "00";
     ti_it = textures.find(tmp);
     if (ti_it == textures.end()) {
-      spdlog::debug("Texture '{}' not found", tmp);
+      spdlog::warn("Texture '{}' not found", tmp);
       return nullptr;
     }
     return ti_it->second;
   }
 
   return ti_it->second;
-}
-
-std::shared_ptr<Texture> TextureHandler::LoadTexture(std::shared_ptr<IArchive>& par_archive,
-                                                     const uint& par_fid,
-                                                     const std::string& par_name) {
-  std::vector<uchar> buf;
-  par_archive->GetFile(par_fid, buf);
-
-  if (buf.empty()) {
-    spdlog::debug("Failed to read texture file '{}' from the archive", par_name);
-    return nullptr;
-  }
-
-  auto tex = std::make_shared<Texture>(buf, par_name);
-  if (!tex->IsLoaded()) {
-    return nullptr;
-  }
-
-  return tex;
 }
 
 bool TextureHandler::LoadFiltered(const std::string& par_archive_path,
@@ -173,11 +180,8 @@ bool TextureHandler::LoadFiltered(const std::string& par_archive_path,
       continue;
     }
 
-    // All lowercase
-    std::string const tmp = to_lower(name);
-
     // Extension checking
-    auto myExt = std::filesystem::path(tmp).extension();
+    auto myExt = std::filesystem::path(name).extension();
     if (myExt.empty()) {
       continue;
     }
@@ -187,7 +191,7 @@ bool TextureHandler::LoadFiltered(const std::string& par_archive_path,
     }
 
     // Apply filter
-    auto internal_name = par_filter(tmp);
+    auto internal_name = par_filter(name);
     if (internal_name.empty()) {
       continue;
     }
@@ -197,13 +201,25 @@ bool TextureHandler::LoadFiltered(const std::string& par_archive_path,
       continue;
     }
 
-    auto tex = LoadTexture(archive, i, internal_name);
-    if (!tex) {
-      return false;
+    // Load from archive
+    std::vector<std::uint8_t> buf;
+    archive->GetFile(i, buf);
+
+    if (buf.empty()) {
+      spdlog::debug("Failed to read texture file '{}' from the archive", internal_name);
+      continue;
     }
 
+    auto tex = std::make_shared<Texture>(buf, name, internal_name);
+    if (tex->HasError()) {
+      continue;
+    }
+
+    // Assign to map
     textures[tex->name] = tex;
   }
+
+  spdlog::debug("Loaded '{}' textures", textures.size());
 
   return true;
 }
@@ -327,21 +343,22 @@ TextureBinTree::Node::~Node() {
   SAFE_DELETE(child[1]);
 }
 
-TextureBinTree::TextureBinTree(int par_width, int par_height) : render_id(), tree() {
-  image_ = Image();
-
-  if (!image_.create(par_width, par_height)) {
-    spdlog::error("Failed to create the atlas image with size '{}/{}'", par_width, par_height);
+TextureBinTree::TextureBinTree(int par_width, int par_height) : TextureBinTree() {
+  if (!image_->create(par_width, par_height)) {
+    spdlog::error("Failed to create the atlas image with size '{}/{}', error was: {}", par_width, par_height, image_->error());
   }
 };
 
 TextureBinTree::~TextureBinTree() { SAFE_DELETE(tree); }
 
-void TextureBinTree::StoreNode(Node* n, const Image& tex) {
-  n->img_w = tex.width();
-  n->img_h = tex.height();
+void TextureBinTree::StoreNode(Node* n, const std::shared_ptr<Image> par_tex) {
+  n->img_w = par_tex->width();
+  n->img_h = par_tex->height();
 
-  image_.blit(tex, n->x, n->y, 1, 0, 0, 1, tex.width(), tex.height(), 1);
+  if (!image_->blit(par_tex, n->x, n->y, 0, 0, 0, 0, par_tex->width(), par_tex->height(), 1)) {
+    spdlog::error("TextureBinTree blit failed {}/{}, error was: {}", n->x, n->y, image_->error());
+    return;
+  }
 }
 
 TextureBinTree::Node* TextureBinTree::InsertNode(Node* n, int w, int h) {
@@ -378,21 +395,21 @@ TextureBinTree::Node* TextureBinTree::InsertNode(Node* n, int w, int h) {
   return 0;
 }
 
-TextureBinTree::Node* TextureBinTree::AddNode(const Image& subtex) {
+TextureBinTree::Node* TextureBinTree::AddNode(const std::shared_ptr<Image> par_subtex) {
   if (tree == nullptr) {
     // create root node
-    if (subtex.width() > image_.width() || subtex.height() > image_.height()) {
+    if (par_subtex->width() > image_->width() || par_subtex->height() > image_->height()) {
       return nullptr;
     }
 
-    tree = new Node(0, 0, image_.width(), image_.height());
+    tree = new Node(0, 0, image_->width(), image_->height());
   }
 
-  auto *pn = InsertNode(tree, subtex.width(), subtex.height());
+  auto *pn = InsertNode(tree, par_subtex->width(), par_subtex->height());
   if (pn == nullptr) {
     return nullptr;
   }
 
-  StoreNode(pn, subtex);
+  StoreNode(pn, par_subtex);
   return pn;
 }

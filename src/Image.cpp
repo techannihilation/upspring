@@ -3,23 +3,19 @@
 #include <IL/il.h>
 #include <IL/ilu.h>
 
-#include <iostream>
-#include <filesystem>
-
-#include <fstream>
-#include <sstream>
 #include <vector>
 #include <string>
+#include <filesystem>
 
 #include "spdlog/spdlog.h"
 
-struct ILInitializer {
-  ILInitializer() {
+struct _imagelib {
+  _imagelib() {
     ilInit();
     iluInit();
   }
-  ~ILInitializer() { ilShutDown(); }
-} static devilInstance;
+  ~_imagelib() { ilShutDown(); }
+} static imagelib;
 
 // -------------------------------- Image ---------------------------------
 
@@ -31,49 +27,28 @@ Image::~Image() {
   ilDeleteImage(ilid_);
 }
 
-Image& Image::operator=(const Image& rhs) {
-  if (this == &rhs) {
-    return *this;
+// Clone
+std::shared_ptr<Image> Image::clone() const {
+  auto clone = std::make_shared<Image>();
+
+  if (has_error()) {
+    clone->has_error_ = true;
+    clone->error_ = error_;
+    return clone;
   }
 
-  if (rhs.has_error()) {
-    has_error_ = true;
-    error_ = rhs.error();
-    return *this;
+  if (!clone->create(width(), height(), channels())) {
+    return clone;
   }
 
-  // Copy the image with libDevil
-  ilid_ = ilGenImage();
-  ilBindImage(ilid_);
-  ilCopyImage(rhs.id());
-
-  width_ = rhs.width_;
-  height_ = rhs.height_;
-  bpp_ = rhs.bpp_;
-  deepth_ = rhs.deepth_;
-  channels_ = rhs.channels_;
-
-  return *this;
-}
-
-Image& Image::operator=(Image&& rhs) noexcept {
-  if (this == &rhs) {
-    return *this;
+  if (ilCopyImage(ilid_) != IL_TRUE) {
+    return clone;
   }
 
-  if (rhs.has_error()) {
-    has_error_ = true;
-    error_ = rhs.error();
-    return *this;
-  }
+  clone->path_ = path_;
+  clone->name_ = name_;
 
-  ilid_ = rhs.ilid_;
-  width_ = rhs.width_;
-  height_ = rhs.height_;
-  bpp_ = rhs.bpp_;
-  deepth_ = rhs.deepth_;
-  channels_ = rhs.channels_;
-  return *this;
+  return clone;
 }
 
 bool Image::load(const std::vector<std::uint8_t>& par_buffer) {
@@ -81,21 +56,37 @@ bool Image::load(const std::vector<std::uint8_t>& par_buffer) {
 }
 
 bool Image::load(const std::string& par_file) {
-  const std::basic_ifstream<std::uint8_t> file(par_file);
-  std::basic_ostringstream<std::uint8_t> stream;
-  stream << file.rdbuf();
-  const std::vector<std::uint8_t> buf(stream.str().begin(), stream.str().end());
+
+	FILE *fp = fopen (par_file.c_str(),  "rb");
+	if (!fp) {
+		has_error_ = true;
+    error_ = "Failed to open file '" + par_file + "'";
+    return false;
+  }
+
+	fseek(fp, 0, SEEK_END);
+	int len=ftell(fp);
+	fseek(fp,0,SEEK_SET);
+	auto buf = std::vector<std::uint8_t>(len);
+	fread(buf.data(), len, 1, fp);
+  fclose(fp);
+
+  path_ = par_file;
 
   return load_from_memory_(buf);
 }
 
-bool Image::create(int par_width, int par_height) {
-  ilid_ = ilGenImage();
+bool Image::create(int par_width, int par_height, int par_channels) {
+  ilGenImages(1, &ilid_);
   ilBindImage(ilid_);
-  ilSetInteger(IL_IMAGE_WIDTH, par_width);
-  ilSetInteger(IL_IMAGE_HEIGHT, par_height);
-  ilSetInteger(IL_IMAGE_CHANNELS, 4);
-  ilClearImage();
+  ilClearColor(0.0F, 0.0F, 0.0F, 1.0F);
+  // iluEnlargeCanvas(par_width, par_height, 1);
+
+  if (ilTexImage(par_width, par_height, 1, par_channels, par_channels == 3 ? IL_RGB : IL_RGBA, IL_UNSIGNED_BYTE, nullptr) != IL_TRUE) {
+    error_ = iluErrorString(ilGetError());
+    has_error_ = true;
+    return false;
+  }
 
   // Read back image infos
   has_error_ = false;
@@ -105,29 +96,32 @@ bool Image::create(int par_width, int par_height) {
 }
 
 bool Image::create(int par_width, int par_height, float par_red, float par_green, float par_blue) {
-  ilid_ = ilGenImage();
-  ilBindImage(ilid_);
-  ilSetInteger(IL_IMAGE_WIDTH, par_width);
-  ilSetInteger(IL_IMAGE_HEIGHT, par_height);
-  ilSetInteger(IL_IMAGE_CHANNELS, 3);
+  if (!create(par_width, par_height, 3)) {
+    return false;
+  }
 
-  clear_color(par_red / 255.0F, par_green / 255.0F, par_blue / 255.0F, 1.0F);
-
-  // Read back image infos
-  has_error_ = false;
-  image_infos_();
-
-  return true;
+  return clear_color(par_red, par_green, par_blue, 1.0F);
 }
 
-bool Image::save(const std::string& par_file) const {
+bool Image::save(const std::string& par_file) {
   if (has_error()) {
     return false;
   }
 
   ilBindImage(ilid_);
   ilEnable(IL_FILE_OVERWRITE);
-  return ilSaveImage(static_cast<const ILstring>(par_file.c_str())) == IL_TRUE;
+
+  if (std::filesystem::path(par_file).extension() == ".dds") {
+    ilSetInteger(IL_DXTC_FORMAT, IL_DXT5);
+    ilEnable(IL_NVIDIA_COMPRESS);
+  }
+
+  if (ilSaveImage(static_cast<const ILstring>(par_file.c_str())) != IL_TRUE) {
+    error_ = iluErrorString(ilGetError());
+    has_error_ = true;
+  }
+
+  return true;
 }
 
 // trunk-ignore(clang-tidy/readability-make-member-function-const)
@@ -140,16 +134,6 @@ std::uint8_t* Image::data() {
   return ilGetData();
 }
 
-const std::uint8_t* Image::data() const {
-  if (has_error()) {
-    return nullptr;
-  }
-
-  ilBindImage(ilid_);
-  return ilGetData();
-}
-
-// trunk-ignore(clang-tidy/readability-make-member-function-const)
 bool Image::clear_color(float pRed, float pGreen, float pBlue, float pAlpha) {
   if (has_error()) {
     return false;
@@ -157,7 +141,10 @@ bool Image::clear_color(float pRed, float pGreen, float pBlue, float pAlpha) {
 
   ilBindImage(ilid_);
   ilClearColour(pRed, pGreen, pBlue, pAlpha);
-  ilClearImage();
+  if (ilClearImage() != IL_TRUE) {
+    error_ = iluErrorString(ilGetError());
+    has_error_ = true;
+  }
 
   return true;
 }
@@ -165,79 +152,116 @@ bool Image::clear_color(float pRed, float pGreen, float pBlue, float pAlpha) {
 /*
 Add/Remove alpha channel
 */
-// trunk-ignore(clang-tidy/readability-make-member-function-const)
 bool Image::add_alpha() {
   if (has_error() or has_alpha()) {
     return false;
   }
 
   ilBindImage(ilid_);
-  ilConvertImage(IL_RGBA, IL_UNSIGNED_BYTE);
+  if (ilConvertImage(IL_RGBA, IL_UNSIGNED_BYTE) != IL_TRUE) {
+    error_ = iluErrorString(ilGetError());
+    has_error_ = true;
+    return false;
+  }
+
+  image_infos_();
+
   return true;
 }
 
-bool Image::alpha_to_zero() {
+bool Image::clear_none_alpha() {
   if (has_error() or !has_alpha()) {
     return false;
   }
 
-  return clear_color(0.0F, 0.0F, 0.0F, 1.0F);
+  auto *data_ptr = data();
+  std::vector<std::uint8_t> data(data_ptr, data_ptr+size());
+
+  for (std::size_t ph = 0; ph < height_; ph++) {
+    for (std::size_t pw = 0; pw < width_; pw++) {
+      auto pixel = ph * pw;
+      data[pixel] &= ~(0xFF << 0);
+      data[pixel] &= ~(0xFF << 8);
+      data[pixel] &= ~(0xFF << 16);
+    }
+  }
+
+  return true;
 }
 
-bool Image::non_alpha_to_zero() {
-  if (has_error() or !has_alpha()) {
+
+bool Image::add_transparent_alpha() {
+  if (has_error()) {
     return false;
   }
 
-  return clear_color(1.0F, 1.0F, 1.0F, 0.0F);
+  ilBindImage(ilid_);
+  if (ilSetAlpha(1.0F) != IL_TRUE) {
+    has_error_ = true;
+    error_ = iluErrorString(ilGetError());
+    return false;
+  }
+
+  image_infos_();
+
+  return true;
 }
 
-// trunk-ignore(clang-tidy/readability-make-member-function-const)
+
 bool Image::mirror() {
   if (has_error()) {
     return false;
   }
 
   ilBindImage(ilid_);
-  iluMirror();
+  if (iluMirror() != IL_TRUE) {
+    error_ = iluErrorString(ilGetError());
+    has_error_ = true;
+  }
 
   return true;
 }
 
-// trunk-ignore(clang-tidy/readability-make-member-function-const)
 bool Image::flip() {
   if (has_error()) {
     return false;
   }
 
   ilBindImage(ilid_);
-  iluFlipImage();
-
-  return true;
-}
-
-bool Image::FlipNonDDS(const std::string& path) {
-  auto ext = std::filesystem::path(path).extension();
-  if (ext != ".dds") {
-    return flip();
+  if (iluFlipImage() != IL_TRUE) {
+    error_ = iluErrorString(ilGetError());
+    has_error_ = true;
   }
 
-  return false;
+  return true;
 }
 
 /*
 This function is not intended to actually draw things (it doesn't do any clipping),
 it is just a way to copy certain parts of an image.
 */
-// trunk-ignore(clang-tidy/readability-make-member-function-const)
-bool Image::blit(const Image& pSrc, int pDx, int pDy, int pDz, int pSx, int pSy, int pSz,
-                 int pWidth, int pHeight, int pDepth) {
-  if (has_error() or pSrc.has_error()) {
+bool Image::blit(const std::shared_ptr<Image> par_src, int par_dx, int par_dy, int par_dz, int par_sx, int par_sy, int par_sz,
+                 int par_width, int par_height, int par_depth) {
+  if (has_error() or par_src->has_error()) {
+    error_ = "blit, either the destination or the source has an error";
+    return false;
+  }
+
+  if (par_src->bpp() < 3) {
+    error_ = "blit, bytesperpixel on source < 3";
     return false;
   }
 
   ilBindImage(ilid_);
-  return ilBlit(pSrc.id(), pDx, pDy, pDz, pSx, pSy, pSz, pWidth, pHeight, pDepth) == IL_TRUE;
+  if (ilBlit(par_src->id(), par_dx, par_dy, par_dz, par_sx, par_sy, par_sz, par_width, par_height, par_depth) != IL_TRUE) {
+    error_ = iluErrorString(ilGetError());
+    has_error_ = true;
+    return false;
+  }
+
+  image_infos_();
+
+  return true;
 }
 
 bool Image::load_from_memory_(const std::vector<std::uint8_t>& par_buffer) {
@@ -249,16 +273,19 @@ bool Image::load_from_memory_(const std::vector<std::uint8_t>& par_buffer) {
   ilBindImage(ilid_);
 
   // /* Convert paletted to packed colors */
-  // ilEnable(IL_CONV_PAL);
-  // ilHint(IL_MEM_SPEED_HINT, IL_FASTEST);
+  ilEnable(IL_CONV_PAL);
+  ilHint(IL_MEM_SPEED_HINT, IL_FASTEST);
   // ilOriginFunc(IL_ORIGIN_LOWER_LEFT);
   // ilEnable(IL_ORIGIN_SET);
 
-  auto ret = ilLoadL(IL_TYPE_UNKNOWN, par_buffer.data(), par_buffer.size());
-  if (ret == IL_FALSE) {
+  if (ilLoadL(IL_TYPE_UNKNOWN, par_buffer.data(), par_buffer.size()) != IL_TRUE) {
     has_error_ = true;
     error_ = std::string(iluErrorString(ilGetError()));
-    spdlog::error("Failed to read image, error was: {}", error_);
+    spdlog::error("Failed to read image '{}', error was: {}", path_, error_);
+
+    ilDeleteImage(ilid_);
+    ilid_ = 0;
+
     return false;
   }
 
@@ -273,6 +300,7 @@ void Image::image_infos_() {
     return;
   }
 
+  ilBindImage(ilid_);
   ilGetIntegerv(IL_IMAGE_WIDTH, &width_);
   ilGetIntegerv(IL_IMAGE_HEIGHT, &height_);
   ilGetIntegerv(IL_IMAGE_BYTES_PER_PIXEL, &bpp_);

@@ -32,26 +32,24 @@ int TextureBrowser::Item::handle(int event) {
 }
 
 void TextureBrowser::Item::draw() {
-  if (!tex || !tex->IsLoaded()) {
+  if (!tex || tex->HasError()) {
     fltk::Widget::draw();
     return;
   }
 
-  auto img = tex->image;
-
   if (selected) {
-    fltk::Rectangle selr(-3, -3, img.width() + 6, img.height() + 6);
+    fltk::Rectangle selr(-3, -3, tex->image->width() + 6, tex->image->height() + 6);
     fltk::push_clip(selr);
     fltk::setcolor(fltk::BLUE);
     fltk::fillrect(selr);
     fltk::pop_clip();
   }
 
-  fltk::Rectangle rect(0, 0, img.width(), img.height());
-  if (img.has_alpha())
-    fltk::drawimage(img.data(), fltk::RGBA, rect);
+  fltk::Rectangle rect(0, 0, tex->image->width(), tex->image->height());
+  if (tex->image->has_alpha())
+    fltk::drawimage(tex->image->data(), fltk::RGBA, rect);
   else
-    fltk::drawimage(img.data(), fltk::RGBA, rect);
+    fltk::drawimage(tex->image->data(), fltk::RGB, rect);
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -124,10 +122,10 @@ void TextureBrowser::UpdatePositions(bool /*bRedraw*/) {
   for (int a = 0; a < nc; a++) {
     Item* item = (Item*)child(a);
 
-    if (!item->tex->IsLoaded()) continue;
+    if (item->tex->HasError()) continue;
 
-    int texWidth = item->tex->image.width();
-    int texHeight = item->tex->image.height();
+    int texWidth = item->tex->image->width();
+    int texHeight = item->tex->image->height();
 
     const int space = 5;
     if (x + texWidth + space > w()) {  // reserve 5 pixels for vertical scrollbar

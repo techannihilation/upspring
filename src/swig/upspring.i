@@ -23,6 +23,7 @@
 #include "../Texture.h"
 #include "../Util.h"
 #include "spdlog/spdlog.h"
+#include "../Image.h"
 
 #include <iostream>
 %}
@@ -66,6 +67,7 @@ namespace std {
 %include "../Animation.h"
 %include "../IEditor.h"
 %include "ScriptInterface.h"
+%include "../Image.h"
 //%include "../Fltk.h"
 
 %feature("immutable") MdlObject::parent;
@@ -134,7 +136,7 @@ namespace UpsScript {
 %}
 
 namespace UpsScript {
-	void LoadArchives() {};
-	void LoadArchive(const std::string &pArchive) {};
-	void TexturesToModel(Model *pModel) {};
+	void LoadArchives();
+	void LoadArchive(const std::string &pArchive);
+	void TexturesToModel(Model *pModel);
 }
