@@ -27,8 +27,6 @@ class Texture {
   Texture(std::shared_ptr<Image> par_image, const std::string& par_name) : glIdent(), name(par_name) {
     image = par_image;
   };
-  static Texture LoadTexture(std::shared_ptr<IArchive>& pArchive, const uint& id,
-                             const std::string& pName);
   ~Texture();
 
   bool Load(const std::string& filename, const std::string& hintpath);
@@ -50,12 +48,22 @@ class Texture {
 
 // manages 3do textures
 class TextureHandler {
- public:
-  TextureHandler();
-  ~TextureHandler();
+  std::unordered_set<std::string> supported_extensions_ = {".bmp", ".jpg", ".tga", ".png", ".dds",
+                                                          ".pcx", ".pic", ".gif", ".ico"};
+  std::unordered_map<std::string, std::shared_ptr<Texture>> textures_;
+  std::set<std::string> teamcolors_;
 
-  bool Load3DO(const std::string& pArchivePath) {
-    return LoadFiltered(pArchivePath, [](const std::string& par_path) -> const std::string {
+ public:
+  TextureHandler() : textures_(), teamcolors_() {}
+  virtual ~TextureHandler() = default;
+
+  TextureHandler(const TextureHandler &rhs) = delete;
+  TextureHandler(TextureHandler &&rhs) = delete;
+  TextureHandler operator=(const TextureHandler &rhs) = delete;
+  TextureHandler operator=(TextureHandler &&rhs) = delete;
+
+  bool Load3DO(const std::string& par_archive_path) {
+    return LoadFiltered(par_archive_path, [](const std::string& par_path) -> const std::string {
       if (par_path.rfind("unittextures/tatex/", 0) == 0) {
         auto result = std::filesystem::path(par_path).replace_extension("").string();
         result = result.substr(std::string("unittextures/tatex/").length());
@@ -67,16 +75,12 @@ class TextureHandler {
   };
   bool LoadFiltered(const std::string& par_archive_path,
                     std::function<const std::string(const std::string&)>&& par_filter);
-  std::shared_ptr<Texture> GetTexture(const std::string& name);
+  std::shared_ptr<Texture> texture(const std::string& name);
 
- protected:
-  std::unordered_set<std::string> mSupportedExtensions = {".bmp", ".jpg", ".tga", ".png", ".dds",
-                                                          ".pcx", ".pic", ".gif", ".ico"};
-
-  std::unordered_map<std::string, std::shared_ptr<Texture>> textures;
+  bool has_team_color(const std::string &texture_name);
 
  public:
-  const std::unordered_map<std::string, std::shared_ptr<Texture>>& Textures() { return textures; }
+  const std::unordered_map<std::string, std::shared_ptr<Texture>>& textures() { return textures_; }
 };
 
 class TextureGroup {
@@ -87,7 +91,7 @@ class TextureGroup {
 
 class TextureGroupHandler {
  public:
-  TextureGroupHandler(TextureHandler* th);
+  TextureGroupHandler(std::shared_ptr<TextureHandler> th);
   ~TextureGroupHandler();
 
   bool Load(const char* fname);
@@ -97,7 +101,7 @@ class TextureGroupHandler {
   TextureGroup* LoadGroup(CfgList* cfg);
 
   std::vector<TextureGroup*> groups;
-  TextureHandler* textureHandler;
+  std::shared_ptr<TextureHandler> textureHandler;
 };
 
 /*

@@ -103,7 +103,7 @@ class EditorViewWindow : public ViewWindow, public IView {
   void PopSelector();
   int GetRenderMode() { return rendermode; }
   Vector3 GetCameraPos();
-  TextureHandler* GetTextureHandler();
+  std::shared_ptr<TextureHandler> GetTextureHandler();
   float GetConfig(int cfg);
   int GetMode();
   bool IsSelecting() { return bSelecting || bUnSelecting; }

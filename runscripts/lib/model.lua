@@ -15,7 +15,7 @@ function model.Convert3DOToS3O(input)
         return;
     end
 
-    upspring.TexturesToModel(model)
+    upspring.textures_to_model(model)
 
     local lfs = require('lfs')
     local _oldDir = lfs.currentdir()

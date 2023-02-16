@@ -209,17 +209,17 @@ void MdlObject::SetPropertiesFromMatrix(Matrix& transform) {
   rotation.FromMatrix(rotationMatrix);
 }
 
-void MdlObject::Load3DOTextures(TextureHandler* th) {
+void MdlObject::load_3do_textures(std::shared_ptr<TextureHandler> par_texhandler) {
   if (!bTexturesLoaded) {
     for (PolyIterator p(this); !p.End(); p.Next()) {
       if (!p->texture && !p->texname.empty()) {
-        p->texture = th->GetTexture(p->texname);
+        p->texture = par_texhandler->texture(p->texname);
       }
     }
     bTexturesLoaded = true;
   }
 
-  for (uint a = 0; a < childs.size(); a++) childs[a]->Load3DOTextures(th);
+  for (uint a = 0; a < childs.size(); a++) childs[a]->load_3do_textures(par_texhandler);
 }
 
 void MdlObject::FlipPolygons() { ApplyPolyMeshOperationR(&PolyMesh::FlipPolygons); }

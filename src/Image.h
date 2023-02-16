@@ -64,8 +64,8 @@ class Image {
   bool clear_color(float pRed, float pGreen, float pBlue, float pAlpha);
 
   bool add_alpha();
-  bool clear_none_alpha();
-  bool add_transparent_alpha();
+  bool threedo_to_s3o();
+  bool add_opaque_alpha();
 
   bool mirror();
   bool flip();

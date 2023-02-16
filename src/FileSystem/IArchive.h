@@ -41,7 +41,9 @@ class IArchive {
    *   using forward-slashes, for example "maps/mymap.smf"
    * @return true if the file exists in this archive, false otherwise
    */
-  bool FileExists(const std::string& normalizedFilePath) const;
+  bool FileExists(const std::string& normalizedFilePath) const {
+    return (lcNameIndex.find(normalizedFilePath) != lcNameIndex.end());
+  }
   /**
    * Returns the fileID of a file.
    * @param filePath VFS path to the file, for example "maps/myMap.smf"

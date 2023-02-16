@@ -118,7 +118,7 @@ class EditorCB : public IEditor {
   Model* GetMdl() { return ui->model; }
   Tool* GetTool();
   void RenderScene(IView* view) { ui->RenderScene(view); }
-  TextureHandler* GetTextureHandler() { return ui->textureHandler; }
+  std::shared_ptr<TextureHandler> GetTextureHandler() { return ui->textureHandler; }
   void SetTextureSelectCallback(void (*cb)(std::shared_ptr<Texture>, void*), void* d) {
     ui->texBrowser->SetSelectCallback(cb, d);
   }
@@ -132,7 +132,7 @@ EditorCB callback;
 CopyBuffer copyBuffer;
 ArchiveList archives;
 
-TextureHandler* textureHandler;
+std::shared_ptr<TextureHandler> textureHandler;
 TextureGroupHandler* textureGroupHandler;
 
 BackupViewerUI* uiBackupViewer;

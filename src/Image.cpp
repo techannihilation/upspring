@@ -7,6 +7,8 @@
 #include <string>
 #include <filesystem>
 
+#include <iostream>
+
 #include "spdlog/spdlog.h"
 
 struct _imagelib {
@@ -169,20 +171,24 @@ bool Image::add_alpha() {
   return true;
 }
 
-bool Image::clear_none_alpha() {
-  if (has_error() or !has_alpha()) {
+bool Image::threedo_to_s3o() {
+  if (has_error() or bpp_ != 4) {
+    spdlog::error("flip_green_alpha needs exactly 4 bytes per pixel, have {}", bpp_);
+    has_error_ = true;
+    error_ = "flip_green_alpha needs exactly 4 bytes per pixel";
     return false;
   }
 
-  auto *data_ptr = data();
-  std::vector<std::uint8_t> data(data_ptr, data_ptr+size());
+  ilBindImage(ilid_);
+  auto *data_ptr = ilGetData();
+  auto **data_pptr = &data_ptr;
+
+  std::cout << std::dec << "Name: " << name_ << std::endl;
 
   for (std::size_t ph = 0; ph < height_; ph++) {
     for (std::size_t pw = 0; pw < width_; pw++) {
-      auto pixel = ph * pw;
-      data[pixel] &= ~(0xFF << 0);
-      data[pixel] &= ~(0xFF << 8);
-      data[pixel] &= ~(0xFF << 16);
+      // Copy red to green
+      data_ptr[1] = data_ptr[0];
     }
   }
 
@@ -190,13 +196,13 @@ bool Image::clear_none_alpha() {
 }
 
 
-bool Image::add_transparent_alpha() {
+bool Image::add_opaque_alpha() {
   if (has_error()) {
     return false;
   }
 
   ilBindImage(ilid_);
-  if (ilSetAlpha(1.0F) != IL_TRUE) {
+  if (ilSetAlpha(0.0F) != IL_TRUE) {
     has_error_ = true;
     error_ = iluErrorString(ilGetError());
     return false;
@@ -253,11 +259,15 @@ bool Image::blit(const std::shared_ptr<Image> par_src, int par_dx, int par_dy, i
   }
 
   ilBindImage(ilid_);
+
+  ilDisable(IL_BLIT_BLEND);
   if (ilBlit(par_src->id(), par_dx, par_dy, par_dz, par_sx, par_sy, par_sz, par_width, par_height, par_depth) != IL_TRUE) {
+    ilEnable(IL_BLIT_BLEND);
     error_ = iluErrorString(ilGetError());
     has_error_ = true;
     return false;
   }
+  ilEnable(IL_BLIT_BLEND);
 
   image_infos_();
 
@@ -275,7 +285,9 @@ bool Image::load_from_memory_(const std::vector<std::uint8_t>& par_buffer) {
   // /* Convert paletted to packed colors */
   ilEnable(IL_CONV_PAL);
   ilHint(IL_MEM_SPEED_HINT, IL_FASTEST);
-  // ilOriginFunc(IL_ORIGIN_LOWER_LEFT);
+
+  // GL like origin.
+  // ilOriginFunc(IL_ORIGIN_UPPER_LEFT);
   // ilEnable(IL_ORIGIN_SET);
 
   if (ilLoadL(IL_TYPE_UNKNOWN, par_buffer.data(), par_buffer.size()) != IL_TRUE) {

@@ -305,7 +305,7 @@ int ModelDrawer::SetupTextureMapping(IView* v, const Vector3& teamColor) {
     case MAPPING_S3O:
       return SetupS3OTextureMapping(v, teamColor);
     case MAPPING_3DO:
-      model->root->Load3DOTextures(v->GetTextureHandler());
+      model->load_3do_textures(v->GetTextureHandler());
   }
   return 0;
 }

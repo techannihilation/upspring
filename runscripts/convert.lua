@@ -7,7 +7,7 @@ package.path = package.path .. ";" .. script_path .. "?/init.lua" .. ";" .. scri
 
 lib = require("lib")
 
-upspring.LoadArchives()
+upspring.load_archive()
 
 ---------------------------------
 -- Actual code

@@ -466,19 +466,16 @@ bool Model::ConvertToS3O(std::string textureName, int texw, int texh) {
   for (auto &texmap_entry : textures) {
     auto clone = texmap_entry.second->image->clone();
 
-    // Everything that has a alpha color is "teamcolor", everything else "normal".
-    if (clone->has_alpha()) {
-      if (!clone->clear_none_alpha()) {
-        spdlog::error("non_alpha_to_zero failed, error was: {}", clone->error());
+    // On teamcolor we copy the red channel to green, on normal textures we add a opaque alpha.
+    if (texture_handler_->has_team_color(clone->name())) {
+      if (!clone->threedo_to_s3o()) {
+        spdlog::error("image->threedo_to_s3o failed, error was: {}", clone->error());
         continue;
       }
-    } else {
-      if (!clone->add_transparent_alpha()) {
-        spdlog::error("alpha_to_zero failed, error was: {}", clone->error());
-        continue;
-      }
+    } else if (!clone->add_opaque_alpha()) {
+      spdlog::error("image->add_opaque_alpha failed, error was: {}", clone->error());
+      continue;
     }
-    // clone->save("/tmp/" + clone->name() + ".bmp");
 
     TextureBinTree::Node* node = tree.AddNode(clone);
 
@@ -503,9 +500,14 @@ bool Model::ConvertToS3O(std::string textureName, int texw, int texh) {
     return false;
   }
 
+  // if (!img->flip()) {
+  //   spdlog::error("Failed to flip the atlas, error was: {}", img->error());
+  //   return false;
+  // }
+
   auto tex1 = std::make_shared<Texture>();
   tex1->SetImage(img);
-  tex1->name = std::filesystem::path(textureName).stem();
+  tex1->name = std::filesystem::path(textureName).filename();
   SetTexture(0, tex1);
 
   // now set new texture coordinates.

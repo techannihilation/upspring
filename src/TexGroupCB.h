@@ -5,7 +5,7 @@
 //-----------------------------------------------------------------------
 
 public:
-TexGroupUI(TextureGroupHandler* tgh, TextureHandler* th);
+TexGroupUI(TextureGroupHandler* tgh, std::shared_ptr<TextureHandler> th);
 ~TexGroupUI();
 
 private:
@@ -24,4 +24,4 @@ void LoadGroup();
 public:
 TextureGroup* current;
 TextureGroupHandler* texGroupHandler;
-TextureHandler* textureHandler;
+std::shared_ptr<TextureHandler> textureHandler;

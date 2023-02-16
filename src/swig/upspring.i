@@ -68,6 +68,7 @@ namespace std {
 %include "../IEditor.h"
 %include "ScriptInterface.h"
 %include "../Image.h"
+%include "../Texture.h"
 //%include "../Fltk.h"
 
 %feature("immutable") MdlObject::parent;
@@ -108,35 +109,35 @@ bool _upsFileOpenDlg (const char *msg, const char *pattern, std::string& fn) { r
 %}
 
 inline %{
+#include "../Texture.h"
 #include "../Model.h"
 
 namespace UpsScript {
-	TextureHandler *textureHandler = new TextureHandler();
+	auto textureHandler = std::make_shared<TextureHandler>();
 
 
-	void LoadArchives() {
+	void load_archive(const std::string &pArchive) {
+		std::cout << "Loading 3DO textures from archive: " << pArchive << std::endl;
+		textureHandler->Load3DO(pArchive);
+	}
+
+	void load_archives() {
 		ArchiveList archives;
 		archives.Load();
 
 		for (auto it = archives.archives.begin(); it !=archives.archives.end(); ++it) {
-			std::cout << "Loading 3DO textures from archive: " << it->c_str() << std::endl;
-			textureHandler->Load3DO(it->c_str());
+			load_archive(*it);
 		}
 	};
 
-	void LoadArchive(const std::string &pArchive) {
-		std::cout << "Loading 3DO textures from archive: " << pArchive << std::endl;
-		textureHandler->Load3DO(pArchive.c_str());
-	}
-
-	void TexturesToModel(Model *pModel) {
-		pModel->root->Load3DOTextures(textureHandler);
+	void textures_to_model(Model *pModel) {
+		pModel->load_3do_textures(textureHandler);
 	}
 }
 %}
 
 namespace UpsScript {
-	void LoadArchives();
-	void LoadArchive(const std::string &pArchive);
-	void TexturesToModel(Model *pModel);
+	void load_archives();
+	void load_archive(const std::string &pArchive);
+	void textures_to_model(Model *pModel);
 }

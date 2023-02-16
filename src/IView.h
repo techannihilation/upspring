@@ -28,7 +28,7 @@ class IView {
   virtual int GetRenderMode() = 0;
   virtual Vector3 GetCameraPos() = 0;
   virtual float GetConfig(int cfg) = 0;
-  virtual TextureHandler* GetTextureHandler() = 0;
+  virtual std::shared_ptr<TextureHandler> GetTextureHandler() = 0;
   virtual bool IsSelecting() = 0;  // currently in a selection render?
 };
 

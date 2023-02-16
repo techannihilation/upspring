@@ -10,11 +10,11 @@
 #include "EditorUI.h"
 #include "CfgParser.h"
 
-TexGroupUI::TexGroupUI(TextureGroupHandler* tgh, TextureHandler* th)
+TexGroupUI::TexGroupUI(TextureGroupHandler* tgh, std::shared_ptr<TextureHandler> th)
     : texGroupHandler(tgh), textureHandler(th) {
   CreateUI();
 
-  auto textures = th->Textures();
+  auto textures = th->textures();
   for (auto ti = textures.begin(); ti != textures.end(); ++ti) {
     texBrowser->AddTexture(ti->second);
   }

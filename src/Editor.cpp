@@ -204,7 +204,7 @@ void EditorUI::Initialize() {
   SetModel(new Model);
   UpdateTitle();
 
-  textureHandler = new TextureHandler();
+  textureHandler = std::make_shared<TextureHandler>();
 
   for (auto arch = archives.archives.begin(); arch != archives.archives.end(); ++arch) {
     textureHandler->Load3DO(arch->c_str());
@@ -272,8 +272,6 @@ EditorUI::~EditorUI() {
     delete textureGroupHandler;
     textureGroupHandler = nullptr;
   }
-
-  SAFE_DELETE(textureHandler);
 
   SAFE_DELETE(objectViewer);
   SAFE_DELETE(modelDrawer);

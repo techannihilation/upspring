@@ -167,6 +167,7 @@ class PolyMesh : public Geometry {
 };
 
 struct MdlObject {
+public:
   MdlObject();
   virtual ~MdlObject();
 
@@ -189,7 +190,7 @@ struct MdlObject {
 
   void FlipPolygons();
 
-  void Load3DOTextures(TextureHandler* th);
+  void load_3do_textures(std::shared_ptr<TextureHandler> par_texhandler);
 
   bool HasSelectedParent();
 
@@ -345,9 +346,16 @@ struct Model {
 
   MdlObject* root;
 
+  Model(const Model& rhs) = delete;
+  void operator=(const Model& rhs) = delete;
+
+  void load_3do_textures(std::shared_ptr<TextureHandler> par_texture_handler) {
+    texture_handler_ = par_texture_handler;
+
+    root->load_3do_textures(par_texture_handler);
+  }
  private:
-  Model(const Model& /*c*/) {}
-  void operator=(const Model& /*c*/) {}
+  std::shared_ptr<TextureHandler> texture_handler_;
 };
 
 MdlObject* Load3DSObject(const char* filename, IProgressCtl& progctl);

@@ -131,18 +131,14 @@ bool Texture::VideoInit() {
 // TextureHandler
 // ------------------------------------------------------------------------------------------------
 
-TextureHandler::TextureHandler() = default;
-
-TextureHandler::~TextureHandler() { textures.clear(); }
-
-std::shared_ptr<Texture> TextureHandler::GetTexture(const std::string& name) {
+std::shared_ptr<Texture> TextureHandler::texture(const std::string& name) {
   std::string tmp = to_lower(name);
 
-  auto ti_it = textures.find(tmp);
-  if (ti_it == textures.end()) {
+  auto ti_it = textures_.find(tmp);
+  if (ti_it == textures_.end()) {
     tmp += "00";
-    ti_it = textures.find(tmp);
-    if (ti_it == textures.end()) {
+    ti_it = textures_.find(tmp);
+    if (ti_it == textures_.end()) {
       spdlog::warn("Texture '{}' not found", tmp);
       return nullptr;
     }
@@ -150,6 +146,17 @@ std::shared_ptr<Texture> TextureHandler::GetTexture(const std::string& name) {
   }
 
   return ti_it->second;
+}
+
+bool TextureHandler::has_team_color(const std::string& texture_name) {
+  auto tmp = to_lower(texture_name);
+
+  // Trim 00 suffix if needed.
+  if (tmp.substr(tmp.length() - 2) == "00") {
+    tmp = tmp.substr(0, tmp.length() - 2);
+  }
+
+  return teamcolors_.find(tmp) != teamcolors_.end();
 }
 
 bool TextureHandler::LoadFiltered(const std::string& par_archive_path,
@@ -185,7 +192,7 @@ bool TextureHandler::LoadFiltered(const std::string& par_archive_path,
     if (myExt.empty()) {
       continue;
     }
-    if (mSupportedExtensions.find(myExt) == mSupportedExtensions.end()) {
+    if (supported_extensions_.find(myExt) == supported_extensions_.end()) {
       // Not a supported file.
       continue;
     }
@@ -196,7 +203,7 @@ bool TextureHandler::LoadFiltered(const std::string& par_archive_path,
       continue;
     }
 
-    if (textures.find(internal_name) != textures.end()) {
+    if (textures_.find(internal_name) != textures_.end()) {
       spdlog::debug("Skipping texture '{}' its already known", internal_name);
       continue;
     }
@@ -216,10 +223,26 @@ bool TextureHandler::LoadFiltered(const std::string& par_archive_path,
     }
 
     // Assign to map
-    textures[tex->name] = tex;
+    textures_[tex->name] = tex;
   }
 
-  spdlog::debug("Loaded '{}' textures", textures.size());
+  // Read teamcolors.
+  if (archive->FileExists("unittextures/tatex/teamtex.txt")) {
+    std::vector<std::uint8_t> buff;
+    archive->GetFileByName("unittextures/tatex/teamtex.txt", buff);
+
+    std::stringstream stringstream(std::string((char *)buff.data(), buff.size()));
+
+    // teamcolors_.reserve(32);
+    std::string line;
+    while (std::getline(stringstream, line)) {
+      line.erase(std::remove(line.begin(), line.end(), '\r'), line.end());
+      line.erase(std::remove(line.begin(), line.end(), '\n'), line.end());
+      teamcolors_.insert(to_lower(line));
+    }
+  }
+
+  spdlog::debug("Loaded '{}' textures and '{}' teamcolors", textures_.size(), teamcolors_.size());
 
   return true;
 }
@@ -228,7 +251,7 @@ bool TextureHandler::LoadFiltered(const std::string& par_archive_path,
 // TextureGroupHandler
 // ------------------------------------------------------------------------------------------------
 
-TextureGroupHandler::TextureGroupHandler(TextureHandler* par_handler) : textureHandler(par_handler) {}
+TextureGroupHandler::TextureGroupHandler(std::shared_ptr<TextureHandler> par_handler) : textureHandler(par_handler) {}
 
 TextureGroupHandler::~TextureGroupHandler() {
   for (auto& group : groups) {
@@ -292,7 +315,7 @@ TextureGroup* TextureGroupHandler::LoadGroup(CfgList* gc) {
   for (auto& child : texlist->childs) {
     auto* l = dynamic_cast<CfgLiteral*>(child.value);
     if ((l != nullptr) && !l->value.empty()) {
-      auto texture = textureHandler->GetTexture(l->value);
+      auto texture = textureHandler->texture(l->value);
       if (texture != nullptr) {
         texGroup->textures.emplace(texture);
       } else {
