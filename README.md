@@ -56,6 +56,8 @@ Upspring is a model editor for .3do and .s3o files, it's able to convert from .3
     Upspring --run runscripts/convert.lua -- ~/.spring/games/TA.sdd/objects3d/cdevastator.3do
     ```
 
+The given lua script here needs [lfs](https://lunarmodules.github.io/luafilesystem/) you can install it with [luarocks](https://github.com/luarocks/luarocks/wiki/Download).
+
 
 ## Authors
 
