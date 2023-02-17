@@ -8,6 +8,20 @@ Upspring is a model editor for .3do and .s3o files, it's able to convert from .3
 - Lot's of helpers which make you the life in the GUI easier.
 - LUA API via the "--run" option as well as lua plugins.
 
+## Roadmap
+
+### Soon/important
+- add support for directories as "archives".
+- add a way to convert multiple .3do's into a single atlas.
+
+### Maybe
+- Extract object textures from an atlas.
+- Combine object's again into an atlas.
+
+### Unlikely
+- Replace the abonded FLTK2 with GTK 3/4.
+
+
 ## Install
 
 - Linux
