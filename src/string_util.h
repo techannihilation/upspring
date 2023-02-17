@@ -24,18 +24,7 @@ inline std::string join(const std::vector<std::string> alist) {
                              [](auto& a, auto& b) { return a + "," + b; });
 }
 
-#if defined(__linux__)
-inline std::string path_to_string(const std::filesystem::path& par_inpath) 
-{
-  return par_inpath.string();
-}
-
-inline const char *path_to_cstring(const std::filesystem::path& par_inpath)
-{
-  return par_inpath.c_str();
-}
-
-#elif defined(_WIN32)
+#if defined(_WIN32)
 inline std::wstring s2ws(const std::string& s)
 {
 	const size_t slength = s.length();
@@ -57,15 +46,5 @@ inline std::string ws2s(const std::wstring& s)
 	std::string r(buf, len);
 	delete[] buf;
 	return r;
-}
-
-inline std::string path_to_string(const std::filesystem::path& par_inpath) 
-{
-  return ws2s(par_inpath.wstring());
-}
-
-inline const char *path_to_cstring(const std::filesystem::path& par_inpath)
-{
-  return path_to_string(par_inpath).c_str();
 }
 #endif

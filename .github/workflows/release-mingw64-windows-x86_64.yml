@@ -12,7 +12,7 @@ jobs:
       matrix:
         include:
           - { sys: MINGW64, cpu: x86_64, sysl: mingw64, preset: msys2-mingw64-release }
-          # - { sys: CLANG64, cpu: x86_64, sysl: clang64, preset: msys2-clang64-release }
+          - { sys: CLANG64, cpu: x86_64, sysl: clang64, preset: msys2-clang64-release }
     runs-on: windows-latest
     name: 🚧 Build ${{matrix.sys}}
     defaults:
