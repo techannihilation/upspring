@@ -2,7 +2,7 @@ name: "Release 'upspring-windows-x86_64' on Tag"
 
 on:
   push:
-    branchs: [main]
+    branches: [main]
     tags:
       - '*'
 
