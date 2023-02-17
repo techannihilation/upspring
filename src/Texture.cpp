@@ -57,20 +57,18 @@ Texture::Texture(std::vector<uchar>& par_data, const std::string& par_path, cons
 }
 
 bool Texture::Load(const std::string& par_filename, const std::string& par_hintpath) {
-  name = fltk::filename_name(par_filename.c_str());
-  glIdent = 0;
-
   bool found = false;
+  name = std::filesystem::path(par_filename).filename();
   std::filesystem::path filename;
-  if (!par_hintpath.empty()) {
+  if (!name.empty()) {
     // Direct
-    filename = std::filesystem::path(par_hintpath) / par_filename;
+    filename = std::filesystem::path(par_hintpath) / name;
     if (std::filesystem::exists(filename)) {
       found = true;
     } else {
       std::filesystem::path my_hp(par_hintpath);
       for (int i = 0; i <= 3; ++i) {
-        filename = my_hp / "unittextures" / par_filename;
+        filename = my_hp / "unittextures" / name;
         if (std::filesystem::exists(filename)) {
           found = true;
           break;
@@ -81,8 +79,8 @@ bool Texture::Load(const std::string& par_filename, const std::string& par_hintp
       }
     }
   }
-  if (!found && !textureLoadDir.empty()) {
-    filename = std::filesystem::path(textureLoadDir).append(par_filename);
+  if (!found && !textureLoadDir.empty() && !name.empty()) {
+    filename = std::filesystem::path(textureLoadDir) / name;
     if (std::filesystem::exists(filename)) {
       found = true;
     }

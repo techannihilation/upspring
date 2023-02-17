@@ -14,6 +14,8 @@
 
 #include <memory>
 
+#include "spdlog/spdlog.h"
+
 #define MAPPING_S3O 0
 #define MAPPING_3DO 1
 

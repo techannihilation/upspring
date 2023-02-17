@@ -37,13 +37,14 @@ void TestGLError() {
 }
 
 void RenderData::Invalidate() {
-  glDeleteLists(drawList, 1);
+  if (drawList != 0) {
+    glDeleteLists(drawList, 1);
+  }
   drawList = 0;
 }
 
 RenderData::~RenderData() {
-  if (drawList) glDeleteLists(drawList, 1);
-  drawList = 0;
+  Invalidate();
 }
 
 ModelDrawer::ModelDrawer() {
@@ -80,14 +81,15 @@ void ModelDrawer::SetupGL() {
 
   GLenum err;
   if ((err = glewInit()) != GLEW_OK) {
-    fltk::message("Failed to initialize GLEW: %s", glewGetErrorString(err));
+    spdlog::error("Failed to initialize GLEW: {}", (const char *)glewGetErrorString(err));
   } else {
     canRenderS3O = 0;
     // see if S3O's can be rendered properly
     if (GLEW_ARB_multitexture && GLEW_ARB_texture_env_combine) {
       canRenderS3O = 1;
-    } else
-      fltk::message("Basic S3O rendering is not possible with this graphics card");
+    } else {
+      spdlog::warn("Basic S3O rendering is not possible with this graphics card");
+    }
 
     if (GLEW_ARB_fragment_program && GLEW_ARB_vertex_program && GLEW_ARB_texture_cube_map) {
       s3oFP = LoadFragmentProgram((ups::config::get().app_path() / "data" / "shaders" / "s3o.fp").string());
@@ -100,7 +102,7 @@ void ModelDrawer::SetupGL() {
 
         nv_dds::CDDSImage image;
         if (!image.load((ups::config::get().app_path() / "data" / "textures" / "skybox.dds").string())) {
-          fltk::message("Failed to load textures/skybox.dds");
+          spdlog::warn("Failed to load textures/skybox.dds");
 
           canRenderS3O = 1;
         }
@@ -114,12 +116,14 @@ void ModelDrawer::SetupGL() {
           fltk::message("Can't upload cubemap texture skybox.dds");
           canRenderS3O = 1;
         }
-      } else
+      } else {
         canRenderS3O = 1;
-    } else
-      fltk::message(
+      }
+    } else {
+      spdlog::warn(
           "Full S3O rendering is not possible with this graphics card, \nself-illumination and "
           "reflection won't be visible");
+    }
   }
 
   GLUquadricObj* sphere = gluNewQuadric();
@@ -127,14 +131,14 @@ void ModelDrawer::SetupGL() {
 
   sphereList = glGenLists(1);
   glNewList(sphereList, GL_COMPILE);
-  gluSphere(sphere, 1.0f, 16, 8);
+  gluSphere(sphere, 1.0F, 16, 8);
   glEndList();
 
   gluDeleteQuadric(sphere);
 
   glGenTextures(1, &whiteTexture);
   glBindTexture(GL_TEXTURE_2D, whiteTexture);
-  float pixel = 1.0f;
+  float pixel = 1.0F;
   glTexImage2D(GL_TEXTURE_2D, 0, 3, 1, 1, 0, GL_LUMINANCE, GL_FLOAT, &pixel);
 }
 
@@ -315,7 +319,9 @@ void ModelDrawer::Render(Model* mdl, IView* v, const Vector3& teamColor) {
   if (!glewInitialized) SetupGL();
 
   model = mdl;
-  if (!model->root) return;
+  if (model->root == nullptr) {
+    return;
+  }
 
   int S3ORendering = 0;
   MdlObject* root = model->root;
