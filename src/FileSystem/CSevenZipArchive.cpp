@@ -138,7 +138,7 @@ CSevenZipArchive::CSevenZipArchive(const std::string& name) : IArchive(name), is
   isOpen = true;
 
   // Get contents of archive and store name->int mapping
-  for (uint i = 0; i < db.NumFiles; ++i) {
+  for (std::size_t i = 0; i < db.NumFiles; ++i) {
     const bool isDir = SzArEx_IsDir(&db, i);
 
     if (isDir) {
@@ -195,9 +195,9 @@ CSevenZipArchive::~CSevenZipArchive() {
   SzFree(nullptr, tempBuf);
 }
 
-uint CSevenZipArchive::NumFiles() const { return fileData.size(); }
+std::size_t CSevenZipArchive::NumFiles() const { return fileData.size(); }
 
-bool CSevenZipArchive::GetFile(uint fid, std::vector<std::uint8_t>& buffer) {
+bool CSevenZipArchive::GetFile(std::size_t fid, std::vector<std::uint8_t>& buffer) {
   // Get 7zip to decompress it
   size_t offset = 0;
   size_t outSizeProcessed = 0;
@@ -215,12 +215,12 @@ bool CSevenZipArchive::GetFile(uint fid, std::vector<std::uint8_t>& buffer) {
   return false;
 }
 
-void CSevenZipArchive::FileInfo(uint fid, std::string& name, int& size, int& mode) const {
-  name = fileData[fid].origName;
-  size = fileData[fid].size;
-  mode = fileData[fid].mode;
+void CSevenZipArchive::FileInfo(std::size_t fid, std::string& par_name, int& par_size, int& par_mode) const {
+  par_name = fileData[fid].origName;
+  par_size = fileData[fid].size;
+  par_mode = fileData[fid].mode;
 }
 
 #if 0
-uint CSevenZipArchive::GetCrc32(uint fid) { return fileData[fid].crc; }
+std::size_t CSevenZipArchive::GetCrc32(std::size_t fid) { return fileData[fid].crc; }
 #endif

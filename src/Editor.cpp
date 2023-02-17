@@ -74,7 +74,7 @@ const char* FileChooserPattern =
 // ------------------------------------------------------------------------------------------------
 
 bool ArchiveList::Load() {
-  std::string const fn = ups::config::get().app_path() / ArchiveListFile;
+  std::string const fn = (ups::config::get().app_path() / ArchiveListFile).string();
   CfgList* cfg = CfgValue::LoadFile(fn.c_str());
 
   if (cfg == nullptr) {
@@ -95,7 +95,7 @@ bool ArchiveList::Load() {
 }
 
 bool ArchiveList::Save() {
-  std::string const fn = ups::config::get().app_path() / ArchiveListFile;
+  std::string const fn = (ups::config::get().app_path() / ArchiveListFile).string();
   CfgWriter writer(fn.c_str());
   if (writer.IsFailed()) {
     return false;
@@ -211,7 +211,7 @@ void EditorUI::Initialize() {
   }
 
   textureGroupHandler = new TextureGroupHandler(textureHandler);
-  textureGroupHandler->Load((ups::config::get().app_path() / TextureGroupConfig).c_str());
+  textureGroupHandler->Load((ups::config::get().app_path() / TextureGroupConfig).string());
 
   UpdateTextureGroups();
   InitTexBrowser();
@@ -268,7 +268,7 @@ EditorUI::~EditorUI() {
   SAFE_DELETE(uiRotator);
 
   if (textureGroupHandler != nullptr) {
-    textureGroupHandler->Save((ups::config::get().app_path() / TextureGroupConfig).c_str());
+    textureGroupHandler->Save((ups::config::get().app_path() / TextureGroupConfig).string());
     delete textureGroupHandler;
     textureGroupHandler = nullptr;
   }
@@ -1032,7 +1032,7 @@ void EditorUI::menuSettingsShowArchiveList() {
 // Show texture group window
 void EditorUI::menuSettingsTextureGroups() {
   TexGroupUI const texGroupUI(textureGroupHandler, textureHandler);
-  textureGroupHandler->Save((ups::config::get().app_path() /  TextureGroupConfig).c_str());
+  textureGroupHandler->Save((ups::config::get().app_path() /  TextureGroupConfig).string());
 
   UpdateTextureGroups();
   InitTexBrowser();
@@ -1058,7 +1058,7 @@ void EditorUI::menuSetSpringDir() {
 void EditorUI::menuSettingsRestoreViews() { LoadSettings(); }
 
 void EditorUI::SaveSettings() {
-  std::string const path = ups::config::get().app_path() /  ViewSettingsFile;
+  std::string const path = (ups::config::get().app_path() /  ViewSettingsFile).string();
   CfgWriter writer(path.c_str());
   if (writer.IsFailed()) {
     fltk::message("Failed to open %s for writing view settings", path.c_str());
@@ -1070,7 +1070,7 @@ void EditorUI::SaveSettings() {
 }
 
 void EditorUI::LoadSettings() {
-  std::string const path = ups::config::get().app_path() / ViewSettingsFile;
+  std::string const path = (ups::config::get().app_path() / ViewSettingsFile).string();
   CfgList* cfg = CfgValue::LoadFile(path.c_str());
   if (cfg != nullptr) {
     SerializeConfig(*cfg, false);
@@ -1079,7 +1079,7 @@ void EditorUI::LoadSettings() {
 }
 
 void EditorUI::LoadToolWindowSettings() {
-  std::string const path = ups::config::get().app_path() / ViewSettingsFile;
+  std::string const path = (ups::config::get().app_path() / ViewSettingsFile).string();
   CfgList* cfg = CfgValue::LoadFile(path.c_str());
   if (cfg != nullptr) {
     // tool window visibility
@@ -1260,7 +1260,7 @@ void run_script(CLI::App &app, const std::string& par_script_file) {
   // Find script
   auto script_file = par_script_file;
   if (!std::filesystem::exists(par_script_file)) {
-    script_file = ups::config::get().app_path() / par_script_file;
+    script_file = (ups::config::get().app_path() / par_script_file).string();
     if (!std::filesystem::exists(script_file)) {
       spdlog::error("Haven't found script '{}', last try was: '{}'", par_script_file, script_file);
       std::exit(1);
@@ -1375,7 +1375,7 @@ int main(int argc, char* argv[]) {
 
     auto lsps = find_files(ups::config::get().app_path() / "scripts" / "plugins", [](const std::filesystem::path& par_path) -> bool { return par_path.extension() == ".lua"; }, false);
     for (auto &lsp : lsps) {
-      if (luaL_dofile(lua_state, lsp.c_str()) != 0) {
+      if (luaL_dofile(lua_state, lsp.string().c_str()) != 0) {
         const char* err = lua_tostring(lua_state, -1);
         fltk::message("Error while executing \'%s\': %s", lsp.c_str(), err);
       }

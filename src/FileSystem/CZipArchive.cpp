@@ -69,9 +69,9 @@ CZipArchive::~CZipArchive() {
 
 bool CZipArchive::IsOpen() const { return zipHandle != nullptr; }
 
-uint CZipArchive::NumFiles() const { return fileData.size(); }
+std::size_t CZipArchive::NumFiles() const { return fileData.size(); }
 
-void CZipArchive::FileInfo(uint fid, std::string& name, int& size, int& mode) const {
+void CZipArchive::FileInfo(std::size_t fid, std::string& name, int& size, int& mode) const {
   //	assert(IsFileId(fid));
 
   name = fileData[fid].fileName;
@@ -80,7 +80,7 @@ void CZipArchive::FileInfo(uint fid, std::string& name, int& size, int& mode) co
 }
 
 #if 0
-uint CZipArchive::GetCrc32(uint fid) {
+std::size_t CZipArchive::GetCrc32(std::size_t fid) {
   //	assert(IsFileId(fid));
 
   return fileData[fid].crc;
@@ -90,7 +90,7 @@ uint CZipArchive::GetCrc32(uint fid) {
 // To simplify things, files are always read completely into memory from
 // the zip-file, since zlib does not provide any way of reading more
 // than one file at a time
-bool CZipArchive::GetFile(uint fid, std::vector<std::uint8_t>& buffer) {
+bool CZipArchive::GetFile(std::size_t fid, std::vector<std::uint8_t>& buffer) {
   if (mz_zip_goto_entry(zipHandle, fileData[fid].pos) != MZ_OK) {
     spdlog::debug("Failed to goto zip entry");
     return false;

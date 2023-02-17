@@ -94,8 +94,8 @@ class TextureGroupHandler {
   TextureGroupHandler(std::shared_ptr<TextureHandler> th);
   ~TextureGroupHandler();
 
-  bool Load(const char* fname);
-  bool Save(const char* fname);
+  bool Load(const std::string& par_filename);
+  bool Save(const std::string& par_filename);
 
   static CfgList* MakeConfig(TextureGroup* tg);
   TextureGroup* LoadGroup(CfgList* cfg);

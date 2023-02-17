@@ -19,7 +19,7 @@ class CTAPalette {
   }
 
   void Init() {
-    std::string fn = ups::config::get().app_path() / "data" / "palette.pal";
+    std::string fn = (ups::config::get().app_path() / "data" / "palette.pal").string();
     FILE* f = fopen(fn.c_str(), "rb");
     if (!f) {
       if (!error) {

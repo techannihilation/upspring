@@ -507,7 +507,7 @@ bool Model::ConvertToS3O(std::string textureName, int texw, int texh) {
 
   auto tex1 = std::make_shared<Texture>();
   tex1->SetImage(img);
-  tex1->name = std::filesystem::path(textureName).filename();
+  tex1->name = std::filesystem::path(textureName).filename().string();
   SetTexture(0, tex1);
 
   // now set new texture coordinates.

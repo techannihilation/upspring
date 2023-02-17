@@ -19,13 +19,13 @@ class CSevenZipArchive : public IArchive {
   explicit CSevenZipArchive(const std::string& name);
   virtual ~CSevenZipArchive();
 
-  virtual uint NumFiles() const override;
-  virtual void FileInfo(uint fid, std::string& name, int& size, int& mode) const override;
+  virtual std::size_t NumFiles() const override;
+  virtual void FileInfo(std::size_t fid, std::string& name, int& size, int& mode) const override;
 
-  virtual bool GetFile(uint fid, std::vector<std::uint8_t>& buffer) override;
+  virtual bool GetFile(std::size_t fid, std::vector<std::uint8_t>& buffer) override;
 
 #if 0
-  virtual unsigned GetCrc32(uint fid);
+  virtual unsigned GetCrc32(std::size_t fid);
 #endif
 
  private:
@@ -42,7 +42,7 @@ class CSevenZipArchive : public IArchive {
      */
     int size;
     std::string origName;
-    uint crc;
+    std::size_t crc;
     /**
      * How many bytes of files have to be unpacked to get to this file.
      * This either equal to size, or is larger, if there are other files

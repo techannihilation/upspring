@@ -15,13 +15,13 @@ class CZipArchive : public IArchive {
 
   virtual bool IsOpen() const;
 
-  virtual uint NumFiles() const override;
-  virtual void FileInfo(uint fid, std::string& name, int& size, int& mode) const override;
+  virtual std::size_t NumFiles() const override;
+  virtual void FileInfo(std::size_t fid, std::string& name, int& size, int& mode) const override;
 
-  virtual bool GetFile(uint fid, std::vector<std::uint8_t>& buffer) override;
+  virtual bool GetFile(std::size_t fid, std::vector<std::uint8_t>& buffer) override;
 
 #if 0
-  virtual uint GetCrc32(uint fid);
+  virtual std::size_t GetCrc32(std::size_t fid);
 #endif
 
  protected:

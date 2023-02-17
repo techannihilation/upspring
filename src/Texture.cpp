@@ -94,7 +94,7 @@ bool Texture::Load(const std::string& par_filename, const std::string& par_hintp
 
   auto img = std::make_shared<Image>();
   spdlog::debug("Loading {}", filename.string());
-  if (!img->load(filename)) {
+  if (!img->load(filename.string())) {
     return false;
   }
 
@@ -188,7 +188,7 @@ bool TextureHandler::LoadFiltered(const std::string& par_archive_path,
     }
 
     // Extension checking
-    auto myExt = std::filesystem::path(name).extension();
+    auto myExt = std::filesystem::path(name).extension().string();
     if (myExt.empty()) {
       continue;
     }
@@ -260,8 +260,8 @@ TextureGroupHandler::~TextureGroupHandler() {
   groups.clear();
 }
 
-bool TextureGroupHandler::Load(const char* fn) {
-  CfgList* cfg = CfgValue::LoadFile(fn);
+bool TextureGroupHandler::Load(const std::string& par_filename) {
+  CfgList* cfg = CfgValue::LoadFile(par_filename.c_str());
 
   if (cfg == nullptr) {
     return false;
@@ -280,11 +280,11 @@ bool TextureGroupHandler::Load(const char* fn) {
   return true;
 }
 
-bool TextureGroupHandler::Save(const char* fn) {
+bool TextureGroupHandler::Save(const std::string& par_filename) {
   // open a cfg writer
-  CfgWriter writer(fn);
+  CfgWriter writer(par_filename.c_str());
   if (writer.IsFailed()) {
-    fltk::message("Unable to save texture groups to %s\n", fn);
+    fltk::message("Unable to save texture groups to %s\n", par_filename);
     return false;
   }
 

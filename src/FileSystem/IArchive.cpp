@@ -6,7 +6,7 @@
 
 // #include "System/StringUtil.h"
 
-uint IArchive::FindFile(const std::string& filePath) const
+std::size_t IArchive::FindFile(const std::string& filePath) const
 {
 	const std::string normalizedFilePath = to_lower(filePath);
 	const auto f_it = lcNameIndex.find(normalizedFilePath);
@@ -35,7 +35,7 @@ bool IArchive::CalcHash(uint32_t fid, uint8_t hash[sha512::SHA_LEN], std::vector
 
 bool IArchive::GetFileByName(const std::string& name, std::vector<std::uint8_t>& buffer)
 {
-	const uint fid = FindFile(name);
+	const std::size_t fid = FindFile(name);
 
 	if (!IsFileId(fid)) {
 		return false;

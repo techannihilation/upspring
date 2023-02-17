@@ -119,6 +119,7 @@ target_sources(${PROJECT_NAME} PRIVATE
     Referenced.h
     RotatorUI.cpp
     Spline.h
+    string_util.h
     TexBuilderCB.h
     TexBuilderUI.cpp
     TexGroupCB.h

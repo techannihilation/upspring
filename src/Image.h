@@ -46,7 +46,7 @@ class Image {
   inline const std::string& error() const { return error_; };
 
   // Image info accessors
-  inline uint id() const { return ilid_; }
+  inline std::uint32_t id() const { return ilid_; }
   inline int width() const { return width_; }
   inline int height() const { return height_; }
   inline int bpp() const { return bpp_; }
@@ -56,7 +56,7 @@ class Image {
 
   // Image Data
   std::uint8_t* data();
-  inline uint size() const { return static_cast<uint>(width_) * height_ * bpp_; }
+  inline std::uint32_t size() const { return static_cast<std::uint32_t>(width_) * height_ * bpp_; }
 
   /**
    * Image manipulation
@@ -83,7 +83,7 @@ class Image {
  const std::string& path() const { return path_; }
 
  protected:
-  uint ilid_;
+  std::uint32_t ilid_;
 
   bool has_error_;
   std::string error_;
