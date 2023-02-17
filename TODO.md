@@ -17,6 +17,7 @@ Here I/we note the things that will/could be done in Upspring.
 
 ### Unlikely
 - Replace the abonded FLTK2 with GTK 3/4.
+- Use assimp for model loading/saving.
 
 
 ## Old entries by previous maintainers (cleaned up the stuff that is done)
