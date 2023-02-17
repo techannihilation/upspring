@@ -1,20 +1,35 @@
 # Changelog
 
-## Unreleased
+## v0.0.14
+
+### General
+
+- You can now open Upspring with any CWD (current working directory), it will find it's assets next to the executable.
+
+### Image changes
+
+- When you open a model, Upspring will locate the textures correctly in "../unittextures/tatex" or "../unittextures".
+- Reload of textures works now.
+- Teamcolors work now as they should (red RGBA channel will be copied to the green channel).
+- Images now consume much lesser memory everything has been cleaned up.
+- The single model atlas now uses much lesser space.
+
+### Archives
+
+- Upspring can open 7zip archives now, thx to code from the spring rts engine, directory support will follow.
+
+### Commandline changes
 
 - Upspring now open's your Models over "Open with...".
 
   ```bash
   Upspring ~/.spring/games/TA.sdd/objects3d/cdevastator.3do
   ```
-
 - The commandline has been reworked, you can now do:
 
   ```bash
   Upspring -r runscripts/convert.lua -- ~/.spring/games/TA.sdd/objects3d/cdevastator.3do
   ```
-
-- A lot of refactoring has been done, soon you will see a converter which allows you to convert many units to a single atlas.
 
 ## v0.0.11
 
