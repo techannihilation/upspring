@@ -68,6 +68,7 @@ jobs:
       run: |
         mkdir Upspring
         cp -pfr out/build/${PRESET}/src/* Upspring/
+        cp README.md TODO.md LICENSE.html CHANGELOG.md Upspring/
         rm -rf Upspring/{CMakeFiles,swig,cmake_install.cmake,libUpspring.dll.a,upspringLUA_wrap.cxx}
       env:
         PRESET: ${{matrix.preset}}
