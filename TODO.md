@@ -14,6 +14,7 @@ Here I/we note the things that will/could be done in Upspring.
 
 - Extract object textures from an atlas.
 - Combine object's again into an atlas.
+- Remove Texture class, Image class is enough.
 
 ### Unlikely
 - Replace the abonded FLTK2 with GTK 3/4.
