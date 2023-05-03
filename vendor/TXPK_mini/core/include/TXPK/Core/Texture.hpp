@@ -49,7 +49,7 @@ namespace txpk
 		* \param ilID Lib devil image id.
 		* \return Returns whether loading the file was successful or not.
 		*/
-		bool loadFromIL(uint ilID);
+		bool loadFromIL(ILuint ilID);
 		/**
 		* \brief Loads raw pixel data into a texture.
 		* \param data The actual pixel data.

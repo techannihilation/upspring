@@ -29,7 +29,7 @@ namespace txpk
 		raw = other.raw;
 	}
 
-	bool Texture::loadFromIL(uint pIlID)
+	bool Texture::loadFromIL(ILuint pIlID)
 	{
 		ilBindImage(pIlID);
 		ilConvertImage(IL_RGBA, IL_UNSIGNED_BYTE);
