@@ -10,4 +10,4 @@ lib = require("lib")
 ---------------------------------
 -- Actual code
 ---------------------------------
-AtlasFrom3DOArchive("/home/pcdummy/Projekte/techannihilation/TA.zip")
+upspring.make_archive_atlas("/home/pcdummy/Projekte/techannihilation/TA.zip", "/home/pcdummy/Projekte/techannihilation/TA_Atlas.png")

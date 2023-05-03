@@ -39,11 +39,13 @@ target_link_libraries (${PROJECT_NAME}
     DevIL::IL
     DevIL::ILU
     DevIL::ILUT
+
     lib3ds
     7zip
     minizip-ng
     spdlog
     CLI11
+    TXPKCore
 )
 
 target_link_libraries (${PROJECT_NAME}
@@ -60,6 +62,8 @@ if ("${CMAKE_BUILD_TYPE}" MATCHES "Debug")
 endif ()
 
 target_sources(${PROJECT_NAME} PRIVATE
+    Atlas/Atlas.cpp
+    Atlas/Atlas.hpp
     FileIO/3DO.cpp
     FileIO/3DS.cpp
     FileIO/OBJ.cpp

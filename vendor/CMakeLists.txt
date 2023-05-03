@@ -11,3 +11,5 @@ option(MZ_DECOMPRESS_ONLY "" ON)
 add_subdirectory(minizip-ng)
 
 add_subdirectory(spdlog)
+
+add_subdirectory(TXPK_mini)

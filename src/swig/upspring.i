@@ -111,6 +111,7 @@ bool _upsFileOpenDlg (const char *msg, const char *pattern, std::string& fn) { r
 inline %{
 #include "../Texture.h"
 #include "../Model.h"
+#include "../Atlas/Atlas.hpp"
 
 namespace UpsScript {
 	auto textureHandler = std::make_shared<TextureHandler>();
@@ -133,6 +134,11 @@ namespace UpsScript {
 	void textures_to_model(Model *pModel) {
 		pModel->load_3do_textures(textureHandler);
 	}
+
+	void make_archive_atlas(const std::string &archive_par, const std::string &savepath_par) {
+		std::cout << "Making an atlas from the archive: " << archive_par << std::endl;
+		Atlas::make_from_archive(archive_par, savepath_par);
+	}
 }
 %}
 
@@ -140,4 +146,5 @@ namespace UpsScript {
 	void load_archives();
 	void load_archive(const std::string &pArchive);
 	void textures_to_model(Model *pModel);
+	void make_archive_atlas(const std::string &archive_par, const std::string &savepath_par);
 }

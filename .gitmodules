@@ -10,3 +10,6 @@
 [submodule "vendor/CLI11"]
 	path = vendor/CLI11
 	url = https://github.com/CLIUtils/CLI11.git
+[submodule "vendor/DevIL"]
+	path = vendor/DevIL
+	url = https://github.com/DentonW/DevIL.git

@@ -45,7 +45,7 @@ Texture::Texture(const std::string& par_filename, const std::string& hintpath) :
 }
 
 
-Texture::Texture(std::vector<uchar>& par_data, const std::string& par_path, const std::string& par_name) : name(par_name), glIdent(0) {
+Texture::Texture(std::vector<std::uint8_t>& par_data, const std::string& par_path, const std::string& par_name) : name(par_name), glIdent(0) {
   auto img = std::make_shared<Image>();
   img->path(par_path);
   img->name(par_name);
@@ -282,7 +282,7 @@ bool TextureGroupHandler::Save(const std::string& par_filename) {
   // open a cfg writer
   CfgWriter writer(par_filename.c_str());
   if (writer.IsFailed()) {
-    fltk::message("Unable to save texture groups to %s\n", par_filename);
+    fltk::message("Unable to save texture groups to %s\n", par_filename.c_str());
     return false;
   }
 
