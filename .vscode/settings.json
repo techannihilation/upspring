@@ -102,7 +102,9 @@
     "*.xpm": "cpp",
     "coroutine": "cpp",
     "test.h": "c",
-    "test_common.h": "c"
+    "test_common.h": "c",
+    "format": "c",
+    "stdfloat": "c"
   },
   "cmake.copyCompileCommands": "${workspaceFolder}/compile_commands.json",
   "C_Cpp.default.compileCommands": "${workspaceFolder}/compile_commands.json",

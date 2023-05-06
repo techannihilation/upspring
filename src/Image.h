@@ -49,6 +49,8 @@ class Image {
   inline std::uint32_t id() const { return ilid_; }
   inline int width() const { return width_; }
   inline int height() const { return height_; }
+  inline int owidth() const { return owidth_; }
+  inline int oheight() const { return oheight_; }
   inline int bpp() const { return bpp_; }
   inline int deepth() const { return deepth_; }
   inline int channels() const { return channels_; }
@@ -66,6 +68,8 @@ class Image {
   bool add_alpha();
   bool threedo_to_s3o();
   bool add_opaque_alpha();
+
+  bool to_power_of_two();
 
   bool mirror();
   bool flip();
@@ -90,8 +94,12 @@ class Image {
 
   int width_, height_, bpp_, deepth_, channels_;
 
+  int owidth_, oheight_;
+
   std::string name_, path_;
 
   bool load_from_memory_(const std::vector<std::uint8_t>& par_buffer);
   void image_infos_();
 };
+
+typedef std::shared_ptr<Image> ImagePtr;

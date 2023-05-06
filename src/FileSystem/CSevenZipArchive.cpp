@@ -6,15 +6,16 @@
 #include <stdexcept>
 #include <cstring>  //memcpy
 
+#include "../string_util.h"
+
+#include "spdlog/spdlog.h"
+
+
 extern "C" {
 #include "7z/7zTypes.h"
 #include "7z/7zAlloc.h"
 #include "7z/7zCrc.h"
 }
-
-#include "../string_util.h"
-
-#include "spdlog/spdlog.h"
 
 static Byte kUtf8Limits[5] = {0xC0, 0xE0, 0xF0, 0xF8, 0xFC};
 static bool Utf16_To_Utf8(char* dest, size_t* destLen, const UInt16* src, size_t srcLen) {

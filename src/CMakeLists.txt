@@ -62,8 +62,8 @@ if ("${CMAKE_BUILD_TYPE}" MATCHES "Debug")
 endif ()
 
 target_sources(${PROJECT_NAME} PRIVATE
-    Atlas/Atlas.cpp
-    Atlas/Atlas.hpp
+    Atlas/atlas.cpp
+    Atlas/atlas.hpp
     FileIO/3DO.cpp
     FileIO/3DS.cpp
     FileIO/OBJ.cpp

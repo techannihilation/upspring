@@ -7,7 +7,7 @@ package.path = package.path .. ";" .. script_path .. "?/init.lua" .. ";" .. scri
 
 lib = require("lib")
 
-upspring.load_archive()
+upspring.load_archive("/home/pcdummy/Projekte/techannihilation/TA.zip")
 
 ---------------------------------
 -- Actual code

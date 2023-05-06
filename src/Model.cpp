@@ -464,20 +464,20 @@ bool Model::ConvertToS3O(std::string textureName, int texw, int texh) {
   std::map<std::string, TextureBinTree::Node*> texToNode;
 
   for (auto &texmap_entry : textures) {
-    auto clone = texmap_entry.second->image->clone();
+    auto img = texmap_entry.second->image;
 
     // On teamcolor we copy the red channel to green, on normal textures we add a opaque alpha.
-    if (texture_handler_->has_team_color(clone->name())) {
-      if (!clone->threedo_to_s3o()) {
-        spdlog::error("image->threedo_to_s3o failed, error was: {}", clone->error());
+    if (texture_handler_->has_team_color(img->name())) {
+      if (!img->threedo_to_s3o()) {
+        spdlog::error("image->threedo_to_s3o failed, error was: {}", img->error());
         continue;
       }
-    } else if (!clone->add_opaque_alpha()) {
-      spdlog::error("image->add_opaque_alpha failed, error was: {}", clone->error());
+    } else if (!img->add_opaque_alpha()) {
+      spdlog::error("image->add_opaque_alpha failed, error was: {}", img->error());
       continue;
     }
 
-    TextureBinTree::Node* node = tree.AddNode(clone);
+    TextureBinTree::Node* node = tree.AddNode(img);
 
     if (node == nullptr) {
       spdlog::error("Not enough texture space for all 3DO textures");

@@ -47,11 +47,11 @@ namespace txpk
 			}
 		}
 
-		for (r = 0; r < size; ++r)
-		{
-			if(data[r].data[3] == 0)
-				data[r] = clearColor;
-		}
+		// for (r = 0; r < size; ++r)
+		// {
+		// 	if(data[r].data[3] == 0)
+		// 		data[r] = clearColor;
+		// }
 
 		Texture texture;
 		texture.loadFromMemory(data, width, height);

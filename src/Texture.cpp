@@ -151,6 +151,10 @@ bool TextureHandler::has_team_color(const std::string& texture_name) {
 
   // Trim 00 suffix if needed.
   if (tmp.substr(tmp.length() - 2) == "00") {
+    if (teamcolors_.find(tmp) != teamcolors_.end()) {
+      return true;
+    }
+
     tmp = tmp.substr(0, tmp.length() - 2);
   }
 

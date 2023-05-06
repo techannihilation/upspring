@@ -79,7 +79,7 @@ namespace txpk
 		ilBindImage(ilid);
 
 		// Create the Image
-		ilClearColor(0.0F, 0.0F, 0.0F, 1.0F);
+		ilClearColor(0.0F, 0.0F, 0.0F, 0.0F);
 		if (ilTexImage(sourceWidth, sourceHeight, 1, 4, IL_RGBA, IL_UNSIGNED_BYTE, nullptr) != IL_TRUE) {
 			auto errno_ = ilGetError();
 			auto error = iluErrorString(errno_);
@@ -91,7 +91,6 @@ namespace txpk
 		// Convert the data to a plain uint8_t array.
 		auto ptr = reinterpret_cast<std::uint8_t*>(&raw[0]);
 		auto buffer = std::vector<std::uint8_t>(ptr, ptr + raw.size()*4);
-		std::cout << "'" << buffer.size() << "', '" << rawRGBASize*4 << "'" << std::endl;
 
 		// Copy the data from the buffer to the image.
 		memcpy(ilGetData(), buffer.data(), buffer.size());

@@ -19,6 +19,27 @@ struct _imagelib {
   ~_imagelib() { ilShutDown(); }
 } static imagelib;
 
+
+// https://stackoverflow.com/a/108360/3368468
+bool is_power_of_two(int n) { return (n > 0 && ((n & (n - 1)) == 0)); }
+
+
+// https://stackoverflow.com/a/466242/3368468
+int next_power_of_two(int n) {
+  unsigned int v;  // compute the next highest power of 2 of 32-bit v
+
+  n--;
+  n |= n >> 1;
+  n |= n >> 2;
+  n |= n >> 4;
+  n |= n >> 8;
+  n |= n >> 16;
+  n++;
+
+  return n;
+}
+
+
 // -------------------------------- Image ---------------------------------
 
 Image::~Image() {
@@ -172,10 +193,7 @@ bool Image::add_alpha() {
 }
 
 bool Image::threedo_to_s3o() {
-  if (has_error() or bpp_ != 4) {
-    spdlog::error("flip_green_alpha needs exactly 4 bytes per pixel, have {}", bpp_);
-    has_error_ = true;
-    error_ = "flip_green_alpha needs exactly 4 bytes per pixel";
+  if (has_error()) {
     return false;
   }
 
@@ -183,14 +201,72 @@ bool Image::threedo_to_s3o() {
   auto *data_ptr = ilGetData();
   auto **data_pptr = &data_ptr;
 
-  std::cout << std::dec << "Name: " << name_ << std::endl;
-
   for (std::size_t ph = 0; ph < height_; ph++) {
     for (std::size_t pw = 0; pw < width_; pw++) {
-      // Copy red to green
       data_ptr[1] = data_ptr[0];
+      *data_pptr += bpp_;
     }
   }
+
+  image_infos_();
+
+  return true;
+}
+
+
+bool Image::to_power_of_two() {
+  if (has_error()) {
+    return false;
+  }
+
+  ilBindImage(ilid_);
+
+  owidth_ = width_;
+  if (!is_power_of_two(owidth_)) {
+    width_ = next_power_of_two(owidth_);
+    spdlog::debug("Extending '{}' cause the width '{}' is not power of two '{}'.", name_,
+                  owidth_, width_);
+  }
+
+  oheight_ = height_;
+  if (!is_power_of_two(oheight_)) {
+    int height_ = next_power_of_two(oheight_);
+    spdlog::debug("Extending '{}' cause the height '{}' is not power of two '{}'.", name_,
+                  oheight_, height_);
+  }
+
+  if (width_ != owidth_ || height_ != oheight_) {
+    iluEnlargeCanvas(width_, height_, 1);
+  }
+
+  auto *data_ptr = ilGetData();
+
+    // Fill the image height with the last row
+  if (height_ > oheight_) {
+    // Find the index of the last row
+    const std::size_t last_row_index = (oheight_ - 1) * owidth_ * bpp_;
+    const int rows = height_ - oheight_;
+
+    for (int i = 0; i < rows; i++) {
+      const std::size_t row_index = (oheight_ + i) * owidth_ * bpp_ - owidth_ * bpp_;
+      ilCopyPixels(0, oheight_ - 1, owidth_, 1, 1, 1, IL_COLOR_INDEX, IL_UNSIGNED_BYTE, data_ptr + row_index);
+    }
+  }
+
+  // Fill the image width with the last column
+  if (width_ > owidth_) {
+    // Calculate the number of columns to copy
+    const int cols = width_ - owidth_;
+
+    // Copy the last column to fill the additional columns
+    for (int i = 0; i < cols; i++) {
+      const std::size_t col_index = (owidth_ + i) * bpp_ - bpp_;
+      ilCopyPixels(owidth_ - 1, 0, 1, height_, 1, 1, IL_COLOR_INDEX, IL_UNSIGNED_BYTE, data_ptr + col_index);
+    }
+  }
+
+  // Update the image information
+  image_infos_();
 
   return true;
 }

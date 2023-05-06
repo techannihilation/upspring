@@ -1,15 +1,16 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 #pragma once
 
+#include <cstdint>
+#include <vector>
+#include <string>
+#include "IArchive.h"
+
 extern "C" {
 #include "7z/7zTypes.h"
 #include "7z/7zFile.h"
 #include "7z/7z.h"
 }
-
-#include <vector>
-#include <string>
-#include "IArchive.h"
 
 /**
  * An LZMA/7zip compressed, single-file archive.
