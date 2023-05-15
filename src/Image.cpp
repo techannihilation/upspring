@@ -224,44 +224,48 @@ bool Image::to_power_of_two() {
   owidth_ = width_;
   if (!is_power_of_two(owidth_)) {
     width_ = next_power_of_two(owidth_);
-    spdlog::debug("Extending '{}' cause the width '{}' is not power of two '{}'.", name_,
+    spdlog::debug("Enlarging '{}' cause the width '{}' is not power of two '{}'.", name_,
                   owidth_, width_);
   }
 
   oheight_ = height_;
   if (!is_power_of_two(oheight_)) {
-    int height_ = next_power_of_two(oheight_);
-    spdlog::debug("Extending '{}' cause the height '{}' is not power of two '{}'.", name_,
+    height_ = next_power_of_two(oheight_);
+    spdlog::debug("Enlarging '{}' cause the height '{}' is not power of two '{}'.", name_,
                   oheight_, height_);
   }
 
   if (width_ != owidth_ || height_ != oheight_) {
+    if (ilConvertImage(IL_RGBA, IL_UNSIGNED_BYTE) != IL_TRUE) {
+      has_error_ = true;
+      error_ = iluErrorString(ilGetError());
+      return false;
+    }
+
+    ilClearColor(0.0F, 0.0F, 0.0F, 0.0F);
+    iluImageParameter(ILU_PLACEMENT, ILU_UPPER_LEFT);
     iluEnlargeCanvas(width_, height_, 1);
   }
 
   auto *data_ptr = ilGetData();
 
-    // Fill the image height with the last row
+  // Copy to bottom
   if (height_ > oheight_) {
-    // Find the index of the last row
-    const std::size_t last_row_index = (oheight_ - 1) * owidth_ * bpp_;
-    const int rows = height_ - oheight_;
-
-    for (int i = 0; i < rows; i++) {
-      const std::size_t row_index = (oheight_ + i) * owidth_ * bpp_ - owidth_ * bpp_;
-      ilCopyPixels(0, oheight_ - 1, owidth_, 1, 1, 1, IL_COLOR_INDEX, IL_UNSIGNED_BYTE, data_ptr + row_index);
+    for (int ih = 0; ih < height_ - oheight_; ih++) {
+      for (int iw = 0; iw <= owidth_; iw++) {
+        const int src = (height_ - oheight_ - ih + height_ - oheight_) * width_ + iw;
+        const int dst = ih * width_ + iw;
+        std::memcpy(data_ptr + (dst * bpp_), data_ptr + (src * bpp_), bpp_);
+      }
     }
   }
 
-  // Fill the image width with the last column
+  // Copy to the right side
   if (width_ > owidth_) {
-    // Calculate the number of columns to copy
-    const int cols = width_ - owidth_;
-
-    // Copy the last column to fill the additional columns
-    for (int i = 0; i < cols; i++) {
-      const std::size_t col_index = (owidth_ + i) * bpp_ - bpp_;
-      ilCopyPixels(owidth_ - 1, 0, 1, height_, 1, 1, IL_COLOR_INDEX, IL_UNSIGNED_BYTE, data_ptr + col_index);
+    for (int ih = height_; ih > 0; ih--) {
+      for (int iw = 0; iw < (width_ - owidth_); iw++) {
+        std::memcpy(data_ptr + ((ih * width_ + owidth_ + iw) * bpp_), data_ptr + ((ih * width_ + owidth_ - 1 - iw) * bpp_), bpp_);
+      }
     }
   }
 

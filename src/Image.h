@@ -25,6 +25,11 @@ class Image {
   bool load(const std::vector<std::uint8_t>& par_buffer);
   bool load(const std::string& par_file);
 
+  // For Swig.
+  bool load_file(const std::string& par_file) {
+    load(par_file);
+  }
+
   bool create(int par_width, int par_height, int par_channels = 4);
   bool create(int par_width, int par_height, float par_red, float par_green,
               float par_blue);  // RGB
