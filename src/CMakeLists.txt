@@ -40,6 +40,10 @@ target_link_libraries (${PROJECT_NAME}
     DevIL::ILU
     DevIL::ILUT
 
+    # IL
+    # ILU
+    # ILUT
+
     lib3ds
     7zip
     minizip-ng

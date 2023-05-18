@@ -94,3 +94,10 @@ set(SOURCES
 add_library(${ENGINE_NAME} ${HEADERS} ${INLINES} ${SOURCES})
 add_library(TXPK::Core-static ALIAS ${ENGINE_NAME})
 target_include_directories(${ENGINE_NAME} PUBLIC ${INCLUDE_DIR})
+
+## OpenIL
+find_package(DevIL REQUIRED)
+
+target_link_libraries(${ENGINE_NAME} DevIL::IL)
+
+# target_link_libraries(${ENGINE_NAME} IL)

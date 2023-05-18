@@ -3,6 +3,7 @@
 #include <IL/il.h>
 #include <IL/ilu.h>
 
+#include <cstddef>
 #include <vector>
 #include <string>
 #include <filesystem>
@@ -26,15 +27,15 @@ bool is_power_of_two(int n) { return (n > 0 && ((n & (n - 1)) == 0)); }
 
 // https://stackoverflow.com/a/466242/3368468
 int next_power_of_two(int n) {
-  unsigned int v;  // compute the next highest power of 2 of 32-bit v
+  unsigned int var = n;  // compute the next highest power of 2 of 32-bit v
 
-  n--;
-  n |= n >> 1;
-  n |= n >> 2;
-  n |= n >> 4;
-  n |= n >> 8;
-  n |= n >> 16;
-  n++;
+  var--;
+  var |= var >> 1;
+  var |= var >> 2;
+  var |= var >> 4;
+  var |= var >> 8;
+  var |= var >> 16;
+  var++;
 
   return n;
 }
@@ -203,7 +204,10 @@ bool Image::threedo_to_s3o() {
 
   for (std::size_t ph = 0; ph < height_; ph++) {
     for (std::size_t pw = 0; pw < width_; pw++) {
+      // trunk-ignore(clang-tidy/cppcoreguidelines-pro-bounds-pointer-arithmetic)
       data_ptr[1] = data_ptr[0];
+
+      // trunk-ignore(clang-tidy/cppcoreguidelines-pro-bounds-pointer-arithmetic)
       *data_pptr += bpp_;
     }
   }
@@ -236,7 +240,7 @@ bool Image::to_power_of_two() {
   }
 
   if (width_ != owidth_ || height_ != oheight_) {
-    if (ilConvertImage(IL_RGBA, IL_UNSIGNED_BYTE) != IL_TRUE) {
+    if (ilConvertImage(has_alpha() ? IL_RGBA : IL_RGB, IL_UNSIGNED_BYTE) != IL_TRUE) {
       has_error_ = true;
       error_ = iluErrorString(ilGetError());
       return false;
@@ -245,9 +249,13 @@ bool Image::to_power_of_two() {
     ilClearColor(0.0F, 0.0F, 0.0F, 0.0F);
     iluImageParameter(ILU_PLACEMENT, ILU_UPPER_LEFT);
     iluEnlargeCanvas(width_, height_, 1);
+
+    image_infos_();
   }
 
   auto *data_ptr = ilGetData();
+
+  std::size_t num_pixels = static_cast<std::size_t>(width_) * height_;
 
   // Copy to bottom
   if (height_ > oheight_) {
@@ -255,16 +263,32 @@ bool Image::to_power_of_two() {
       for (int iw = 0; iw <= owidth_; iw++) {
         const int src = (height_ - oheight_ - ih + height_ - oheight_) * width_ + iw;
         const int dst = ih * width_ + iw;
-        std::memcpy(data_ptr + (dst * bpp_), data_ptr + (src * bpp_), bpp_);
+
+        if (dst > num_pixels) {
+          spdlog::warn("'{}' - 'row' can't write to destination: '{}', number of pixels is '{}'", name_, dst, num_pixels);
+          continue;
+        }
+
+        // trunk-ignore(clang-tidy/cppcoreguidelines-pro-bounds-pointer-arithmetic)
+        std::memcpy(data_ptr + static_cast<ptrdiff_t>(dst * bpp_), data_ptr + static_cast<ptrdiff_t>(src * bpp_), bpp_);
       }
     }
   }
 
   // Copy to the right side
   if (width_ > owidth_) {
-    for (int ih = height_; ih > 0; ih--) {
+    for (int ih = height_ - 1; ih >= 0; ih--) {
       for (int iw = 0; iw < (width_ - owidth_); iw++) {
-        std::memcpy(data_ptr + ((ih * width_ + owidth_ + iw) * bpp_), data_ptr + ((ih * width_ + owidth_ - 1 - iw) * bpp_), bpp_);
+        const int src = ih * width_ + owidth_ - 1 - iw;
+        const int dst = ih * width_ + owidth_ + iw;
+
+        if (dst > num_pixels) {
+          spdlog::warn("'{}' - 'column' can't write to destination: '{}', number of pixels is '{}'", name_, dst, num_pixels);
+          continue;
+        }
+
+        // trunk-ignore(clang-tidy/cppcoreguidelines-pro-bounds-pointer-arithmetic)
+        std::memcpy(data_ptr + static_cast<ptrdiff_t>(dst * bpp_), data_ptr + static_cast<ptrdiff_t>(src * bpp_), bpp_);
       }
     }
   }

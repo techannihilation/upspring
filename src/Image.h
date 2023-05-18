@@ -13,7 +13,9 @@ class Image {
         has_error_(),
         error_(),
         width_(),
+        owidth_(),
         height_(),
+        oheight_(),
         bpp_(),
         deepth_(),
         channels_(),
@@ -27,7 +29,7 @@ class Image {
 
   // For Swig.
   bool load_file(const std::string& par_file) {
-    load(par_file);
+    return load(par_file);
   }
 
   bool create(int par_width, int par_height, int par_channels = 4);

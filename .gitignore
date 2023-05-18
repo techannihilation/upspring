@@ -2,5 +2,7 @@ out/
 compile_commands.json
 UpSpring
 
+vendor/DevIL/
+
 # My Playground
 playground/

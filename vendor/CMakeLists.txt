@@ -12,4 +12,6 @@ add_subdirectory(minizip-ng)
 
 add_subdirectory(spdlog)
 
+# add_subdirectory(DevIL/DevIL)
+
 add_subdirectory(TXPK_mini)
