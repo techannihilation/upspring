@@ -66,7 +66,9 @@ The given lua script here needs [lfs](https://lunarmodules.github.io/luafilesyst
     |------------------------------------------------------|---------------|
     | [7zip](https://7-zip.org/sdk.html)                   | public domain |
     | [CLI11](https://github.com/CLIUtils/CLI11)           | BSD 3-Clause  |
-    | [fltk2](vendor/fltk2/COPYING)                        | LGPL-2.1      |
-    | [lib3ds](https://github.com/techannihilation/lib3ds) | LGPL-2.1      |
+    | [fltk2](vendor/fltk2/COPYING)                        | LGPL-2        |
+    | [lib3ds](https://github.com/techannihilation/lib3ds) | LGPL-2        |
     | [minizip-ng](https://github.com/zlib-ng/minizip-ng)  | zlib license  |
     | [spdlog](https://github.com/gabime/spdlog)           | MIT           |
+    | [TXPK](https://github.com/Seng3694/TXPK)             | MIT           |
+    | [OpenIL](https://openil.sourceforge.net/)            | GPL-2         |
