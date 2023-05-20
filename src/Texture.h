@@ -24,7 +24,7 @@ class Texture {
   Texture();
   Texture(const std::string& filename);
   Texture(const std::string& filename, const std::string& hintpath);
-  Texture(std::vector<std::uint8_t>& par_data, const std::string& par_path, const std::string& par_name);
+  Texture(std::vector<std::uint8_t>& par_data, const std::string& par_path, const std::string& par_name, bool par_is_teamcolor);
   Texture(std::shared_ptr<Image> par_image, const std::string& par_name) : glIdent(), name(par_name) {
     image = par_image;
   };

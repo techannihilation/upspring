@@ -18,9 +18,11 @@ class atlas {
     rectangles_ = rhs.rectangles_;
   }
 
-  static atlas make_from_archive(const std::string& archive_par, const std::string& savepath_par, bool par_power_of_two);
+  static atlas make_from_archive(const std::string& par_archive, const std::string& par_savepath, bool par_power_of_two);
 
-  bool add_images(std::vector<ImagePtr> par_images);
+  bool add_3do_textures(std::vector<ImagePtr> par_images, bool par_power_of_two);
+  bool add_textures(std::vector<ImagePtr> par_images);
+
   bool save(const std::string &par_savepath);
 
  private:

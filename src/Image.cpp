@@ -37,7 +37,7 @@ int next_power_of_two(int n) {
   var |= var >> 16;
   var++;
 
-  return n;
+  return var;
 }
 
 

@@ -18,10 +18,7 @@ atlas atlas::make_from_archive(const std::string& par_archive, const std::string
 
   if (!texture_handler.LoadFiltered(par_archive, [](const std::string& par_path) -> std::string {
         if (par_path.rfind("unittextures/tatex/", 0) == 0) {
-          auto result = std::filesystem::path(par_path).replace_extension("").string();
-          result = result.substr(std::string("unittextures/tatex/").length());
-
-          return result;
+          return std::filesystem::path(par_path).replace_extension("").string().substr(std::string("unittextures/tatex/").length());
         }
         return "";
       })) {
@@ -38,10 +35,26 @@ atlas atlas::make_from_archive(const std::string& par_archive, const std::string
 
     spdlog::debug("Loading texture: {}", mapE.first);
 
-    ImagePtr img = mapE.second->image;
+    images.push_back(mapE.second->image);
+  }
+
+  auto atl = atlas();
+  atl.add_3do_textures(images, par_power_of_two);
+
+  return atl;
+}
+
+bool atlas::add_3do_textures(std::vector<ImagePtr> par_images, bool par_power_of_two) {
+  for (const auto& img : par_images) {
+    if (par_power_of_two) {
+      if (!img->to_power_of_two()) {
+        spdlog::error("Power of two failed");
+        continue;
+      }
+    }
 
     // On teamcolor we copy the red channel to green, on normal textures we add a opaque alpha.
-    if (texture_handler.has_team_color(img->name())) {
+    if (img->is_team_color()) {
       if (!img->threedo_to_s3o()) {
         spdlog::error("image->threedo_to_s3o failed, error was: {}", img->error());
         continue;
@@ -50,24 +63,14 @@ atlas atlas::make_from_archive(const std::string& par_archive, const std::string
       spdlog::error("image->add_opaque_alpha failed, error was: {}", img->error());
       continue;
     }
-
-    if (par_power_of_two) {
-      if (!img->to_power_of_two()) {
-        spdlog::error("Power of two failed");
-        continue;
-      }
-    }
-
-    images.push_back(img);
   }
 
-  auto a = atlas();
-  a.add_images(images);
+  add_textures(par_images);
 
-  return a;
+  return true;
 }
 
-bool atlas::add_images(std::vector<ImagePtr> par_images) {
+bool atlas::add_textures(std::vector<ImagePtr> par_images) {
   for (const auto& img : par_images) {
     auto txTexture = std::make_shared<txpk::Texture>();
 
@@ -92,11 +95,7 @@ bool atlas::add_images(std::vector<ImagePtr> par_images) {
 }
 
 bool atlas::save(const std::string& par_savepath) {
-  txpk::Color<4U> black;
+  const txpk::Color<4U> black{};
   auto txBin = packer_->pack(rectangles_, 0, txpk::SizeContraintType::None, false);
-  if (!txBin.save(textures_, black, par_savepath, false)) {
-    return false;
-  }
-
-  return true;
+  return txBin.save(textures_, black, par_savepath, false);
 }

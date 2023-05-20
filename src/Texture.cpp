@@ -45,7 +45,7 @@ Texture::Texture(const std::string& par_filename, const std::string& hintpath) :
 }
 
 
-Texture::Texture(std::vector<std::uint8_t>& par_data, const std::string& par_path, const std::string& par_name) : name(par_name), glIdent(0) {
+Texture::Texture(std::vector<std::uint8_t>& par_data, const std::string& par_path, const std::string& par_name, bool par_is_teamcolor) : name(par_name), glIdent(0) {
   auto img = std::make_shared<Image>();
   img->path(par_path);
   img->name(par_name);
@@ -53,6 +53,7 @@ Texture::Texture(std::vector<std::uint8_t>& par_data, const std::string& par_pat
     spdlog::error("Failed to create an image from '{}'", par_name);
     return;
   }
+  img->is_team_color(par_is_teamcolor);
   image = img;
 }
 
@@ -178,6 +179,22 @@ bool TextureHandler::LoadFiltered(const std::string& par_archive_path,
     return false;
   }
 
+  // Read teamcolors.
+  if (archive->FileExists("unittextures/tatex/teamtex.txt")) {
+    std::vector<std::uint8_t> buff;
+    archive->GetFileByName("unittextures/tatex/teamtex.txt", buff);
+
+    std::stringstream stringstream(std::string((char *)buff.data(), buff.size()));
+
+    // teamcolors_.reserve(32);
+    std::string line;
+    while (std::getline(stringstream, line)) {
+      line.erase(std::remove(line.begin(), line.end(), '\r'), line.end());
+      line.erase(std::remove(line.begin(), line.end(), '\n'), line.end());
+      teamcolors_.insert(to_lower(line));
+    }
+  }
+
   for (uint i = 0; i < archive->NumFiles(); i++) {
     std::string name;
     int size = 0;
@@ -219,29 +236,13 @@ bool TextureHandler::LoadFiltered(const std::string& par_archive_path,
       continue;
     }
 
-    auto tex = std::make_shared<Texture>(buf, name, internal_name);
+    auto tex = std::make_shared<Texture>(buf, name, internal_name, has_team_color(internal_name));
     if (tex->HasError()) {
       continue;
     }
 
     // Assign to map
     textures_[tex->name] = tex;
-  }
-
-  // Read teamcolors.
-  if (archive->FileExists("unittextures/tatex/teamtex.txt")) {
-    std::vector<std::uint8_t> buff;
-    archive->GetFileByName("unittextures/tatex/teamtex.txt", buff);
-
-    std::stringstream stringstream(std::string((char *)buff.data(), buff.size()));
-
-    // teamcolors_.reserve(32);
-    std::string line;
-    while (std::getline(stringstream, line)) {
-      line.erase(std::remove(line.begin(), line.end(), '\r'), line.end());
-      line.erase(std::remove(line.begin(), line.end(), '\n'), line.end());
-      teamcolors_.insert(to_lower(line));
-    }
   }
 
   spdlog::debug("Loaded '{}' textures and '{}' teamcolors", textures_.size(), teamcolors_.size());

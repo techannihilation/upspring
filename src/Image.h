@@ -13,14 +13,15 @@ class Image {
         has_error_(),
         error_(),
         width_(),
-        owidth_(),
         height_(),
-        oheight_(),
         bpp_(),
         deepth_(),
         channels_(),
+        owidth_(),
+        oheight_(),
         name_(),
-        path_() {};
+        path_(),
+        is_team_color_() {};
 
   virtual ~Image();
 
@@ -63,6 +64,9 @@ class Image {
   inline int channels() const { return channels_; }
   inline bool has_alpha() const { return channels_ > 3; }
 
+  inline bool is_team_color() const { return is_team_color_; }
+  inline void is_team_color(bool par_tc) { is_team_color_ = par_tc; }
+
   // Image Data
   std::uint8_t* data();
   inline std::uint32_t size() const { return static_cast<std::uint32_t>(width_) * height_ * bpp_; }
@@ -104,6 +108,8 @@ class Image {
   int owidth_, oheight_;
 
   std::string name_, path_;
+
+  bool is_team_color_;
 
   bool load_from_memory_(const std::vector<std::uint8_t>& par_buffer);
   void image_infos_();
