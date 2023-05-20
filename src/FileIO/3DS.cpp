@@ -20,7 +20,7 @@ static Lib3dsMesh* ConvertObjTo3DS(MdlObject* obj) {
     lib3ds_mesh_resize_vertices(mesh, pm->verts.size(), 1, 1);
     for (std::size_t v = 0, max = pm->verts.size(); v != max; ++v) {
       // Copy Vertexes
-      for (uint axis = 0; axis < 3; axis++) mesh->vertices[v][axis] = pm->verts[v].pos[axis];
+      for (std::uint32_t axis = 0; axis < 3; axis++) mesh->vertices[v][axis] = pm->verts[v].pos[axis];
 
       mesh->texcos[v][0] = pm->verts[v].tc[0].x;
       mesh->texcos[v][1] = pm->verts[v].tc[0].y;
@@ -116,7 +116,7 @@ static MdlObject* Convert3DSToObj(Lib3dsMesh* mesh) {
       Vertex& vrt = pm->verts[pl->verts[f]];
 
       vrt = orgvrt[face->index[f]];
-      for (uint axis = 0; axis < 3; axis++) vrt.normal[axis] = face_normals[i * 3 + f][axis];
+      for (std::uint32_t axis = 0; axis < 3; axis++) vrt.normal[axis] = face_normals[i * 3 + f][axis];
     }
 
     pm->poly[i] = pl;

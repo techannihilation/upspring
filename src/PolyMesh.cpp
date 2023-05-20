@@ -13,7 +13,7 @@ float Poly::Selector::Score(Vector3& pos, float /*camdis*/) {
   Plane plane;
 
   Vector3 vrt[3];
-  for (uint a = 0; a < 3; a++) transform.apply(&v[poly->verts[a]].pos, &vrt[a]);
+  for (std::uint32_t a = 0; a < 3; a++) transform.apply(&v[poly->verts[a]].pos, &vrt[a]);
 
   plane.MakePlane(vrt[0], vrt[1], vrt[2]);
   float dis = plane.Dis(&pos);
@@ -47,7 +47,7 @@ Poly* Poly::Clone() {
 void Poly::Flip() {
   std::vector<int> nv;
   nv.resize(verts.size());
-  for (uint a = 0; a < verts.size(); a++) nv[verts.size() - a - 1] = verts[(a + 2) % verts.size()];
+  for (std::uint32_t a = 0; a < verts.size(); a++) nv[verts.size() - a - 1] = verts[(a + 2) % verts.size()];
   verts = nv;
 }
 
@@ -59,7 +59,7 @@ Plane Poly::CalcPlane(const std::vector<Vertex>& vrt) {
 
 void Poly::RotateVerts() {
   std::vector<int> n(verts.size());
-  for (uint a = 0; a < verts.size(); a++) n[a] = verts[(a + 1) % n.size()];
+  for (std::uint32_t a = 0; a < verts.size(); a++) n[a] = verts[(a + 1) % n.size()];
   verts = n;
 }
 
@@ -68,7 +68,7 @@ void Poly::RotateVerts() {
 // ------------------------------------------------------------------------------------------------
 
 PolyMesh::~PolyMesh() {
-  for (uint a = 0; a < poly.size(); a++)
+  for (std::uint32_t a = 0; a < poly.size(); a++)
     if (poly[a]) delete poly[a];
   poly.clear();
 }
@@ -83,7 +83,7 @@ Geometry* PolyMesh::Clone() {
 
   cp->verts = verts;
 
-  for (uint a = 0; a < poly.size(); a++) cp->poly.push_back(poly[a]->Clone());
+  for (std::uint32_t a = 0; a < poly.size(); a++) cp->poly.push_back(poly[a]->Clone());
 
   return cp;
 }
@@ -94,7 +94,7 @@ void PolyMesh::Transform(const Matrix& transform) {
   invTransform.transpose(&normalTransform);
 
   // transform and add the child vertices to the parent vertices list
-  for (uint a = 0; a < verts.size(); a++) {
+  for (std::uint32_t a = 0; a < verts.size(); a++) {
     Vertex& v = verts[a];
     Vector3 tpos, tnormal;
 
@@ -123,12 +123,12 @@ void PolyMesh::OptimizeVertices(PolyMesh::IsEqualVertexCB cb) {
   usage.resize(verts.size());
   fill(usage.begin(), usage.end(), 0);
 
-  for (uint a = 0; a < poly.size(); a++) {
+  for (std::uint32_t a = 0; a < poly.size(); a++) {
     Poly* pl = poly[a];
     for (uint b = 0; b < pl->verts.size(); b++) usage[pl->verts[b]]++;
   }
 
-  for (uint a = 0; a < verts.size(); a++) {
+  for (std::uint32_t a = 0; a < verts.size(); a++) {
     bool matched = false;
 
     if (!usage[a]) continue;
@@ -153,7 +153,7 @@ void PolyMesh::OptimizeVertices(PolyMesh::IsEqualVertexCB cb) {
   verts = nv;
 
   // map the poly vertex-indices to the new set of vertices
-  for (uint a = 0; a < poly.size(); a++) {
+  for (std::uint32_t a = 0; a < poly.size(); a++) {
     Poly* pl = poly[a];
     for (uint b = 0; b < pl->verts.size(); b++) pl->verts[b] = old2new[pl->verts[b]];
   }
@@ -164,7 +164,7 @@ void PolyMesh::Optimize(PolyMesh::IsEqualVertexCB cb) {
 
   // remove double linked vertices
   std::vector<Poly*> npl;
-  for (uint a = 0; a < poly.size(); a++) {
+  for (std::uint32_t a = 0; a < poly.size(); a++) {
     Poly* pl = poly[a];
 
     bool finished;
@@ -198,7 +198,7 @@ void PolyMesh::CalculateRadius(float& radius, const Matrix& tr, const Vector3& m
 std::vector<Triangle> PolyMesh::MakeTris() {
   std::vector<Triangle> tris;
 
-  for (uint a = 0; a < poly.size(); a++) {
+  for (std::uint32_t a = 0; a < poly.size(); a++) {
     Poly* p = poly[a];
     for (uint b = 2; b < p->verts.size(); b++) {
       Triangle t;
@@ -217,7 +217,7 @@ void GenerateUniqueVectors(const std::vector<Vertex>& verts, std::vector<Vector3
                            std::vector<int>& old2new) {
   old2new.resize(verts.size());
 
-  for (uint a = 0; a < verts.size(); a++) {
+  for (std::uint32_t a = 0; a < verts.size(); a++) {
     bool matched = false;
 
     for (uint b = 0; b < vertPos.size(); b++)
@@ -245,18 +245,18 @@ void PolyMesh::CalculateNormals2(float maxSmoothAngle) {
 
   std::vector<std::vector<int>> new2old;
   new2old.resize(vertPos.size());
-  for (uint a = 0; a < old2new.size(); a++) new2old[old2new[a]].push_back(a);
+  for (std::uint32_t a = 0; a < old2new.size(); a++) new2old[old2new[a]].push_back(a);
 
   // Calculate planes
   std::vector<Plane> polyPlanes;
   polyPlanes.resize(poly.size());
-  for (uint a = 0; a < poly.size(); a++) polyPlanes[a] = poly[a]->CalcPlane(verts);
+  for (std::uint32_t a = 0; a < poly.size(); a++) polyPlanes[a] = poly[a]->CalcPlane(verts);
 
   // Determine which faces are using which unique vertex
   std::vector<FaceVert> faceVerts;  // one per unique vertex
   faceVerts.resize(old2new.size());
 
-  for (uint a = 0; a < poly.size(); a++) {
+  for (std::uint32_t a = 0; a < poly.size(); a++) {
     Poly* pl = poly[a];
     for (uint v = 0; v < pl->verts.size(); v++)
       faceVerts[old2new[pl->verts[v]]].adjacentFaces.push_back(a);
@@ -264,18 +264,18 @@ void PolyMesh::CalculateNormals2(float maxSmoothAngle) {
 
   // Calculate normals
   int cnorm = 0;
-  for (uint a = 0; a < poly.size(); a++) cnorm += poly[a]->verts.size();
+  for (std::uint32_t a = 0; a < poly.size(); a++) cnorm += poly[a]->verts.size();
   std::vector<Vector3> normals;
   normals.resize(cnorm);
 
   cnorm = 0;
-  for (uint a = 0; a < poly.size(); a++) {
+  for (std::uint32_t a = 0; a < poly.size(); a++) {
     Poly* pl = poly[a];
     for (uint v = 0; v < pl->verts.size(); v++) {
       FaceVert& fv = faceVerts[old2new[pl->verts[v]]];
       std::vector<Vector3> vnormals;
       vnormals.push_back(polyPlanes[a].GetVector());
-      for (uint adj = 0; adj < fv.adjacentFaces.size(); adj++) {
+      for (std::uint32_t adj = 0; adj < fv.adjacentFaces.size(); adj++) {
         // Same poly?
         if (fv.adjacentFaces[adj] == int(a)) continue;
 
@@ -308,7 +308,7 @@ void PolyMesh::CalculateNormals2(float maxSmoothAngle) {
   std::vector<Vertex> newVertices;
   newVertices.reserve(poly.size() * 4);  // approximate
   cnorm = 0;
-  for (uint a = 0; a < poly.size(); a++) {
+  for (std::uint32_t a = 0; a < poly.size(); a++) {
     Poly* pl = poly[a];
     for (uint v = 0; v < pl->verts.size(); v++) {
       Vertex nv = verts[pl->verts[v]];
@@ -332,12 +332,12 @@ void PolyMesh::CalculateNormals() {
 
   std::vector<std::vector<int>> new2old;
   new2old.resize(vertPos.size());
-  for (uint a = 0; a < old2new.size(); a++) new2old[old2new[a]].push_back(a);
+  for (std::uint32_t a = 0; a < old2new.size(); a++) new2old[old2new[a]].push_back(a);
 
   std::vector<std::vector<Vector3>> normals;
   normals.resize(vertPos.size());
 
-  for (uint a = 0; a < poly.size(); a++) {
+  for (std::uint32_t a = 0; a < poly.size(); a++) {
     Poly* pl = poly[a];
     Plane plane;
 
@@ -355,7 +355,7 @@ void PolyMesh::CalculateNormals() {
     }
   }
 
-  for (uint a = 0; a < normals.size(); a++) {
+  for (std::uint32_t a = 0; a < normals.size(); a++) {
     Vector3 sum;
     std::vector<Vector3>& vn = normals[a];
     for (uint b = 0; b < vn.size(); b++) sum += vn[b];
@@ -368,12 +368,12 @@ void PolyMesh::CalculateNormals() {
 }
 
 void PolyMesh::FlipPolygons() {
-  for (uint a = 0; a < poly.size(); a++) poly[a]->Flip();
+  for (std::uint32_t a = 0; a < poly.size(); a++) poly[a]->Flip();
 }
 
 void PolyMesh::MoveGeometry(PolyMesh* dst) {
   // offset the vertex indices and move polygons
-  for (uint a = 0; a < poly.size(); a++) {
+  for (std::uint32_t a = 0; a < poly.size(); a++) {
     Poly* pl = poly[a];
 
     for (uint b = 0; b < pl->verts.size(); b++) pl->verts[b] += (int)dst->verts.size();

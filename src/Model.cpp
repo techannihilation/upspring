@@ -132,7 +132,7 @@ bool Model::Save(Model* mdl, const std::string& _fn, IProgressCtl& progctl) {
 static void GetSelectedObjectsHelper(MdlObject* obj, std::vector<MdlObject*>& sel) {
   if (obj->isSelected) sel.push_back(obj);
 
-  for (uint a = 0; a < obj->childs.size(); a++) GetSelectedObjectsHelper(obj->childs[a], sel);
+  for (std::uint32_t a = 0; a < obj->childs.size(); a++) GetSelectedObjectsHelper(obj->childs[a], sel);
 }
 
 std::vector<MdlObject*> Model::GetSelectedObjects() {
@@ -213,7 +213,7 @@ static void AddPositions(MdlObject* o, Vector3& p, int& count) {
     p += temp;
     count++;
   }
-  for (uint a = 0; a < o->childs.size(); a++) AddPositions(o->childs[a], p, count);
+  for (std::uint32_t a = 0; a < o->childs.size(); a++) AddPositions(o->childs[a], p, count);
 }
 
 void Model::EstimateMidPosition() {
@@ -313,12 +313,12 @@ bool Model::ImportUVCoords(Model* other, IProgressCtl& progctl) {
   std::vector<Vector3> pverts;
 
   int numPl = 0, curPl = 0;
-  for (uint a = 0; a < objects.size(); a++) {
+  for (std::uint32_t a = 0; a < objects.size(); a++) {
     PolyMesh* pm = objects[a]->GetPolyMesh();
     if (pm) numPl += pm->poly.size();
   }
 
-  for (uint a = 0; a < objects.size(); a++) {
+  for (std::uint32_t a = 0; a < objects.size(); a++) {
     MdlObject* obj = objects[a];
     Matrix objTransform;
     obj->GetFullTransform(objTransform);
@@ -365,7 +365,7 @@ bool Model::ImportUVCoords(Model* other, IProgressCtl& progctl) {
 
 static void GetObjectListHelper(MdlObject* obj, std::vector<MdlObject*>& list) {
   list.push_back(obj);
-  for (uint a = 0; a < obj->childs.size(); a++) GetObjectListHelper(obj->childs[a], list);
+  for (std::uint32_t a = 0; a < obj->childs.size(); a++) GetObjectListHelper(obj->childs[a], list);
 }
 
 std::vector<MdlObject*> Model::GetObjectList() {
@@ -377,7 +377,7 @@ std::vector<MdlObject*> Model::GetObjectList() {
 std::vector<PolyMesh*> Model::GetPolyMeshList() {
   std::vector<MdlObject*> objlist = GetObjectList();
   std::vector<PolyMesh*> pmlist;
-  for (uint a = 0; a < objlist.size(); a++)
+  for (std::uint32_t a = 0; a < objlist.size(); a++)
     if (objlist[a]->GetPolyMesh()) pmlist.push_back(objlist[a]->GetPolyMesh());
   return pmlist;
 }

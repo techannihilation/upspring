@@ -840,7 +840,7 @@ void EditorViewWindow::ShowViewModifyMenu(int cx, int cy) {
   const int d = ViewMergeDistance;
   EditorViewWindow* candidate = 0;
 
-  for (uint a = 0; a < views.size(); a++) {
+  for (std::uint32_t a = 0; a < views.size(); a++) {
     EditorViewWindow* nb = views[a];
     if (nb == this) continue;
 

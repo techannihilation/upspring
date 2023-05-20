@@ -187,7 +187,7 @@ public:
   void ApplyPolyMeshOperationR(Fn f) {
     PolyMesh* pm = GetPolyMesh();
     if (pm) (pm->*f)();
-    for (uint a = 0; a < childs.size(); a++) childs[a]->ApplyPolyMeshOperationR(f);
+    for (std::uint32_t a = 0; a < childs.size(); a++) childs[a]->ApplyPolyMeshOperationR(f);
   }
 
   void FlipPolygons();

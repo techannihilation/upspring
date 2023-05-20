@@ -125,7 +125,7 @@ void UVViewWindow::DrawScene() {
 
   // draw model vertices
   std::vector<MdlObject*> objs = mdl->GetObjectList();
-  for (uint a = 0; a < objs.size(); a++) {
+  for (std::uint32_t a = 0; a < objs.size(); a++) {
     MdlObject* obj = objs[a];
     for (PolyIterator pi(obj); !pi.End(); pi.Next()) {
       if (!pi.verts()) continue;

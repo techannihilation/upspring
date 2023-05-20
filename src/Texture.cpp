@@ -59,7 +59,7 @@ Texture::Texture(std::vector<std::uint8_t>& par_data, const std::string& par_pat
 
 bool Texture::Load(const std::string& par_filename, const std::string& par_hintpath) {
   bool found = false;
-  name = std::filesystem::path(par_filename).filename();
+  name = std::filesystem::path(par_filename).filename().string();
   std::filesystem::path filename;
   if (!name.empty()) {
     // Direct
@@ -195,7 +195,7 @@ bool TextureHandler::LoadFiltered(const std::string& par_archive_path,
     }
   }
 
-  for (uint i = 0; i < archive->NumFiles(); i++) {
+  for (std::uint32_t i = 0; i < archive->NumFiles(); i++) {
     std::string name;
     int size = 0;
     int mode = 0;
@@ -294,7 +294,7 @@ bool TextureGroupHandler::Save(const std::string& par_filename) {
   // create a config list and save it
   CfgList cfg;
 
-  for (uint a = 0; a < groups.size(); a++) {
+  for (std::uint32_t a = 0; a < groups.size(); a++) {
     CfgList* gc = MakeConfig(groups[a]);
 
     char n[10];

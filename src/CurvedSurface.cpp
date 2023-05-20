@@ -33,7 +33,7 @@ void Object::GenerateFromPolyMesh(PolyMesh* o) {
 
   // simple definition: intersecting edges are edges with the same vertex pair
   // use o->poly, because the edges from non-curved polygons are needed as well
-  for (uint a = 0; a < o->poly.size(); a++) {
+  for (std::uint32_t a = 0; a < o->poly.size(); a++) {
     Poly* pl = o->poly[a];
 
     Face* f = new Face;
@@ -57,7 +57,7 @@ void Object::GenerateFromPolyMesh(PolyMesh* o) {
     }
   }
 
-  for (uint a = 0; a < edges.size(); a++) {
+  for (std::uint32_t a = 0; a < edges.size(); a++) {
     Edge* edge = edges[a];
 
     // parallel edge with same direction
@@ -82,7 +82,7 @@ void Object::GenerateFromPolyMesh(PolyMesh* o) {
   edgeMap.clear();
 
   // calculate edge normals
-  for (uint a = 0; a < edges.size(); a++) {
+  for (std::uint32_t a = 0; a < edges.size(); a++) {
     Edge* e = edges[a];
 
     e->normal = e->face->plane.GetVector();

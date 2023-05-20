@@ -16,13 +16,13 @@
 
 CZipArchive::CZipArchive(const std::string& archiveName)
     : IArchive(archiveName), streamHandle(nullptr), zipHandle(nullptr) {
-  mz_stream_os_create(&streamHandle);
+  mz_stream_os_create();
   if (mz_stream_open(streamHandle, archiveName.c_str(), MZ_OPEN_MODE_READ) != MZ_OK) {
     spdlog::error("minizip: Error opening: {}", archiveName);
     return;
   }
 
-  mz_zip_create(&zipHandle);
+  mz_zip_create();
   if (mz_zip_open(zipHandle, streamHandle, MZ_OPEN_MODE_READ) != MZ_OK) {
     spdlog::error("minizip: Error opening: {}", archiveName);
     return;

@@ -22,7 +22,7 @@ class ViewsGroup : public fltk::TiledGroup {
     if (pwnd->iconic()) {
       // store view dimensions
       viewDims.resize(children());
-      for (uint a = 0; a < (uint)children(); a++) {
+      for (std::uint32_t a = 0; a < (uint)children(); a++) {
         fltk::Widget* w = child(a);
         Rectangle dim(w->x(), w->y(), w->w(), w->h());
         viewDims[a] = dim;
@@ -30,7 +30,7 @@ class ViewsGroup : public fltk::TiledGroup {
       wasIconic = true;
     } else if (wasIconic) {
       // restore view dimensions
-      for (uint a = 0; a < (uint)children() && a < viewDims.size(); a++) {
+      for (std::uint32_t a = 0; a < (uint)children() && a < viewDims.size(); a++) {
         fltk::Widget* w = child(a);
         Rectangle& dim = viewDims[a];
         w->resize(dim.x(), dim.y(), dim.w(), dim.h());
@@ -38,7 +38,7 @@ class ViewsGroup : public fltk::TiledGroup {
       wasIconic = false;
     } else if (!suppressRescale) {  // this is a normal resize, scale all child-widgets
       float xs = w() / (float)lastWidth, ys = h() / (float)lastHeight;
-      for (uint a = 0; a < (uint)children(); a++) {
+      for (std::uint32_t a = 0; a < (uint)children(); a++) {
         fltk::Widget* ch = child(a);
         ch->resize(ch->x() * xs + 0.5f, ch->y() * ys + 0.5f, ch->w() * xs + 0.5f,
                    ch->h() * ys + 0.5f);

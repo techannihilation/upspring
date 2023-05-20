@@ -40,7 +40,7 @@ class Texture {
   inline int Width() const { return image->width(); }
   inline int Height() const { return image->height(); }
 
-  uint glIdent;
+  std::uint32_t glIdent;
   std::string name;
   std::shared_ptr<Image> image;
 
@@ -137,7 +137,7 @@ class TextureBinTree {
   }
 
   // Unused by class: uint for storing texture rendering id
-  uint render_id;
+  std::uint32_t render_id;
 
   std::shared_ptr<Image> GetResult() { return image_; }
 

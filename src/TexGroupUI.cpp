@@ -91,7 +91,7 @@ void TexGroupUI::AddToGroup() {
   if (!current) return;
 
   auto sel = texBrowser->GetSelection();
-  for (uint a = 0; a < sel.size(); a++) {
+  for (std::uint32_t a = 0; a < sel.size(); a++) {
     if (current->textures.find(sel[a]) == current->textures.end()) {
       current->textures.insert(sel[a]);
       groupTexBrowser->AddTexture(sel[a]);
@@ -107,7 +107,7 @@ void TexGroupUI::UpdateGroupList() {
 
   if (!current && !texGroupHandler->groups.empty()) current = texGroupHandler->groups.front();
 
-  for (uint a = 0; a < texGroupHandler->groups.size(); a++) {
+  for (std::uint32_t a = 0; a < texGroupHandler->groups.size(); a++) {
     TextureGroup* gr = texGroupHandler->groups[a];
     groups->add(gr->name.c_str(), 0, 0, gr);
     if (current == gr) curval = a;

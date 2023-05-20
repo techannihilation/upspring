@@ -171,13 +171,13 @@ void ModelDrawer::RenderPolygon(MdlObject* o, Poly* pl, IView* v, int mapping, b
     glBegin(GL_POLYGON);
     if (pl->verts.size() == 4 || pl->verts.size() == 3) {
       const float tc[] = {0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f};
-      for (uint a = 0; a < pl->verts.size(); a++) {
+      for (std::uint32_t a = 0; a < pl->verts.size(); a++) {
         glTexCoord2f(tc[a * 2], tc[a * 2 + 1]);
         glNormal3fv((float*)&pm->verts[pl->verts[a]].normal);
         glVertex3fv((float*)&pm->verts[pl->verts[a]].pos);
       }
     } else {
-      for (uint a = 0; a < pl->verts.size(); a++) {
+      for (std::uint32_t a = 0; a < pl->verts.size(); a++) {
         int i = pl->verts[a];
         glNormal3fv((float*)&pm->verts[i].normal);
         glVertex3fv((float*)&pm->verts[i].pos);
@@ -190,7 +190,7 @@ void ModelDrawer::RenderPolygon(MdlObject* o, Poly* pl, IView* v, int mapping, b
     glColor3ub(255, 255, 255);
   } else {
     glBegin(GL_POLYGON);
-    for (uint a = 0; a < pl->verts.size(); a++) {
+    for (std::uint32_t a = 0; a < pl->verts.size(); a++) {
       int i = pl->verts[a];
       glTexCoord2fv((float*)&pm->verts[i].tc[0]);
       glNormal3fv((float*)&pm->verts[i].normal);
@@ -233,7 +233,7 @@ void ModelDrawer::RenderObject(MdlObject* o, IView* v, int mapping) {
   // render polygons
   PolyMesh* pm = o->GetPolyMesh();
   if (pm) {
-    for (uint a = 0; a < pm->poly.size(); a++)
+    for (std::uint32_t a = 0; a < pm->poly.size(); a++)
       RenderPolygon(o, pm->poly[a], v, mapping, polySelect);
   } else if (o->geometry)
     o->geometry->Draw(this, model, o);
@@ -254,14 +254,14 @@ void ModelDrawer::RenderObject(MdlObject* o, IView* v, int mapping) {
                           glNewList(rd->drawList, GL_COMPILE_AND_EXECUTE);
 
                           // render polygons
-                          for (uint a=0;a<o->poly.size();a++)
+                          for (std::uint32_t a=0;a<o->poly.size();a++)
                                   RenderPolygon (o, o->poly[a], v,mapping, polySelect);
 
                           glEndList ();
                   }
           }*/
 
-  for (uint a = 0; a < o->childs.size(); a++) RenderObject(o->childs[a], v, mapping);
+  for (std::uint32_t a = 0; a < o->childs.size(); a++) RenderObject(o->childs[a], v, mapping);
 
   glPopMatrix();
   v->PopSelector();
@@ -381,7 +381,7 @@ void ModelDrawer::RenderPolygonVertexNormals(PolyMesh* o, Poly* pl) {
   glColor3ub(255, 0, 0);
   glDisable(GL_TEXTURE_2D);
   glBegin(GL_LINES);
-  for (uint a = 0; a < pl->verts.size(); a++) {
+  for (std::uint32_t a = 0; a < pl->verts.size(); a++) {
     Vertex& v = o->verts[pl->verts[a]];
     glVertex3fv(v.pos.getf());
     glVertex3fv((v.pos + v.normal).getf());
@@ -476,7 +476,7 @@ void ModelDrawer::RenderSmoothPolygon(PolyMesh* pm, Poly* pl) {
     glEnd();
   }
 
-  for (uint a = 0; a < pl->verts.size();
+  for (std::uint32_t a = 0; a < pl->verts.size();
        a++) { /*
                      Vertex& next = o->verts[pl->verts[(a+1 >= pl->verts.size()) ? 0 : a+1]];
                      Vertex& prev = o->verts[pl->verts[(a-1 < 0) ? pl->verts.size()-1 : a-1]];
@@ -541,18 +541,18 @@ void ModelDrawer::RenderHelperGeom(MdlObject* o, IView* v) {
   PolyMesh* pm = o->GetPolyMesh();
   if (v->GetConfig(CFG_VRTNORMALS) != 0.0f) {
     if (o->isSelected && pm) {
-      for (uint a = 0; a < pm->poly.size(); a++)
+      for (std::uint32_t a = 0; a < pm->poly.size(); a++)
         //	if (o->poly[a]->isSelected)
         RenderPolygonVertexNormals(pm, pm->poly[a]);
     }
   }
 
   if (v->GetConfig(CFG_MESHSMOOTH) != 0.0f) {
-    for (uint a = 0; a < pm->poly.size(); a++)
+    for (std::uint32_t a = 0; a < pm->poly.size(); a++)
       if (pm->poly[a]->isSelected) RenderSmoothPolygon(pm, pm->poly[a]);
   }
 
-  for (uint a = 0; a < o->childs.size(); a++) RenderHelperGeom(o->childs[a], v);
+  for (std::uint32_t a = 0; a < o->childs.size(); a++) RenderHelperGeom(o->childs[a], v);
 
   glPopMatrix();
 }
@@ -580,7 +580,7 @@ void ModelDrawer::RenderSelection_(MdlObject* o, IView* view) {
       glEnd();
     }
   }
-  for (uint a = 0; a < o->childs.size(); a++) RenderSelection_(o->childs[a], view);
+  for (std::uint32_t a = 0; a < o->childs.size(); a++) RenderSelection_(o->childs[a], view);
 
   glPopMatrix();
 }

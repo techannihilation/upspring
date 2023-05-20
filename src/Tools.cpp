@@ -40,7 +40,7 @@ CopyBuffer::CopyBuffer() {}
 CopyBuffer::~CopyBuffer() { Clear(); }
 
 void CopyBuffer::Clear() {
-  for (uint a = 0; a < buffer.size(); a++) delete buffer[a];
+  for (std::uint32_t a = 0; a < buffer.size(); a++) delete buffer[a];
   buffer.clear();
 }
 
@@ -48,7 +48,7 @@ void CopyBuffer::Copy(Model* mdl) {
   Clear();
 
   std::vector<MdlObject*> sel = mdl->GetSelectedObjects();
-  for (uint a = 0; a < sel.size(); a++) {
+  for (std::uint32_t a = 0; a < sel.size(); a++) {
     if (sel[a]->HasSelectedParent()) continue;  // the parent will be copied anyway
 
     buffer.push_back(sel[a]->Clone());
@@ -78,7 +78,7 @@ void CopyBuffer::Cut(Model* mdl) {
 }
 
 void CopyBuffer::Paste(Model* mdl, MdlObject* where) {
-  for (uint a = 0; a < buffer.size(); a++) {
+  for (std::uint32_t a = 0; a < buffer.size(); a++) {
     if (where) {
       MdlObject* obj = buffer[a]->Clone();
       where->childs.push_back(obj);
@@ -101,7 +101,7 @@ void CopyBuffer::Paste(Model* mdl, MdlObject* where) {
 
 void ModifyObjects(MdlObject* obj, Vector3 d, void (*fn)(MdlObject* obj, Vector3 d)) {
   fn(obj, d);
-  for (uint a = 0; a < obj->childs.size(); a++) ModifyObjects(obj->childs[a], d, fn);
+  for (std::uint32_t a = 0; a < obj->childs.size(); a++) ModifyObjects(obj->childs[a], d, fn);
 }
 
 static const float SpeedMod = 0.05f;
@@ -366,7 +366,7 @@ struct ETextureTool : Tool {
         }
       }
     }
-    for (uint a = 0; a < o->childs.size(); a++) applyTexture(o->childs[a], par_tex);
+    for (std::uint32_t a = 0; a < o->childs.size(); a++) applyTexture(o->childs[a], par_tex);
   }
 
   static void callback(std::shared_ptr<Texture> tex, void* data) {
@@ -413,7 +413,7 @@ struct EPolyColorTool : Tool {
         pi->texname.clear();
         pi->texture = 0;
       }
-    for (uint a = 0; a < o->childs.size(); a++) applyColor(o->childs[a], color);
+    for (std::uint32_t a = 0; a < o->childs.size(); a++) applyColor(o->childs[a], color);
   }
 
   bool toggle(bool enable) { return true; }
@@ -496,18 +496,18 @@ Tools::Tools() {
 
   Tool* _tools[] = {camera,     move,      rotate,           scale, texmap, color, flip,
                     originMove, rotateTex, toggleCurvedPoly, 0};
-  for (uint a = 0; _tools[a]; a++) tools.push_back(_tools[a]);
+  for (std::uint32_t a = 0; _tools[a]; a++) tools.push_back(_tools[a]);
 }
 
 Tool* Tools::GetDefaultTool() { return camera; }
 
 void Tools::Disable() {
-  for (uint a = 0; a < tools.size(); a++)
+  for (std::uint32_t a = 0; a < tools.size(); a++)
     if (tools[a]->isToggle) tools[a]->toggle(false);
 }
 
 void Tools::SetEditor(IEditor* editor) {
-  for (uint a = 0; a < tools.size(); a++) tools[a]->editor = editor;
+  for (std::uint32_t a = 0; a < tools.size(); a++) tools[a]->editor = editor;
 }
 
 void Tools::LoadImages()
