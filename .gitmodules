@@ -15,4 +15,4 @@
 	url = https://github.com/DentonW/DevIL.git
 [submodule "vendor/yaml-cpp"]
 	path = vendor/yaml-cpp
-	url = https://github.com/jbeder/yaml-cpp
+	url = https://github.com/jbeder/yaml-cpp.git
