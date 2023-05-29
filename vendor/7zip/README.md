@@ -1,7 +1,7 @@
 # 7zip
 
 This is the C source code from https://7-zip.org/sdk.html 
-Only the CMakeLists.txt is from me.
+Only the CMakeLists.txt is from @jochumdev.
 
 ## License
 

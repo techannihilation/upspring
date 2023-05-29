@@ -16,3 +16,6 @@
 [submodule "vendor/yaml-cpp"]
 	path = vendor/yaml-cpp
 	url = https://github.com/jbeder/yaml-cpp.git
+[submodule "vendor/simdutf"]
+	path = vendor/simdutf
+	url = https://github.com/simdutf/simdutf.git

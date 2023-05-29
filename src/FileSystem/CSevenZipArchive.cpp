@@ -8,77 +8,64 @@
 
 #include "../string_util.h"
 
+#include "simdutf.h"
 #include "spdlog/spdlog.h"
 
-
 extern "C" {
-#include "7z/7zTypes.h"
-#include "7z/7zAlloc.h"
-#include "7z/7zCrc.h"
+#include "7zip/C/7zTypes.h"
+#include "7zip/C/7zAlloc.h"
+#include "7zip/C/7zCrc.h"
 }
 
-static Byte kUtf8Limits[5] = {0xC0, 0xE0, 0xF0, 0xF8, 0xFC};
-static bool Utf16_To_Utf8(char* dest, size_t* destLen, const UInt16* src, size_t srcLen) {
-  size_t destPos = 0;
-  size_t srcPos = 0;
-  for (;;) {
-    unsigned numAdds = 0;
-    if (srcPos == srcLen) {
-      *destLen = destPos;
-      return True;
-    }
-    UInt32 value = src[srcPos++];
-    if (value < 0x80) {
-      if (dest != nullptr) {
-        dest[destPos] = static_cast<char>(value);
-      }
-      destPos++;
-      continue;
-    }
-    if (value >= 0xD800 && value < 0xE000) {
-      if (value >= 0xDC00 || srcPos == srcLen) {
-        break;
-      }
-      const UInt32 c2 = src[srcPos++];
-      if (c2 < 0xDC00 || c2 >= 0xE000) {
-        break;
-      }
-      value = (((value - 0xD800) << 10) | (c2 - 0xDC00)) + 0x10000;
-    }
-    for (numAdds = 1; numAdds < 5; numAdds++) {
-      if (value < ((static_cast<UInt32>(1)) << (numAdds * 5 + 6))) {
-        break;
-      }
-    }
-    if (dest != nullptr) {
-      dest[destPos] = static_cast<char>(kUtf8Limits[numAdds - 1] + (value >> (6 * numAdds)));
-    }
-    destPos++;
-    do {
-      numAdds--;
-      if (dest != nullptr) {
-        dest[destPos] = static_cast<char>(0x80 + ((value >> (6 * numAdds)) & 0x3F));
-      }
-      destPos++;
-    } while (numAdds != 0);
+//
+// UTF-16 <-> UTF-8 using simdutf
+//
+std::wstring convert_utf8_to_wchar(const std::string& utf8_str) {
+  const size_t utf8_length = utf8_str.size();
+
+  // Determine the maximum possible UTF-16 output size
+  const size_t utf16_max_length = simdutf::utf16_length_from_utf8(utf8_str.data(), utf8_length);
+
+  // Allocate a buffer for the UTF-16 output
+  std::vector<char16_t> utf16_buffer(utf16_max_length, 0);
+
+  // Convert the UTF-8 string to UTF-16
+  simdutf::convert_utf8_to_utf16(utf8_str.data(), utf8_length, utf16_buffer.data());
+
+  // Return the UTF-16 string as a wstring
+  return std::wstring(reinterpret_cast<const wchar_t*>(utf16_buffer.data()), utf16_buffer.size());
+}
+
+std::optional<std::string> convert_char16_to_utf8(const char16_t* cstr, std::size_t cstr_len) {
+  if (cstr == nullptr) {
+    return std::nullopt;
   }
-  *destLen = destPos;
-  return false;
+
+  const size_t utf8_length = simdutf::utf8_length_from_utf16(cstr, cstr_len);
+
+  std::vector<char> utf8_buffer(utf8_length, 0);
+
+  if (simdutf::convert_utf16_to_utf8(cstr, cstr_len, utf8_buffer.data()) != utf8_length) {
+    spdlog::error("Failed to convert UTF16 to UTF8");
+    return std::nullopt;
+  }
+
+  return std::string(utf8_buffer.data(), utf8_buffer.size());
 }
 
-int CSevenZipArchive::GetFileName(const CSzArEx* db, int i) {
+std::optional<std::string> convert_wchar_to_utf8(const wchar_t* wstr) {
+  const size_t wstr_length = std::wcslen(wstr);
+  return convert_char16_to_utf8(reinterpret_cast<const char16_t*>(wstr), wstr_length);
+}
+
+static std::optional<std::string> get_file_name(const CSzArEx* db, std::size_t i) {
   const size_t len = SzArEx_GetFileNameUtf16(db, i, nullptr);
+  std::vector<uint16_t> utf16_buffer(len);
 
-  if (len > tempBufSize) {
-    SzFree(nullptr, tempBuf);
-    tempBufSize = len;
-    tempBuf = static_cast<UInt16*>(SzAlloc(nullptr, tempBufSize * sizeof(tempBuf[0])));
-    if (tempBuf == nullptr) {
-      return SZ_ERROR_MEM;
-    }
-  }
-  tempBuf[len - 1] = 0;
-  return SzArEx_GetFileNameUtf16(db, i, tempBuf);
+  // Get the name into the buffer
+  const std::size_t name_len = SzArEx_GetFileNameUtf16(db, i, utf16_buffer.data());
+
+  return convert_char16_to_utf8(reinterpret_cast<char16_t*>(utf16_buffer.data()), name_len);
 }
 
 const char* CSevenZipArchive::GetErrorStr(int res) {
@@ -121,43 +108,39 @@ CSevenZipArchive::CSevenZipArchive(const std::string& name) : IArchive(name), is
   }
 
   FileInStream_CreateVTable(&archiveStream);
-  LookToRead2_CreateVTable(&lookStream, False);
+  archiveStream.wres = 0;
 
+  LookToRead2_CreateVTable(&lookStream, False);
   lookStream.realStream = &archiveStream.vt;
-  LookToRead2_Init(&lookStream);
-  lookStream.buf = nullptr;
   lookStream.buf = static_cast<Byte*>(ISzAlloc_Alloc(&allocImp, kInputBufSize));
+  lookStream.bufSize = kInputBufSize;
+  LookToRead2_Init(&lookStream);
 
   CrcGenerateTable();
   SzArEx_Init(&db);
 
   SRes res = SzArEx_Open(&db, &lookStream.vt, &allocImp, &allocTempImp);
   if (res != SZ_OK) {
-    spdlog::error("7Zip error opening '{}', error was: {}", name, strerror(res));
+    spdlog::error("7zip error opening '{}', error was: {}", name, strerror(res));
     return;
   }
   isOpen = true;
 
   // Get contents of archive and store name->int mapping
   for (std::size_t i = 0; i < db.NumFiles; ++i) {
-    const bool isDir = SzArEx_IsDir(&db, i);
-
-    if (isDir) {
+    if (SzArEx_IsDir(&db, i)) {
       continue;
     }
 
-    const int written = GetFileName(&db, i);
-    if (written <= 0) {
-      spdlog::error("Error getting filename in Archive: {} {}, file skipped in {}",
-                    GetErrorStr(res), res, name);
+    auto name = get_file_name(&db, i);
+    if (!name) {
+      spdlog::error("Error getting filename in Archive: {} {}, file skipped",
+                    GetErrorStr(res), res);
       continue;
     }
+    spdlog::debug("Got '{}'", name.value());
 
-    char buf[1024];
-    size_t dstlen = sizeof(buf);
-
-    Utf16_To_Utf8(buf, &dstlen, tempBuf, written);
-    const std::string lower_name = to_lower(buf);
+    const std::string lower_name = to_lower(name.value());
 
     if (lcNameIndex.find(lower_name) != lcNameIndex.end()) {
       spdlog::debug("7zip: skipping '{}' it's already known", lower_name);
@@ -166,12 +149,11 @@ CSevenZipArchive::CSevenZipArchive(const std::string& name) : IArchive(name), is
 
 
     FileData fd;
-    fd.origName = buf;
+    fd.origName = std::move(name.value());
     fd.fp = i;
     fd.size = SzArEx_GetFileSize(&db, i);
-    fd.crc = 0;  //; (f->Size > 0) ? f->Crc : 0;
+
     if (SzBitWithVals_Check(&db.Attribs, i)) {
-      // LOG_DEBUG("%s %d", fd.origName.c_str(), db.Attribs.Vals[i])
       if ((db.Attribs.Vals[i] & 1 << 16) != 0U) {
         fd.mode = 0755;
       } else {
@@ -179,8 +161,8 @@ CSevenZipArchive::CSevenZipArchive(const std::string& name) : IArchive(name), is
       }
     }
 
-    fileData.emplace_back(std::move(fd));
-    lcNameIndex.insert({to_lower(fd.origName), fileData.size() - 1});
+    lcNameIndex.emplace(to_lower(fd.origName), fileEntries.size());
+    fileEntries.emplace_back(std::move(fd));
   }
 }
 
@@ -196,14 +178,14 @@ CSevenZipArchive::~CSevenZipArchive() {
   SzFree(nullptr, tempBuf);
 }
 
-std::size_t CSevenZipArchive::NumFiles() const { return fileData.size(); }
+std::size_t CSevenZipArchive::NumFiles() const { return fileEntries.size(); }
 
 bool CSevenZipArchive::GetFile(std::size_t fid, std::vector<std::uint8_t>& buffer) {
   // Get 7zip to decompress it
   size_t offset = 0;
   size_t outSizeProcessed = 0;
   const SRes res =
-      SzArEx_Extract(&db, &lookStream.vt, fileData[fid].fp, &blockIndex, &outBuffer, &outBufferSize,
+      SzArEx_Extract(&db, &lookStream.vt, fileEntries[fid].fp, &blockIndex, &outBuffer, &outBufferSize,
                      &offset, &outSizeProcessed, &allocImp, &allocTempImp);
   if (res == SZ_OK) {
     buffer.resize(outSizeProcessed);
@@ -212,14 +194,14 @@ bool CSevenZipArchive::GetFile(std::size_t fid, std::vector<std::uint8_t>& buffe
     }
     return true;
   }
-  spdlog::error("Error extracting {}: {}", fileData[fid].origName, GetErrorStr(res));
+  spdlog::error("Error extracting {}: {}", fileEntries[fid].origName, GetErrorStr(res));
   return false;
 }
 
 void CSevenZipArchive::FileInfo(std::size_t fid, std::string& par_name, int& par_size, int& par_mode) const {
-  par_name = fileData[fid].origName;
-  par_size = fileData[fid].size;
-  par_mode = fileData[fid].mode;
+  par_name = fileEntries[fid].origName;
+  par_size = fileEntries[fid].size;
+  par_mode = fileEntries[fid].mode;
 }
 
 #if 0

@@ -46,8 +46,10 @@ target_link_libraries (${PROJECT_NAME}
 
     lib3ds
     7zip
+
     minizip-ng
     spdlog
+    simdutf::simdutf
     CLI11
     TXPKCore
 )

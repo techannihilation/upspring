@@ -211,7 +211,7 @@ bool TextureHandler::LoadFiltered(const std::string& par_archive_path,
     if (myExt.empty()) {
       continue;
     }
-    if (supported_extensions_.find(myExt) == supported_extensions_.end()) {
+    if (supported_extensions_.find(myExt) != supported_extensions_.end()) {
       // Not a supported file.
       continue;
     }

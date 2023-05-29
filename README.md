@@ -69,6 +69,7 @@ The given lua script here needs [lfs](https://lunarmodules.github.io/luafilesyst
     | [fltk2](vendor/fltk2/COPYING)                        | LGPL-2        |
     | [lib3ds](https://github.com/techannihilation/lib3ds) | LGPL-2        |
     | [minizip-ng](https://github.com/zlib-ng/minizip-ng)  | zlib license  |
+    | [simdutf](https://github.com/simdutf/simdutf)        | Apache 2.0    |
     | [spdlog](https://github.com/gabime/spdlog)           | MIT           |
     | [TXPK](https://github.com/Seng3694/TXPK)             | MIT           |
     | [OpenIL](https://openil.sourceforge.net/)            | GPL-2         |

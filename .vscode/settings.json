@@ -128,5 +128,6 @@
   "C_Cpp.default.cStandard": "c99",
   "C_Cpp.codeAnalysis.clangTidy.args": [
     "--extra-arg=-fcoroutines"
-  ]
+  ],
+  "cmake.configureOnOpen": true
 }

@@ -12,10 +12,6 @@ atlas::atlas() : packer_(std::make_shared<txpk::BlackspawnPacker>()) {}
 atlas atlas::make_from_archive(const std::string& par_archive, const std::string& par_savepath, bool par_power_of_two) {
   TextureHandler texture_handler = TextureHandler();
 
-  auto d3doFilter = [](const std::string& pName) -> bool {
-    return pName.rfind("unittextures/tatex/", 0) == 0;
-  };
-
   if (!texture_handler.LoadFiltered(par_archive, [](const std::string& par_path) -> std::string {
         if (par_path.rfind("unittextures/tatex/", 0) == 0) {
           return std::filesystem::path(par_path).replace_extension("").string().substr(std::string("unittextures/tatex/").length());

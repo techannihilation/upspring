@@ -4,12 +4,12 @@
 #include <cstdint>
 #include <vector>
 #include <string>
+#include <optional>
 #include "IArchive.h"
 
 extern "C" {
-#include "7z/7zTypes.h"
-#include "7z/7zFile.h"
-#include "7z/7z.h"
+#include "7zip/C/7zFile.h"
+#include "7zip/C/7z.h"
 }
 
 /**
@@ -36,40 +36,13 @@ class CSevenZipArchive : public IArchive {
 
   struct FileData {
     int fp;
-    /**
-     * Real/unpacked size of the file in bytes.
-     * @see #unpackedSize
-     * @see #packedSize
-     */
-    int size;
+    std::size_t size;
     std::string origName;
-    std::size_t crc;
-    /**
-     * How many bytes of files have to be unpacked to get to this file.
-     * This either equal to size, or is larger, if there are other files
-     * in the same solid block.
-     * @see #size
-     * @see #packedSize
-     */
-    int unpackedSize;
-    /**
-     * How many bytes of the archive have to be read
-     * from disc to get to this file.
-     * This may be smaller or larger then size,
-     * and is smaller then or equal to unpackedSize.
-     * @see #size
-     * @see #unpackedSize
-     */
-    int packedSize;
-    /**
-     * file mode
-     */
     int mode;
   };
-  int GetFileName(const CSzArEx* db, int i);
   static const char* GetErrorStr(int res);
 
-  std::vector<FileData> fileData;
+  std::vector<FileData> fileEntries;
   UInt16* tempBuf = nullptr;
   size_t tempBufSize = 0;
 
