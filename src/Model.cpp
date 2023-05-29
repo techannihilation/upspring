@@ -132,7 +132,8 @@ bool Model::Save(Model* mdl, const std::string& _fn, IProgressCtl& progctl) {
 static void GetSelectedObjectsHelper(MdlObject* obj, std::vector<MdlObject*>& sel) {
   if (obj->isSelected) sel.push_back(obj);
 
-  for (std::uint32_t a = 0; a < obj->childs.size(); a++) GetSelectedObjectsHelper(obj->childs[a], sel);
+  for (std::uint32_t a = 0; a < obj->childs.size(); a++)
+    GetSelectedObjectsHelper(obj->childs[a], sel);
 }
 
 std::vector<MdlObject*> Model::GetSelectedObjects() {
@@ -463,7 +464,7 @@ bool Model::ConvertToS3O(std::string textureName, int texw, int texh) {
   TextureBinTree tree(texw, texh);
   std::map<std::string, TextureBinTree::Node*> texToNode;
 
-  for (auto &texmap_entry : textures) {
+  for (auto& texmap_entry : textures) {
     auto img = texmap_entry.second->image;
 
     // On teamcolor we copy the red channel to green, on normal textures we add a opaque alpha.
@@ -513,11 +514,11 @@ bool Model::ConvertToS3O(std::string textureName, int texw, int texh) {
   // now set new texture coordinates.
   // Vertices might need to be split, so vertices are calculated per frame and then optimized again
 
-  for (auto &polymesh : pmlist) {
+  for (auto& polymesh : pmlist) {
     std::vector<Vertex> vertices;
 
     for (auto& poly : polymesh->poly) {
-      auto *tnode = texToNode[poly->texname];
+      auto* tnode = texToNode[poly->texname];
 
       if (poly->verts.size() <= 4) {
         const float tc[] = {0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f};
@@ -643,7 +644,7 @@ void Model::Cleanup() {
 void Model::FlipUVs() {
   auto objs = GetObjectList();
 
-  for (auto &obj : objs) {
+  for (auto& obj : objs) {
     for (VertexIterator vi(obj); !vi.End(); vi.Next()) {
       vi->tc[0].y = 1.0F - vi->tc[0].y;
       // vi->tc[1].y = 1.0F - vi->tc[1].y;
@@ -654,7 +655,7 @@ void Model::FlipUVs() {
 void Model::MirrorUVs() {
   auto objs = GetObjectList();
 
-  for (auto &obj : objs) {
+  for (auto& obj : objs) {
     for (VertexIterator vi(obj); !vi.End(); vi.Next()) {
       vi->tc[0].x = 1.0F - vi->tc[0].x;
       // vi->tc[1].x = 1.0F - vi->tc[1].x;

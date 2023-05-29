@@ -889,7 +889,9 @@ float EditorViewWindow::GetConfig(int cfg) {
   return 0;
 }
 
-std::shared_ptr<TextureHandler> EditorViewWindow::GetTextureHandler() { return editor->GetTextureHandler(); }
+std::shared_ptr<TextureHandler> EditorViewWindow::GetTextureHandler() {
+  return editor->GetTextureHandler();
+}
 
 /*
   FLTK event handler

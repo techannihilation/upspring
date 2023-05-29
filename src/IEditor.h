@@ -14,7 +14,8 @@ class IEditor {
   virtual Tool* GetTool() = 0;
   virtual void RenderScene(IView* view) = 0;
   virtual std::shared_ptr<TextureHandler> GetTextureHandler() = 0;
-  virtual void SetTextureSelectCallback(void (*cb)(std::shared_ptr<Texture> tex, void* data), void* data) = 0;
+  virtual void SetTextureSelectCallback(void (*cb)(std::shared_ptr<Texture> tex, void* data),
+                                        void* data) = 0;
   virtual float GetTime() = 0;
   virtual void SetModel(Model* mdl) = 0;
 };

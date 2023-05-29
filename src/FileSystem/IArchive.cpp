@@ -6,16 +6,15 @@
 
 // #include "System/StringUtil.h"
 
-std::size_t IArchive::FindFile(const std::string& filePath) const
-{
-	const std::string normalizedFilePath = to_lower(filePath);
-	const auto f_it = lcNameIndex.find(normalizedFilePath);
+std::size_t IArchive::FindFile(const std::string& filePath) const {
+  const std::string normalizedFilePath = to_lower(filePath);
+  const auto f_it = lcNameIndex.find(normalizedFilePath);
 
-	if (f_it != lcNameIndex.end()) {
-		return f_it->second;
-    }
+  if (f_it != lcNameIndex.end()) {
+    return f_it->second;
+  }
 
-	return NumFiles();
+  return NumFiles();
 }
 
 #if 0
@@ -33,14 +32,13 @@ bool IArchive::CalcHash(uint32_t fid, uint8_t hash[sha512::SHA_LEN], std::vector
 }
 #endif
 
-bool IArchive::GetFileByName(const std::string& name, std::vector<std::uint8_t>& buffer)
-{
-	const std::size_t fid = FindFile(name);
+bool IArchive::GetFileByName(const std::string& name, std::vector<std::uint8_t>& buffer) {
+  const std::size_t fid = FindFile(name);
 
-	if (!IsFileId(fid)) {
-		return false;
-    }
+  if (!IsFileId(fid)) {
+    return false;
+  }
 
-	GetFile(fid, buffer);
-	return true;
+  GetFile(fid, buffer);
+  return true;
 }

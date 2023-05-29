@@ -20,7 +20,7 @@ class Tool {
     maptype = map2d;
     imageFile = 0;
   }
-  ~Tool() { }
+  ~Tool() {}
   // on a mapview
   // msg = fltk::PUSH, fltk::RELEASE, fltk::DRAG, fltk::MOVE
   virtual void mouse(EditorViewWindow* /*view*/, int /*msg*/, Point /*move*/) {

@@ -20,7 +20,9 @@ class config {
   config(config const&) = delete;
   void operator=(config const&) = delete;
 
-  void app_path(std::filesystem::path par_app_path) { app_path_ = std::filesystem::canonical(par_app_path).string(); }
+  void app_path(std::filesystem::path par_app_path) {
+    app_path_ = std::filesystem::canonical(par_app_path).string();
+  }
   std::filesystem::path app_path() { return app_path_; }
 };
 

@@ -47,7 +47,8 @@ Poly* Poly::Clone() {
 void Poly::Flip() {
   std::vector<int> nv;
   nv.resize(verts.size());
-  for (std::uint32_t a = 0; a < verts.size(); a++) nv[verts.size() - a - 1] = verts[(a + 2) % verts.size()];
+  for (std::uint32_t a = 0; a < verts.size(); a++)
+    nv[verts.size() - a - 1] = verts[(a + 2) % verts.size()];
   verts = nv;
 }
 

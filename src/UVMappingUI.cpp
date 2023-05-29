@@ -208,10 +208,6 @@ void MappingUI::Show() {
   window->show();
 }
 
-void MappingUI::flipUVs() {
-  callback->GetMdl()->FlipUVs();
-}
+void MappingUI::flipUVs() { callback->GetMdl()->FlipUVs(); }
 
-void MappingUI::mirrorUVs() {
-  callback->GetMdl()->MirrorUVs();
-}
+void MappingUI::mirrorUVs() { callback->GetMdl()->MirrorUVs(); }

@@ -4,13 +4,12 @@
 #define SCRIPT_EXEC 3
 
 #ifndef SWIG
-class ScriptedMenuItem
-{
-public:
-	std::string funcName, name;
+class ScriptedMenuItem {
+ public:
+  std::string funcName, name;
 };
 #endif
 
 IEditor* upsGetEditor();
 
-void upsAddMenuItem(const char *name, const char *funcname);
+void upsAddMenuItem(const char* name, const char* funcname);

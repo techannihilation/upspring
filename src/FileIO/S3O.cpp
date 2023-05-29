@@ -152,7 +152,8 @@ bool Model::LoadS3O(const char* filename, IProgressCtl& /*progctl*/) {
   }
 
   if (header.version != 0) {
-    spdlog::error("S3O model '{}' has a wrong version ({}, wanted: {})", filename, header.version, 0);
+    spdlog::error("S3O model '{}' has a wrong version ({}, wanted: {})", filename, header.version,
+                  0);
     fclose(file);
     return false;
   }

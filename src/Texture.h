@@ -23,8 +23,10 @@ class Texture {
   Texture();
   Texture(const std::string& filename);
   Texture(const std::string& filename, const std::string& hintpath);
-  Texture(std::vector<std::uint8_t>& par_data, const std::string& par_path, const std::string& par_name, bool par_is_teamcolor);
-  Texture(std::shared_ptr<Image> par_image, const std::string& par_name) : glIdent(), name(par_name) {
+  Texture(std::vector<std::uint8_t>& par_data, const std::string& par_path,
+          const std::string& par_name, bool par_is_teamcolor);
+  Texture(std::shared_ptr<Image> par_image, const std::string& par_name)
+      : glIdent(), name(par_name) {
     image = par_image;
   };
   ~Texture();
@@ -57,10 +59,10 @@ class TextureHandler {
   TextureHandler() : textures_(), teamcolors_() {}
   virtual ~TextureHandler() = default;
 
-  TextureHandler(const TextureHandler &rhs) = delete;
-  TextureHandler(TextureHandler &&rhs) = delete;
-  TextureHandler operator=(const TextureHandler &rhs) = delete;
-  TextureHandler operator=(TextureHandler &&rhs) = delete;
+  TextureHandler(const TextureHandler& rhs) = delete;
+  TextureHandler(TextureHandler&& rhs) = delete;
+  TextureHandler operator=(const TextureHandler& rhs) = delete;
+  TextureHandler operator=(TextureHandler&& rhs) = delete;
 
   bool Load3DO(const std::string& par_archive_path) {
     return LoadFiltered(par_archive_path, [](const std::string& par_path) -> const std::string {
@@ -77,7 +79,7 @@ class TextureHandler {
                     std::function<const std::string(const std::string&)>&& par_filter);
   std::shared_ptr<Texture> texture(const std::string& name);
 
-  bool has_team_color(const std::string &texture_name);
+  bool has_team_color(const std::string& texture_name);
 
  public:
   const std::unordered_map<std::string, std::shared_ptr<Texture>>& textures() { return textures_; }

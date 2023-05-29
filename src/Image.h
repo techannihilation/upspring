@@ -21,7 +21,7 @@ class Image {
         oheight_(),
         name_(),
         path_(),
-        is_team_color_() {};
+        is_team_color_(){};
 
   virtual ~Image();
 
@@ -29,9 +29,7 @@ class Image {
   bool load(const std::string& par_file);
 
   // For Swig.
-  bool load_file(const std::string& par_file) {
-    return load(par_file);
-  }
+  bool load_file(const std::string& par_file) { return load(par_file); }
 
   bool create(int par_width, int par_height, int par_channels = 4);
   bool create(int par_width, int par_height, float par_red, float par_green,
@@ -43,7 +41,7 @@ class Image {
 
   // Copy
   Image(const Image& rhs) = delete;
-  Image& operator=(const Image& rhs)= delete;
+  Image& operator=(const Image& rhs) = delete;
 
   // Move
   Image(Image&& rhs) noexcept = delete;
@@ -85,17 +83,17 @@ class Image {
   bool mirror();
   bool flip();
 
-  bool blit(const std::shared_ptr<Image> par_src, int par_dx, int par_dy, int par_dz, int par_sx, int par_sy, int par_sz,
-            int par_width, int par_height, int par_depth);
+  bool blit(const std::shared_ptr<Image> par_src, int par_dx, int par_dy, int par_dz, int par_sx,
+            int par_sy, int par_sz, int par_width, int par_height, int par_depth);
 
   /**
    * Name/path getter/setter
    */
- void name(const std::string& par_name) { name_ = par_name; }
- const std::string& name() const { return name_; }
+  void name(const std::string& par_name) { name_ = par_name; }
+  const std::string& name() const { return name_; }
 
- void path(const std::string& par_path) { path_ = par_path; }
- const std::string& path() const { return path_; }
+  void path(const std::string& par_path) { path_ = par_path; }
+  const std::string& path() const { return path_; }
 
  protected:
   std::uint32_t ilid_;

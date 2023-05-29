@@ -510,10 +510,9 @@ void Tools::SetEditor(IEditor* editor) {
   for (std::uint32_t a = 0; a < tools.size(); a++) tools[a]->editor = editor;
 }
 
-void Tools::LoadImages()
-{
+void Tools::LoadImages() {
   auto archive = CZipArchive("data/buttons.ups");
-  for (auto &tool : tools) {
+  for (auto& tool : tools) {
     std::string const name = to_lower(tool->imageFile);
     std::vector<std::uint8_t> buffer{};
     if (!archive.GetFileByName(name, buffer)) {
@@ -528,7 +527,8 @@ void Tools::LoadImages()
     }
 
     if (!image.has_alpha() && !image.add_alpha()) {
-      spdlog::error("Failed to add alpha to tool image: '{}', error was: {}", tool->imageFile, image.error());
+      spdlog::error("Failed to add alpha to tool image: '{}', error was: {}", tool->imageFile,
+                    image.error());
       continue;
     }
 

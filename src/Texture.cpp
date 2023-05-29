@@ -34,18 +34,15 @@ std::string Texture::textureLoadDir;
 
 Texture::Texture() : glIdent() {}
 
-Texture::Texture(const std::string& par_filename) : glIdent()
-{
-  Load(par_filename, std::string());
-}
+Texture::Texture(const std::string& par_filename) : glIdent() { Load(par_filename, std::string()); }
 
-Texture::Texture(const std::string& par_filename, const std::string& hintpath) : glIdent()
-{
+Texture::Texture(const std::string& par_filename, const std::string& hintpath) : glIdent() {
   Load(par_filename, hintpath);
 }
 
-
-Texture::Texture(std::vector<std::uint8_t>& par_data, const std::string& par_path, const std::string& par_name, bool par_is_teamcolor) : name(par_name), glIdent(0) {
+Texture::Texture(std::vector<std::uint8_t>& par_data, const std::string& par_path,
+                 const std::string& par_name, bool par_is_teamcolor)
+    : name(par_name), glIdent(0) {
   auto img = std::make_shared<Image>();
   img->path(par_path);
   img->name(par_name);
@@ -122,7 +119,8 @@ bool Texture::VideoInit() {
 
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-  gluBuild2DMipmaps(GL_TEXTURE_2D, format, image->width(), image->height(), format, GL_UNSIGNED_BYTE, image->data());
+  gluBuild2DMipmaps(GL_TEXTURE_2D, format, image->width(), image->height(), format,
+                    GL_UNSIGNED_BYTE, image->data());
   return true;
 }
 
@@ -162,8 +160,9 @@ bool TextureHandler::has_team_color(const std::string& texture_name) {
   return teamcolors_.find(tmp) != teamcolors_.end();
 }
 
-bool TextureHandler::LoadFiltered(const std::string& par_archive_path,
-                                  std::function<const std::string(const std::string&)>&& par_filter) {
+bool TextureHandler::LoadFiltered(
+    const std::string& par_archive_path,
+    std::function<const std::string(const std::string&)>&& par_filter) {
   auto ext = std::filesystem::path(par_archive_path).extension();
 
   std::shared_ptr<IArchive> archive;
@@ -184,7 +183,7 @@ bool TextureHandler::LoadFiltered(const std::string& par_archive_path,
     std::vector<std::uint8_t> buff;
     archive->GetFileByName("unittextures/tatex/teamtex.txt", buff);
 
-    std::stringstream stringstream(std::string((char *)buff.data(), buff.size()));
+    std::stringstream stringstream(std::string((char*)buff.data(), buff.size()));
 
     // teamcolors_.reserve(32);
     std::string line;
@@ -254,7 +253,8 @@ bool TextureHandler::LoadFiltered(const std::string& par_archive_path,
 // TextureGroupHandler
 // ------------------------------------------------------------------------------------------------
 
-TextureGroupHandler::TextureGroupHandler(std::shared_ptr<TextureHandler> par_handler) : textureHandler(par_handler) {}
+TextureGroupHandler::TextureGroupHandler(std::shared_ptr<TextureHandler> par_handler)
+    : textureHandler(par_handler) {}
 
 TextureGroupHandler::~TextureGroupHandler() {
   for (auto& group : groups) {
@@ -371,7 +371,8 @@ TextureBinTree::Node::~Node() {
 
 TextureBinTree::TextureBinTree(int par_width, int par_height) : TextureBinTree() {
   if (!image_->create(par_width, par_height)) {
-    spdlog::error("Failed to create the atlas image with size '{}/{}', error was: {}", par_width, par_height, image_->error());
+    spdlog::error("Failed to create the atlas image with size '{}/{}', error was: {}", par_width,
+                  par_height, image_->error());
   }
 };
 
@@ -431,7 +432,7 @@ TextureBinTree::Node* TextureBinTree::AddNode(const std::shared_ptr<Image> par_s
     tree = new Node(0, 0, image_->width(), image_->height());
   }
 
-  auto *pn = InsertNode(tree, par_subtex->width(), par_subtex->height());
+  auto* pn = InsertNode(tree, par_subtex->width(), par_subtex->height());
   if (pn == nullptr) {
     return nullptr;
   }

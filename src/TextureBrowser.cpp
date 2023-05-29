@@ -16,7 +16,8 @@
 // TextureBrowser::Item
 // ------------------------------------------------------------------------------------------------
 
-TextureBrowser::Item::Item(std::shared_ptr<Texture> par_texture) : fltk::Widget(0, 0, 50, 50), tex(par_texture), selected(false) {
+TextureBrowser::Item::Item(std::shared_ptr<Texture> par_texture)
+    : fltk::Widget(0, 0, 50, 50), tex(par_texture), selected(false) {
   color((fltk::Color)0x1f1f1f00);
   tooltip(par_texture->name.c_str());
 }

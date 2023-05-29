@@ -134,8 +134,8 @@ CSevenZipArchive::CSevenZipArchive(const std::string& name) : IArchive(name), is
 
     auto name = get_file_name(&db, i);
     if (!name) {
-      spdlog::error("Error getting filename in Archive: {} {}, file skipped",
-                    GetErrorStr(res), res);
+      spdlog::error("Error getting filename in Archive: {} {}, file skipped", GetErrorStr(res),
+                    res);
       continue;
     }
     spdlog::debug("Got '{}'", name.value());
@@ -146,7 +146,6 @@ CSevenZipArchive::CSevenZipArchive(const std::string& name) : IArchive(name), is
       spdlog::debug("7zip: skipping '{}' it's already known", lower_name);
       continue;
     }
-
 
     FileData fd;
     fd.origName = std::move(name.value());
@@ -185,8 +184,8 @@ bool CSevenZipArchive::GetFile(std::size_t fid, std::vector<std::uint8_t>& buffe
   size_t offset = 0;
   size_t outSizeProcessed = 0;
   const SRes res =
-      SzArEx_Extract(&db, &lookStream.vt, fileEntries[fid].fp, &blockIndex, &outBuffer, &outBufferSize,
-                     &offset, &outSizeProcessed, &allocImp, &allocTempImp);
+      SzArEx_Extract(&db, &lookStream.vt, fileEntries[fid].fp, &blockIndex, &outBuffer,
+                     &outBufferSize, &offset, &outSizeProcessed, &allocImp, &allocTempImp);
   if (res == SZ_OK) {
     buffer.resize(outSizeProcessed);
     if (outSizeProcessed > 0) {
@@ -198,7 +197,8 @@ bool CSevenZipArchive::GetFile(std::size_t fid, std::vector<std::uint8_t>& buffe
   return false;
 }
 
-void CSevenZipArchive::FileInfo(std::size_t fid, std::string& par_name, int& par_size, int& par_mode) const {
+void CSevenZipArchive::FileInfo(std::size_t fid, std::string& par_name, int& par_size,
+                                int& par_mode) const {
   par_name = fileEntries[fid].origName;
   par_size = fileEntries[fid].size;
   par_mode = fileEntries[fid].mode;

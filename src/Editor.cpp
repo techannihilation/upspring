@@ -36,7 +36,6 @@
 #include "swig/ScriptInterface.h"
 #include "string_util.h"
 
-
 extern "C" {
 #include "lua.h"
 #include "lualib.h"
@@ -294,7 +293,8 @@ void EditorUI::uiSetRenderMethod(RenderMethod rm) {
   viewsGroup->redraw();
 }
 
-static void CollectTextures(MdlObject* par_object, std::set<std::shared_ptr<Texture>>& par_textures) {
+static void CollectTextures(MdlObject* par_object,
+                            std::set<std::shared_ptr<Texture>>& par_textures) {
   PolyMesh* pm = par_object->GetPolyMesh();
   if (pm != nullptr) {
     for (auto& a : pm->poly) {
@@ -1032,7 +1032,7 @@ void EditorUI::menuSettingsShowArchiveList() {
 // Show texture group window
 void EditorUI::menuSettingsTextureGroups() {
   TexGroupUI const texGroupUI(textureGroupHandler, textureHandler);
-  textureGroupHandler->Save((ups::config::get().app_path() /  TextureGroupConfig).string());
+  textureGroupHandler->Save((ups::config::get().app_path() / TextureGroupConfig).string());
 
   UpdateTextureGroups();
   InitTexBrowser();
@@ -1058,7 +1058,7 @@ void EditorUI::menuSetSpringDir() {
 void EditorUI::menuSettingsRestoreViews() { LoadSettings(); }
 
 void EditorUI::SaveSettings() {
-  std::string const path = (ups::config::get().app_path() /  ViewSettingsFile).string();
+  std::string const path = (ups::config::get().app_path() / ViewSettingsFile).string();
   CfgWriter writer(path.c_str());
   if (writer.IsFailed()) {
     fltk::message("Failed to open %s for writing view settings", path.c_str());
@@ -1253,7 +1253,7 @@ extern "C" {
 int luaopen_upspring(lua_State* lua_state);
 }
 
-void run_script(CLI::App &app, const std::string& par_script_file) {
+void run_script(CLI::App& app, const std::string& par_script_file) {
   // Config
   ups::config::get().app_path(std::filesystem::path(CLI::argv()[0]).remove_filename());
 
@@ -1283,7 +1283,8 @@ void run_script(CLI::App &app, const std::string& par_script_file) {
       return;
     }
 
-    lua_createtable(lua_state, static_cast<int>(remaining.size()), static_cast<int>(remaining.size()));
+    lua_createtable(lua_state, static_cast<int>(remaining.size()),
+                    static_cast<int>(remaining.size()));
     lua_pushstring(lua_state, script_file.c_str());
     lua_rawseti(lua_state, -2, 0);
     for (std::size_t i = 1; i < remaining.size(); ++i) {
@@ -1330,7 +1331,9 @@ int main(int argc, char* argv[]) {
 
   app.set_version_flag("--version", std::string(UPSPRING_VERSION));
 
-  app.add_option_function<std::string>("--run,-r", [&app](const std::string par_script_file) { run_script(app, par_script_file); }, "Run a lua script file and exit");
+  app.add_option_function<std::string>(
+      "--run,-r", [&app](const std::string par_script_file) { run_script(app, par_script_file); },
+      "Run a lua script file and exit");
   app.callback([&app]() {
     CLI::App subApp;
     std::string model_file;
@@ -1373,8 +1376,13 @@ int main(int argc, char* argv[]) {
       fltk::message(msg.payload.data());
     });
 
-    auto lsps = find_files(ups::config::get().app_path() / "scripts" / "plugins", [](const std::filesystem::path& par_path) -> bool { return par_path.extension() == ".lua"; }, false);
-    for (auto &lsp : lsps) {
+    auto lsps = find_files(
+        ups::config::get().app_path() / "scripts" / "plugins",
+        [](const std::filesystem::path& par_path) -> bool {
+          return par_path.extension() == ".lua";
+        },
+        false);
+    for (auto& lsp : lsps) {
       if (luaL_dofile(lua_state, lsp.string().c_str()) != 0) {
         const char* err = lua_tostring(lua_state, -1);
         fltk::message("Error while executing \'%s\': %s", lsp.c_str(), err);
@@ -1387,7 +1395,6 @@ int main(int argc, char* argv[]) {
 
     std::exit(fltk::run());
   });
-
 
   try {
     (app).parse(argc, argv);

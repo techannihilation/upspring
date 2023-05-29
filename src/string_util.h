@@ -25,26 +25,23 @@ inline std::string join(const std::vector<std::string> alist) {
 }
 
 #if defined(_WIN32)
-inline std::wstring s2ws(const std::string& s)
-{
-	const size_t slength = s.length();
-	const int len = MultiByteToWideChar(CP_UTF8, 0, s.c_str(), slength, 0, 0);
-	wchar_t* buf = new wchar_t[len];
-	MultiByteToWideChar(CP_UTF8, 0, s.c_str(), slength, buf, len);
-	std::wstring r(buf, len);
-	delete[] buf;
-	return r;
+inline std::wstring s2ws(const std::string& s) {
+  const size_t slength = s.length();
+  const int len = MultiByteToWideChar(CP_UTF8, 0, s.c_str(), slength, 0, 0);
+  wchar_t* buf = new wchar_t[len];
+  MultiByteToWideChar(CP_UTF8, 0, s.c_str(), slength, buf, len);
+  std::wstring r(buf, len);
+  delete[] buf;
+  return r;
 }
 
-inline std::string ws2s(const std::wstring& s)
-{
-	const size_t slength = s.length();
-	const int len =
-	    WideCharToMultiByte(CP_UTF8, 0, s.c_str(), slength, nullptr, 0, nullptr, nullptr);
-	char* buf = new char[len];
-	WideCharToMultiByte(CP_UTF8, 0, s.c_str(), slength, buf, len, nullptr, nullptr);
-	std::string r(buf, len);
-	delete[] buf;
-	return r;
+inline std::string ws2s(const std::wstring& s) {
+  const size_t slength = s.length();
+  const int len = WideCharToMultiByte(CP_UTF8, 0, s.c_str(), slength, nullptr, 0, nullptr, nullptr);
+  char* buf = new char[len];
+  WideCharToMultiByte(CP_UTF8, 0, s.c_str(), slength, buf, len, nullptr, nullptr);
+  std::string r(buf, len);
+  delete[] buf;
+  return r;
 }
 #endif

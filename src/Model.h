@@ -169,7 +169,7 @@ class PolyMesh : public Geometry {
 };
 
 struct MdlObject {
-public:
+ public:
   MdlObject();
   virtual ~MdlObject();
 
@@ -356,6 +356,7 @@ struct Model {
 
     root->load_3do_textures(par_texture_handler);
   }
+
  private:
   std::shared_ptr<TextureHandler> texture_handler_;
 };

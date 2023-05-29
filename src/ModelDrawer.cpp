@@ -32,7 +32,7 @@ uint LoadFragmentProgram(std::string fn);
 void TestGLError() {
   GLenum err = glGetError();
   if (err != GL_NO_ERROR) {
-    spdlog::error("GL Error: {}", (const char *)gluErrorString(err));
+    spdlog::error("GL Error: {}", (const char*)gluErrorString(err));
   }
 }
 
@@ -43,9 +43,7 @@ void RenderData::Invalidate() {
   drawList = 0;
 }
 
-RenderData::~RenderData() {
-  Invalidate();
-}
+RenderData::~RenderData() { Invalidate(); }
 
 ModelDrawer::ModelDrawer() {
   glewInitialized = false;
@@ -81,7 +79,7 @@ void ModelDrawer::SetupGL() {
 
   GLenum err;
   if ((err = glewInit()) != GLEW_OK) {
-    spdlog::error("Failed to initialize GLEW: {}", (const char *)glewGetErrorString(err));
+    spdlog::error("Failed to initialize GLEW: {}", (const char*)glewGetErrorString(err));
   } else {
     canRenderS3O = 0;
     // see if S3O's can be rendered properly
@@ -92,16 +90,21 @@ void ModelDrawer::SetupGL() {
     }
 
     if (GLEW_ARB_fragment_program && GLEW_ARB_vertex_program && GLEW_ARB_texture_cube_map) {
-      s3oFP = LoadFragmentProgram((ups::config::get().app_path() / "data" / "shaders" / "s3o.fp").string());
-      s3oVP = LoadVertexProgram((ups::config::get().app_path() / "data" / "shaders" / "s3o.vp").string());
-      s3oFPunlit = LoadFragmentProgram((ups::config::get().app_path() / "data" / "shaders" / "s3o_unlit.fp").string());
-      s3oVPunlit = LoadVertexProgram((ups::config::get().app_path() / "data" / "shaders" / "s3o_unlit.vp").string());
+      s3oFP = LoadFragmentProgram(
+          (ups::config::get().app_path() / "data" / "shaders" / "s3o.fp").string());
+      s3oVP = LoadVertexProgram(
+          (ups::config::get().app_path() / "data" / "shaders" / "s3o.vp").string());
+      s3oFPunlit = LoadFragmentProgram(
+          (ups::config::get().app_path() / "data" / "shaders" / "s3o_unlit.fp").string());
+      s3oVPunlit = LoadVertexProgram(
+          (ups::config::get().app_path() / "data" / "shaders" / "s3o_unlit.vp").string());
 
       if (s3oFP && s3oVP && s3oFPunlit && s3oVPunlit) {
         canRenderS3O = 2;
 
         nv_dds::CDDSImage image;
-        if (!image.load((ups::config::get().app_path() / "data" / "textures" / "skybox.dds").string())) {
+        if (!image.load(
+                (ups::config::get().app_path() / "data" / "textures" / "skybox.dds").string())) {
           spdlog::warn("Failed to load textures/skybox.dds");
 
           canRenderS3O = 1;

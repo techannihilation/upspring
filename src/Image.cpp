@@ -20,10 +20,8 @@ struct _imagelib {
   ~_imagelib() { ilShutDown(); }
 } static imagelib;
 
-
 // https://stackoverflow.com/a/108360/3368468
 bool is_power_of_two(int n) { return (n > 0 && ((n & (n - 1)) == 0)); }
-
 
 // https://stackoverflow.com/a/466242/3368468
 int next_power_of_two(int n) {
@@ -39,7 +37,6 @@ int next_power_of_two(int n) {
 
   return var;
 }
-
 
 // -------------------------------- Image ---------------------------------
 
@@ -80,19 +77,18 @@ bool Image::load(const std::vector<std::uint8_t>& par_buffer) {
 }
 
 bool Image::load(const std::string& par_file) {
-
-	FILE *fp = fopen (par_file.c_str(),  "rb");
-	if (!fp) {
-		has_error_ = true;
+  FILE* fp = fopen(par_file.c_str(), "rb");
+  if (!fp) {
+    has_error_ = true;
     error_ = "Failed to open file '" + par_file + "'";
     return false;
   }
 
-	fseek(fp, 0, SEEK_END);
-	int len=ftell(fp);
-	fseek(fp,0,SEEK_SET);
-	auto buf = std::vector<std::uint8_t>(len);
-	fread(buf.data(), len, 1, fp);
+  fseek(fp, 0, SEEK_END);
+  int len = ftell(fp);
+  fseek(fp, 0, SEEK_SET);
+  auto buf = std::vector<std::uint8_t>(len);
+  fread(buf.data(), len, 1, fp);
   fclose(fp);
 
   path_ = par_file;
@@ -106,7 +102,8 @@ bool Image::create(int par_width, int par_height, int par_channels) {
   ilClearColor(0.0F, 0.0F, 0.0F, 1.0F);
   // iluEnlargeCanvas(par_width, par_height, 1);
 
-  if (ilTexImage(par_width, par_height, 1, par_channels, par_channels == 3 ? IL_RGB : IL_RGBA, IL_UNSIGNED_BYTE, nullptr) != IL_TRUE) {
+  if (ilTexImage(par_width, par_height, 1, par_channels, par_channels == 3 ? IL_RGB : IL_RGBA,
+                 IL_UNSIGNED_BYTE, nullptr) != IL_TRUE) {
     error_ = iluErrorString(ilGetError());
     has_error_ = true;
     return false;
@@ -199,8 +196,8 @@ bool Image::threedo_to_s3o() {
   }
 
   ilBindImage(ilid_);
-  auto *data_ptr = ilGetData();
-  auto **data_pptr = &data_ptr;
+  auto* data_ptr = ilGetData();
+  auto** data_pptr = &data_ptr;
 
   for (std::size_t ph = 0; ph < height_; ph++) {
     for (std::size_t pw = 0; pw < width_; pw++) {
@@ -217,7 +214,6 @@ bool Image::threedo_to_s3o() {
   return true;
 }
 
-
 bool Image::to_power_of_two() {
   if (has_error()) {
     return false;
@@ -228,15 +224,15 @@ bool Image::to_power_of_two() {
   owidth_ = width_;
   if (!is_power_of_two(owidth_)) {
     width_ = next_power_of_two(owidth_);
-    spdlog::debug("Enlarging '{}' cause the width '{}' is not power of two '{}'.", name_,
-                  owidth_, width_);
+    spdlog::debug("Enlarging '{}' cause the width '{}' is not power of two '{}'.", name_, owidth_,
+                  width_);
   }
 
   oheight_ = height_;
   if (!is_power_of_two(oheight_)) {
     height_ = next_power_of_two(oheight_);
-    spdlog::debug("Enlarging '{}' cause the height '{}' is not power of two '{}'.", name_,
-                  oheight_, height_);
+    spdlog::debug("Enlarging '{}' cause the height '{}' is not power of two '{}'.", name_, oheight_,
+                  height_);
   }
 
   if (width_ != owidth_ || height_ != oheight_) {
@@ -253,7 +249,7 @@ bool Image::to_power_of_two() {
     image_infos_();
   }
 
-  auto *data_ptr = ilGetData();
+  auto* data_ptr = ilGetData();
 
   std::size_t num_pixels = static_cast<std::size_t>(width_) * height_;
 
@@ -265,12 +261,14 @@ bool Image::to_power_of_two() {
         const int dst = ih * width_ + iw;
 
         if (dst > num_pixels) {
-          spdlog::warn("'{}' - 'row' can't write to destination: '{}', number of pixels is '{}'", name_, dst, num_pixels);
+          spdlog::warn("'{}' - 'row' can't write to destination: '{}', number of pixels is '{}'",
+                       name_, dst, num_pixels);
           continue;
         }
 
         // trunk-ignore(clang-tidy/cppcoreguidelines-pro-bounds-pointer-arithmetic)
-        std::memcpy(data_ptr + static_cast<ptrdiff_t>(dst * bpp_), data_ptr + static_cast<ptrdiff_t>(src * bpp_), bpp_);
+        std::memcpy(data_ptr + static_cast<ptrdiff_t>(dst * bpp_),
+                    data_ptr + static_cast<ptrdiff_t>(src * bpp_), bpp_);
       }
     }
   }
@@ -283,12 +281,14 @@ bool Image::to_power_of_two() {
         const int dst = ih * width_ + owidth_ + iw;
 
         if (dst > num_pixels) {
-          spdlog::warn("'{}' - 'column' can't write to destination: '{}', number of pixels is '{}'", name_, dst, num_pixels);
+          spdlog::warn("'{}' - 'column' can't write to destination: '{}', number of pixels is '{}'",
+                       name_, dst, num_pixels);
           continue;
         }
 
         // trunk-ignore(clang-tidy/cppcoreguidelines-pro-bounds-pointer-arithmetic)
-        std::memcpy(data_ptr + static_cast<ptrdiff_t>(dst * bpp_), data_ptr + static_cast<ptrdiff_t>(src * bpp_), bpp_);
+        std::memcpy(data_ptr + static_cast<ptrdiff_t>(dst * bpp_),
+                    data_ptr + static_cast<ptrdiff_t>(src * bpp_), bpp_);
       }
     }
   }
@@ -298,7 +298,6 @@ bool Image::to_power_of_two() {
 
   return true;
 }
-
 
 bool Image::add_opaque_alpha() {
   if (has_error()) {
@@ -316,7 +315,6 @@ bool Image::add_opaque_alpha() {
 
   return true;
 }
-
 
 bool Image::mirror() {
   if (has_error()) {
@@ -350,8 +348,8 @@ bool Image::flip() {
 This function is not intended to actually draw things (it doesn't do any clipping),
 it is just a way to copy certain parts of an image.
 */
-bool Image::blit(const std::shared_ptr<Image> par_src, int par_dx, int par_dy, int par_dz, int par_sx, int par_sy, int par_sz,
-                 int par_width, int par_height, int par_depth) {
+bool Image::blit(const std::shared_ptr<Image> par_src, int par_dx, int par_dy, int par_dz,
+                 int par_sx, int par_sy, int par_sz, int par_width, int par_height, int par_depth) {
   if (has_error() or par_src->has_error()) {
     error_ = "blit, either the destination or the source has an error";
     return false;
@@ -365,7 +363,8 @@ bool Image::blit(const std::shared_ptr<Image> par_src, int par_dx, int par_dy, i
   ilBindImage(ilid_);
 
   ilDisable(IL_BLIT_BLEND);
-  if (ilBlit(par_src->id(), par_dx, par_dy, par_dz, par_sx, par_sy, par_sz, par_width, par_height, par_depth) != IL_TRUE) {
+  if (ilBlit(par_src->id(), par_dx, par_dy, par_dz, par_sx, par_sy, par_sz, par_width, par_height,
+             par_depth) != IL_TRUE) {
     ilEnable(IL_BLIT_BLEND);
     error_ = iluErrorString(ilGetError());
     has_error_ = true;

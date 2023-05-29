@@ -4,7 +4,7 @@ cli:
 plugins:
   sources:
     - id: trunk
-      ref: v0.0.9
+      ref: v0.0.17
       uri: https://github.com/trunk-io/plugins
 lint:
   definitions:
@@ -21,6 +21,8 @@ lint:
           read_output_from: tmp_file
       run_timeout: 10m
   enabled:
+    - ruff@0.0.265
+    - yamllint@1.32.0
     - prettier@2.8.8
     - isort@5.12.0
     - git-diff-check
@@ -34,7 +36,7 @@ lint:
     - clang-format@14.0.1
 runtimes:
   enabled:
-    - go@1.18.3
+    - go@1.19.5
     - node@18.12.1
     - python@3.10.8
 actions:

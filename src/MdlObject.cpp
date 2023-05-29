@@ -273,7 +273,8 @@ void MdlObject::ApplyTransform(bool removeRotation, bool removeScaling, bool rem
       mirrorMatrix.scale(mirror);
 
       TransformVertices(mirrorMatrix);
-      for (std::uint32_t a = 0; a < childs.size(); a++) childs[a]->ApplyParentSpaceTransform(mirrorMatrix);
+      for (std::uint32_t a = 0; a < childs.size(); a++)
+        childs[a]->ApplyParentSpaceTransform(mirrorMatrix);
 
       if (flip) FlipPolygons();
     }

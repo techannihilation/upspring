@@ -50,7 +50,7 @@ void TexGroupUI::InitGroupTexBrowser() {
 void TexGroupUI::RemoveFromGroup() {
   auto sel = groupTexBrowser->GetSelection();
 
-  for (auto & a : sel) {
+  for (auto& a : sel) {
     groupTexBrowser->RemoveTexture(a);
     current->textures.erase(a);
   }
