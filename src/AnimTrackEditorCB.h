@@ -16,7 +16,7 @@ struct Property : BrowserItem {
   AnimProperty* prop;
   int member;
   bool IsProperty() { return true; }
-  float EvaluateY(float time, int& lastkey);
+  float EvaluateY(float time, int& lastkey) const;
 };
 struct AnimObject : BrowserItem {
   AnimObject() { obj = 0; }
@@ -37,7 +37,7 @@ struct List : public fltk::List {
   struct Item : fltk::Item {
     AnimTrackEditorUI* ui;
   } item;
-  AnimTrackEditorUI* ui;
+  AnimTrackEditorUI* ui{};
   std::string itemLabel;
 } browserList;
 
@@ -47,11 +47,11 @@ void cmdDeleteKeys();
 void cmdAutoFitTime();
 
 public:
-AnimTrackEditorUI(IEditor* editor, TimelineUI* timeline);
+AnimTrackEditorUI(IEditor* editor, TimelineUI* tl);
 ~AnimTrackEditorUI();
 
-void Show();
-void Hide();
+void Show() const;
+void Hide() const;
 void Update();
 void UpdateBrowser();
 void UpdateKeySel();

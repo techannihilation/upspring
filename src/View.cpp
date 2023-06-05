@@ -9,6 +9,7 @@
 
 #include <fltk/gl.h>
 #include <GL/glu.h>
+#include <cmath>
 
 #include "View.h"
 #include "Util.h"
@@ -24,22 +25,20 @@ const int PopupBoxH = 18;
 // ------------------------------------------------------------------------------------------------
 
 // size of selection box in window coordinates
-#define SELECT_W 3
+enum { SELECT_W = 3 };
 
-ViewWindow::ViewWindow(int x, int y, int w, int h, const char* l) : fltk::GlWindow(x, y, w, h, l) {
-  selector_count = 0;
-  bSelecting = false;
-  bUnSelecting = false;
-  bBoxSelect = false;
+ViewWindow::ViewWindow(int x, int y, int w, int h, const char* l)
+    : fltk::GlWindow(x, y, w, h, l), selector_count(0), bSelecting(false), bUnSelecting(false), bBoxSelect(false) {
+  
 }
 
-ViewWindow::~ViewWindow() {}
+ViewWindow::~ViewWindow() = default;
 
 void ViewWindow::InitGL() {
   glViewport(0, 0, w(), h());
   glShadeModel(GL_SMOOTH);
-  glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-  glClearDepth(1.0f);
+  glClearColor(0.0F, 0.0F, 0.0F, 1.0F);
+  glClearDepth(1.0F);
   glDepthFunc(GL_LEQUAL);
   glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
   glEnable(GL_DEPTH_TEST);
@@ -55,17 +54,19 @@ void ViewWindow::InitGL() {
 void ViewWindow::SetRasterMatrix() {
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
-  glScalef(2.0f / (float)w(), -2.0f / (float)h(), 1.0f);
-  glTranslatef(-((float)w() / 2.0f), -((float)h() / 2.0f), 0.0f);
+  glScalef(2.0F / static_cast<float>(w()), -2.0F / static_cast<float>(h()), 1.0F);
+  glTranslatef(-(static_cast<float>(w()) / 2.0F), -(static_cast<float>(h()) / 2.0F), 0.0F);
   glMatrixMode(GL_MODELVIEW);
 }
 
 void ViewWindow::draw() {
   // bool use_solid = false; // unused
 
-  if (!valid()) InitGL();
+  if (valid() == 0) {
+    InitGL();
+  }
 
-  glClearColor(backgroundColor.x, backgroundColor.y, backgroundColor.z, 0.0f);
+  glClearColor(backgroundColor.x, backgroundColor.y, backgroundColor.z, 0.0F);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
   glMatrixMode(GL_PROJECTION);
@@ -85,7 +86,7 @@ void ViewWindow::draw() {
   }
 }
 
-float ViewWindow::GetCamDistance(const Vector3& /*pos*/) { return 1.0f; }
+float ViewWindow::GetCamDistance(const Vector3& /*pos*/) { return 1.0F; }
 
 /*
 Find the world position of the user-clicked selection area on (x,y),
@@ -93,15 +94,17 @@ using gluUnProject
 */
 Vector3 ViewWindow::FindSelCoords(int px, int py) {
   float depthbuf[SELECT_W * SELECT_W];
-  int x, y;
+  int x = 0;
+  int y = 0;
 
   glReadPixels(px - SELECT_W / 2, py - SELECT_W / 2, SELECT_W, SELECT_W, GL_DEPTH_COMPONENT,
                GL_FLOAT, depthbuf);
   float* d = depthbuf;
-  int best_x = -1, best_y = -1;
-  float best_z = 1.0f;
+  int best_x = -1;
+  int best_y = -1;
+  float best_z = 1.0F;
 
-  for (y = 0; y < SELECT_W; y++)
+  for (y = 0; y < SELECT_W; y++) {
     for (x = 0; x < SELECT_W; x++) {
       if (*d < best_z) {
         best_z = *d;
@@ -110,9 +113,11 @@ Vector3 ViewWindow::FindSelCoords(int px, int py) {
       }
       ++d;
     }
+  }
 
-  if (best_x < 0)  // something not right, so just ignore
+  if (best_x < 0) {  // something not right, so just ignore
     return Vector3();
+  }
 
   GLdouble modelview[16];
   GLdouble projection[16];
@@ -122,7 +127,9 @@ Vector3 ViewWindow::FindSelCoords(int px, int py) {
   GLint vp[4];
   glGetIntegerv(GL_VIEWPORT, vp);
 
-  double rx, ry, rz;
+  double rx = NAN;
+  double ry = NAN;
+  double rz = NAN;
   if (gluUnProject(best_x, best_y, best_z, modelview, projection, vp, &rx, &ry, &rz) == GL_TRUE) {
     // logger.Trace (NL_Msg, "rx: %f, ry: %f, rz: %f\n", (float)rx, (float)ry, (float)rz);
     return Vector3(rx, ry, rz);
@@ -144,15 +151,15 @@ void ViewWindow::PushSelector(ViewSelector* s) {
   }
 }
 
-void ViewWindow::PopSelector() {
+void ViewWindow::PopSelector() const {
   if (bSelecting) {
     glPopName();
   }
 }
 
 void ViewWindow::Select(float sx, float sy, int w, int h, bool box) {
-  int bufsize = 10000;  // FIXME: Find some way to calculate this value
-  uint* buffer;
+  int const bufsize = 10000;  // FIXME: Find some way to calculate this value
+  uint* buffer = nullptr;
   int vp[4];  // viewport
 
   make_current();
@@ -167,7 +174,7 @@ void ViewWindow::Select(float sx, float sy, int w, int h, bool box) {
   gluPickMatrix(sx + w / 2, sy - h / 2, w, h, vp);
   SetupProjectionMatrix();
 
-  glSelectBuffer(bufsize, (uint*)buffer);
+  glSelectBuffer(bufsize, buffer);
   glRenderMode(GL_SELECT);
   glInitNames();
 
@@ -178,7 +185,8 @@ void ViewWindow::Select(float sx, float sy, int w, int h, bool box) {
   glPopName();
   bSelecting = false;
 
-  int a, hits;
+  int a = 0;
+  int hits = 0;
   if ((hits = glRenderMode(GL_RENDER)) != 0) {
     Vector3 pos;
     if (!box) {
@@ -186,18 +194,20 @@ void ViewWindow::Select(float sx, float sy, int w, int h, bool box) {
     }
 
     uint* pBuf = buffer;
-    ViewSelector* best = 0;
+    ViewSelector* best = nullptr;
     float bestscore = 0.;
     bool bRedraw = false;
     for (a = 0; a < hits; a++) {
-      uint num = pBuf[0];
+      uint const num = pBuf[0];
       pBuf += 3;
 
       for (uint b = 0; b < num; b++) {
-        int sl_index = *(pBuf++) - 1;
+        int const sl_index = *(pBuf++) - 1;
 
         // only the top of the name stack
-        if (b < num - 1) continue;
+        if (b < num - 1) {
+          continue;
+        }
 
         if (sl_index >= 0 && sl_index < bufsize) {
           ViewSelector* sel = selector_list[sl_index];
@@ -207,8 +217,8 @@ void ViewWindow::Select(float sx, float sy, int w, int h, bool box) {
             sel->Toggle(pos, !sel->IsSelected());
             bRedraw = true;
           } else {
-            float score = sel->Score(pos, GetCamDistance(pos));
-            if (!best || score < bestscore) {
+            float const score = sel->Score(pos, GetCamDistance(pos));
+            if ((best == nullptr) || score < bestscore) {
               best = sel;
               bestscore = score;
             }
@@ -216,13 +226,15 @@ void ViewWindow::Select(float sx, float sy, int w, int h, bool box) {
         }
       }
     }
-    if (best) {
-      bool bSelect = !best->IsSelected();
+    if (best != nullptr) {
+      bool const bSelect = !best->IsSelected();
       best->Toggle(pos, bSelect);
       bRedraw = true;
     }
 
-    if (bRedraw) editor->SelectionUpdated();
+    if (bRedraw) {
+      editor->SelectionUpdated();
+    }
   }
 }
 
@@ -238,14 +250,18 @@ void ViewWindow::DeSelect() {
   FLTK event handler
  */
 int ViewWindow::handle(int msg) {
-  int ret = GlWindow::handle(msg);
-  int x = fltk::event_x(), y = fltk::event_y(), b = fltk::event_button();
+  int const ret = GlWindow::handle(msg);
+  int const x = fltk::event_x();
+  int const y = fltk::event_y();
+  int const b = fltk::event_button();
 
   if (msg == fltk::PUSH) {
     click.x = fltk::event_x();
     click.y = fltk::event_y();
     last = click;
-    if (fltk::event_state() & fltk::SHIFT) bBoxSelect = true;
+    if ((fltk::event_state() & fltk::SHIFT) != 0U) {
+      bBoxSelect = true;
+    }
     return -1;
   }
 
@@ -256,7 +272,9 @@ int ViewWindow::handle(int msg) {
   }
 
   if (msg == fltk::DRAG) {
-    if (bBoxSelect) redraw();
+    if (bBoxSelect) {
+      redraw();
+    }
 
     last.x = fltk::event_x();
     last.y = fltk::event_y();
@@ -264,31 +282,41 @@ int ViewWindow::handle(int msg) {
 
   if (msg == fltk::RELEASE) {
     if (bBoxSelect) {
-      int sx = fltk::event_x(), sy = fltk::event_y();
-      int ex = click.x, ey = click.y;
+      int sx = fltk::event_x();
+      int sy = fltk::event_y();
+      int ex = click.x;
+      int ey = click.y;
 
-      if (sx > ex) std::swap(sx, ex);
-      if (sy > ey) std::swap(sy, ey);
+      if (sx > ex) {
+        std::swap(sx, ex);
+      }
+      if (sy > ey) {
+        std::swap(sy, ey);
+      }
 
       Select(sx, sy, ex - sx, ey - sy, true);
       bBoxSelect = false;
       redraw();
     } else {
       if (click.x == x && click.y == y) {
-        if (b == 1)
+        if (b == 1) {
           Select(click.x - SELECT_W / 2, click.y - SELECT_W / 2, SELECT_W, SELECT_W, false);
-        else if (b == 3)
+        } else if (b == 3) {
           DeSelect();
+        }
       }
     }
     return -1;
   }
 
-  if (msg == fltk::ENTER) return 1;
+  if (msg == fltk::ENTER) {
+    return 1;
+  }
 
   if (msg == fltk::LEAVE) {
-    if (x < this->x() || x > this->x() + w() || y < this->y() || y > this->y() + h())
+    if (x < this->x() || x > this->x() + w() || y < this->y() || y > this->y() + h()) {
       bBoxSelect = false;
+    }
   }
 
   return ret;
@@ -297,7 +325,10 @@ int ViewWindow::handle(int msg) {
 void ViewWindow::resize(int x, int y, int w, int h) { GlWindow::resize(x, y, w, h); }
 
 void ViewWindow::Serialize(CfgList& cfg, bool store) {
-  int X = x(), Y = y(), Width = w(), Height = h();
+  int X = x();
+  int Y = y();
+  int Width = w();
+  int Height = h();
   float& bgRed = backgroundColor.x;
   float& bgGreen = backgroundColor.y;
   float& bgBlue = backgroundColor.z;
@@ -327,8 +358,8 @@ void ViewWindow::Serialize(CfgList& cfg, bool store) {
 // Camera for EditorViewWindow
 // ------------------------------------------------------------------------------------------------
 
-const float SpeedMod = 0.05f;
-const float AngleMod = 1.0f;
+const float SpeedMod = 0.05F;
+const float AngleMod = 1.0F;
 
 Camera::Camera() {
   Reset();
@@ -336,8 +367,8 @@ Camera::Camera() {
 }
 
 void Camera::Reset() {
-  yaw = pitch = 0.0f;
-  zoom = 1.0f;
+  yaw = pitch = 0.0F;
+  zoom = 1.0F;
   pos = Vector3();
 }
 
@@ -351,59 +382,63 @@ void Camera::MouseEvent(EditorViewWindow* view, int msg, Point move) {
         MouseEventFPSMode(view, msg, move);
         break;
     }
-  } else
+  } else {
     MouseEvent2DView(view, msg, move);
+  }
 }
 
 void Camera::MouseEvent2DView(EditorViewWindow* view, int msg, Point move) {
-  uint s = fltk::event_state();
-  if ((msg == fltk::DRAG || msg == fltk::MOVE) && ((s & fltk::BUTTON1) || (s & fltk::BUTTON2))) {
-    pos += Vector3(-move.x / zoom, move.y / zoom, 0) * 0.05f;
+  uint const s = fltk::event_state();
+  if ((msg == fltk::DRAG || msg == fltk::MOVE) &&
+      (((s & fltk::BUTTON1) != 0U) || ((s & fltk::BUTTON2) != 0U))) {
+    pos += Vector3(-move.x / zoom, move.y / zoom, 0) * 0.05F;
     view->redraw();
-  } else if ((msg == fltk::DRAG || msg == fltk::MOVE) && (s & fltk::BUTTON3)) {
+  } else if ((msg == fltk::DRAG || msg == fltk::MOVE) && ((s & fltk::BUTTON3) != 0U)) {
     zoom *= (1 - move.x * 0.02 - move.y * 0.02);
     view->redraw();
   }
 }
 
 void Camera::MouseEventFPSMode(EditorViewWindow* view, int msg, Point move) {
-  uint s = fltk::event_state();
-  if ((msg == fltk::DRAG || msg == fltk::MOVE) && (s & fltk::BUTTON1)) {
+  uint const s = fltk::event_state();
+  if ((msg == fltk::DRAG || msg == fltk::MOVE) && ((s & fltk::BUTTON1) != 0U)) {
     Vector3 f;
     yaw += (M_PI * move.x * AngleMod / 360);
-    Math::ComputeOrientation(yaw, 0.0f, 0.0f, 0, 0, &f);
+    Math::ComputeOrientation(yaw, 0.0F, 0.0F, nullptr, nullptr, &f);
     pos -= f * move.y * SpeedMod * 2;
     view->redraw();
-  } else if ((msg == fltk::DRAG || msg == fltk::MOVE) && (s & fltk::BUTTON3)) {
+  } else if ((msg == fltk::DRAG || msg == fltk::MOVE) && ((s & fltk::BUTTON3) != 0U)) {
     yaw += (M_PI * (move.x * AngleMod) / 180);
     pitch -= (M_PI * (move.y * AngleMod) / 360);
     view->redraw();
   } else if ((msg == fltk::DRAG || msg == fltk::MOVE) &&
-             ((s & fltk::BUTTON2) || ((s & fltk::BUTTON1) && (s & fltk::BUTTON3)))) {
+             (((s & fltk::BUTTON2) != 0U) ||
+              (((s & fltk::BUTTON1) != 0U) && ((s & fltk::BUTTON3) != 0U)))) {
     Vector3 right;
-    Math::ComputeOrientation(yaw, 0.0f, 0.0f, &right, 0, 0);
-    pos.y -= move.y * 0.5f * SpeedMod;
-    pos += right * (move.x * 0.5f * SpeedMod);
+    Math::ComputeOrientation(yaw, 0.0F, 0.0F, &right, nullptr, nullptr);
+    pos.y -= move.y * 0.5F * SpeedMod;
+    pos += right * (move.x * 0.5F * SpeedMod);
     view->redraw();
   }
 }
 
 void Camera::MouseEventRotatingMode(EditorViewWindow* view, int msg, Point move) {
-  uint s = fltk::event_state();  // event_button() only works for PUSH/RELEASE
-  if (msg == fltk::DRAG && (s & fltk::BUTTON1)) {
+  uint const s = fltk::event_state();  // event_button() only works for PUSH/RELEASE
+  if (msg == fltk::DRAG && ((s & fltk::BUTTON1) != 0U)) {
     yaw += M_PI * move.x * AngleMod / 360;  // AngleMod deg per x
     pitch -= M_PI * move.y * AngleMod / 360;
     view->redraw();
-  } else if (msg == fltk::DRAG && (s & fltk::BUTTON3)) {
+  } else if (msg == fltk::DRAG && ((s & fltk::BUTTON3) != 0U)) {
     zoom *= 1 - move.x * 0.02 - move.y * 0.02;
     view->redraw();
-  } else if (msg == fltk::DRAG && (s & fltk::BUTTON2)) {
+  } else if (msg == fltk::DRAG && ((s & fltk::BUTTON2) != 0U)) {
     // x & y are used to displace the camera sideways
-    Vector3 r, u;
-    Math::ComputeOrientation(yaw, pitch, 0, &r, &u, 0);
+    Vector3 r;
+    Vector3 u;
+    Math::ComputeOrientation(yaw, pitch, 0, &r, &u, nullptr);
 
-    float Xmove = -move.x * 0.5f * SpeedMod * zoom;
-    float Ymove = move.y * 0.5f * SpeedMod * zoom;
+    float const Xmove = -move.x * 0.5F * SpeedMod * zoom;
+    float const Ymove = move.y * 0.5F * SpeedMod * zoom;
     strafe += r * Xmove + u * Ymove;
     view->redraw();
   }
@@ -411,7 +446,9 @@ void Camera::MouseEventRotatingMode(EditorViewWindow* view, int msg, Point move)
 
 void Camera::GetMatrix(Matrix& vm) {
   if (ctlmode == FPS) {
-    Vector3 r, u, f;
+    Vector3 r;
+    Vector3 u;
+    Vector3 f;
     Math::ComputeOrientation(yaw, pitch, 0, &r, &u, &f);
     vm.camera(&pos, &r, &u, &f);
   } else if (ctlmode == Rotating) {
@@ -421,23 +458,24 @@ void Camera::GetMatrix(Matrix& vm) {
     vm *= tmp;
     tmp.xrotate(pitch);
     vm *= tmp;
-    vm.addtranslation(Vector3(0.0f, 0.0f, 10 * zoom));
+    vm.addtranslation(Vector3(0.0F, 0.0F, 10 * zoom));
   }
 }
 
 Vector3 Camera::GetOrigin() {
-  if (ctlmode == FPS)
+  if (ctlmode == FPS) {
     return pos;
-  else {
-    Matrix inv, mat;
-    GetMatrix(mat);
-    if (mat.inverse(inv)) {
-      Vector3 zero, origin;
-      inv.apply(&zero, &origin);
-      return origin * 0.15f;
-    }
-    return Vector3();
   }
+  Matrix inv;
+  Matrix mat;
+  GetMatrix(mat);
+  if (mat.inverse(inv)) {
+    Vector3 const zero;
+    Vector3 origin;
+    inv.apply(&zero, &origin);
+    return origin * 0.15F;
+  }
+  return Vector3();
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -445,11 +483,8 @@ Vector3 Camera::GetOrigin() {
 // ------------------------------------------------------------------------------------------------
 
 EditorViewWindow::EditorViewWindow(int X, int Y, int W, int H, IEditor* cb)
-    : ViewWindow(X, Y, W, H) {
-  mode = MAP_XY;
-  rendermode = M3D_WIRE;
-  bCullFaces = false;
-  bLighting = false;
+    : ViewWindow(X, Y, W, H), mode(MAP_XY), rendermode(M3D_WIRE), bCullFaces(false), bLighting(false) {
+  
   bHideGrid = false;
   bDrawMeshSmoothing = false;
   bDrawVertexNormals = false;
@@ -459,7 +494,7 @@ EditorViewWindow::EditorViewWindow(int X, int Y, int W, int H, IEditor* cb)
   editor = cb;
 }
 
-void EditorViewWindow::DrawLight() {
+void EditorViewWindow::DrawLight() const {
   glPointSize(10);
   glColor3ub(255, 255, 0);
   glBegin(GL_POINTS);
@@ -477,40 +512,48 @@ void EditorViewWindow::DrawScene() {
   GetViewMatrix(cam.mat);
   cam.mat.transpose(&tr);
   glMatrixMode(GL_MODELVIEW);
-  glLoadMatrixf((const float*)&tr);
+  glLoadMatrixf(reinterpret_cast<const float*>(&tr));
 
-  if (!bHideGrid) DrawGrid();
+  if (!bHideGrid) {
+    DrawGrid();
+  }
 
-  if (bLockLightToCam) lightPos = cam.GetOrigin();
+  if (bLockLightToCam) {
+    lightPos = cam.GetOrigin();
+  }
 
-  if (bLighting && !bLockLightToCam) DrawLight();
+  if (bLighting && !bLockLightToCam) {
+    DrawLight();
+  }
 
   // Clear the modelview matrix so the light is not transformed
   //	glLoadIdentity ();
 
   if (bCullFaces) {
-    if (mode == MAP_3D)
+    if (mode == MAP_3D) {
       glFrontFace(GL_CW);
-    else
+    } else {
       glFrontFace(GL_CCW);
+    }
     glEnable(GL_CULL_FACE);
   }
 
   glEnable(GL_DEPTH_TEST);
 
-  if (rendermode == M3D_WIRE)
+  if (rendermode == M3D_WIRE) {
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-  else
+  } else {
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+  }
 
   if (bLighting) {
     glEnable(GL_LIGHTING);
     glEnable(GL_LIGHT0);
-    float pos[4] = {lightPos.x, lightPos.y, lightPos.z, 1.0f};
+    float pos[4] = {lightPos.x, lightPos.y, lightPos.z, 1.0F};
     glLightfv(GL_LIGHT0, GL_POSITION, pos);
     float diffuse[] = {1, 1, 1, 1};
     glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuse);
-    float specular[] = {0.5f, 0.5f, 0.5f, 0.0f};
+    float specular[] = {0.5F, 0.5F, 0.5F, 0.0F};
     glLightfv(GL_LIGHT0, GL_SPECULAR, specular);
     // glColorMaterial (GL_FRONT_AND_BACK, GL_DIFFUSE);
     // const float params[] = { 0.3f, 0.3f, 0.3f, 1.0f };
@@ -523,7 +566,7 @@ void EditorViewWindow::DrawScene() {
   }
 
   // Load the modelview transform again
-  glLoadMatrixf((const float*)&tr);
+  glLoadMatrixf(reinterpret_cast<const float*>(&tr));
 
   glColor3ub(255, 255, 255);
   editor->RenderScene(this);
@@ -571,22 +614,24 @@ void EditorViewWindow::Draw2D() {
 static Vector3 MakeVisibleColor(Vector3 bg) {
   Vector3 r;
   for (int i = 0; i < 3; i++) {
-    if (bg.v[i] < 0.5f)
-      r.v[i] = bg.v[i] + 0.5f;
-    else
-      r.v[i] = bg.v[i] - 0.5f;
+    if (bg.v[i] < 0.5F) {
+      r.v[i] = bg.v[i] + 0.5F;
+    } else {
+      r.v[i] = bg.v[i] - 0.5F;
+    }
   }
   return r;
 }
 
 void EditorViewWindow::DrawGrid() {
-  Vector3 c = MakeVisibleColor(backgroundColor);
+  Vector3 const c = MakeVisibleColor(backgroundColor);
   glColor3fv(&c.x);
 
-  int sz = 16;
+  int const sz = 16;
   if (mode == MAP_3D) {
-    int w = sz, h = sz;
-    float s = 8.0f;
+    int const w = sz;
+    int const h = sz;
+    float const s = 8.0F;
     glScalef(s, s, s);
     glEnable(GL_DEPTH_TEST);
     // draw a small grid the 3D view
@@ -601,15 +646,19 @@ void EditorViewWindow::DrawGrid() {
     }
     glEnd();
   } else {
-    int w = sz, h = sz;  // this->w()/80/cam.zoom,h=this->h()/80/cam.zoom;
-    float s = 8.0f;
+    int const w = sz;
+    int const h = sz;  // this->w()/80/cam.zoom,h=this->h()/80/cam.zoom;
+    float const s = 8.0F;
     glScalef(s, s, s);
     // draw a small grid the 3D view
     glBegin(GL_LINES);
-    int stx = -w / 2, endx = w / 2;
-    int sty = -h / 2, endy = h / 2;
+    int const stx = -w / 2;
+    int const endx = w / 2;
+    int const sty = -h / 2;
+    int const endy = h / 2;
 
-    for (int x = stx; x <= endx; x++) switch (mode) {
+    for (int x = stx; x <= endx; x++) {
+      switch (mode) {
         case MAP_XY:
           glVertex2i(x, sty);
           glVertex2i(x, endy);
@@ -623,6 +672,7 @@ void EditorViewWindow::DrawGrid() {
           glVertex3i(0, endy, x);
           break;
       }
+    }
     for (int y = sty; y <= endy; y++) {
       switch (mode) {
         case MAP_XY:
@@ -656,19 +706,19 @@ void EditorViewWindow::GetViewMatrix(Matrix& tv) {
       break;
     case MAP_XZ:
       // x' = x, y' = z
-      tv.v(0, 0) = 1.0f;
-      tv.v(1, 2) = 1.0f;
-      tv.v(2, 1) = 1.0f;
-      tv.v(3, 3) = 1.0f;
+      tv.v(0, 0) = 1.0F;
+      tv.v(1, 2) = 1.0F;
+      tv.v(2, 1) = 1.0F;
+      tv.v(3, 3) = 1.0F;
       tv.t(0) = -cam.pos.x;
       tv.t(1) = -cam.pos.y;
       break;
     case MAP_YZ:
       // x' = z, y' = y
-      tv.v(0, 2) = 1.0f;
-      tv.v(1, 1) = 1.0f;
-      tv.v(2, 0) = 1.0f;
-      tv.v(3, 3) = 1.0f;
+      tv.v(0, 2) = 1.0F;
+      tv.v(1, 1) = 1.0F;
+      tv.v(2, 0) = 1.0F;
+      tv.v(3, 3) = 1.0F;
       tv.t(0) = -cam.pos.x;
       tv.t(1) = -cam.pos.y;
       break;
@@ -677,15 +727,15 @@ void EditorViewWindow::GetViewMatrix(Matrix& tv) {
   if (mode != MAP_3D) {
     // apply zoom
     Matrix zoomscale;
-    zoomscale.scale(cam.zoom, cam.zoom, 1.0f);
+    zoomscale.scale(cam.zoom, cam.zoom, 1.0F);
     tv *= zoomscale;
 
-    tv.v(2, 0) = tv.v(2, 1) = tv.v(2, 2) = 0.0f;
-    tv.v(2, 3) = 1.0f;  // z-component is always 1.0f
+    tv.v(2, 0) = tv.v(2, 1) = tv.v(2, 2) = 0.0F;
+    tv.v(2, 3) = 1.0F;  // z-component is always 1.0f
   }
 
   if (h() != 0) {
-    tv.gety()->mul(w() / (float)h());
+    tv.gety()->mul(w() / static_cast<float>(h()));
   }
 }
 
@@ -698,22 +748,27 @@ Vector3 EditorViewWindow::GetCameraPos() {
 
 void EditorViewWindow::SetupProjectionMatrix() {
   if (mode == MAP_3D) {
-    gluPerspective(70.0f, 1, 1.0f, 4000.0f);
-    glScalef(1.0f, 1.0f, -1.0f);
-  } else
+    gluPerspective(70.0F, 1, 1.0F, 4000.0F);
+    glScalef(1.0F, 1.0F, -1.0F);
+  } else {
     Ortho();
+  }
 }
 
 void EditorViewWindow::SetMode(int m) {
   mode = m;
 
   cam.Reset();
-  if (m == MAP_3D && cam.ctlmode == Camera::FPS) cam.pos.set(0, 0, -10);
+  if (m == MAP_3D && cam.ctlmode == Camera::FPS) {
+    cam.pos.set(0, 0, -10);
+  }
   if (m == MAP_3D && cam.ctlmode == Camera::Rotating) {
     cam.pitch = -M_PI / 6;
     cam.zoom = 20;
   }
-  if (m != MAP_3D) cam.zoom = 0.1f;
+  if (m != MAP_3D) {
+    cam.zoom = 0.1F;
+  }
   SetupProjectionMatrix();
   redraw();
 }
@@ -722,20 +777,20 @@ int EditorViewWindow::GetMode() { return mode; }
 
 template <int rmode>
 static void RenderTypeCB(fltk::Widget* /*w*/, void* data) {
-  EditorViewWindow* wnd = (EditorViewWindow*)data;
+  auto* wnd = static_cast<EditorViewWindow*>(data);
   wnd->rendermode = rmode;
   wnd->redraw();
 }
 
 template <int MapType>
 static void MapTypeCB(fltk::Widget* /*w*/, void* data) {
-  EditorViewWindow* wnd = (EditorViewWindow*)data;
+  auto* wnd = static_cast<EditorViewWindow*>(data);
   wnd->SetMode(MapType);
 }
 
 template <Camera::CtlMode ctlmode>
 static void CameraModeCB(fltk::Widget* /*w*/, void* data) {
-  EditorViewWindow* wnd = (EditorViewWindow*)data;
+  auto* wnd = static_cast<EditorViewWindow*>(data);
   wnd->cam.SetCtlMode(ctlmode);
   wnd->SetMode(MAP_3D);
   wnd->redraw();
@@ -743,22 +798,22 @@ static void CameraModeCB(fltk::Widget* /*w*/, void* data) {
 
 template <bool EditorViewWindow::*prop>
 static void BooleanPropCB(fltk::Widget* /*w*/, void* data) {
-  EditorViewWindow* wnd = (EditorViewWindow*)data;
+  auto* wnd = static_cast<EditorViewWindow*>(data);
   wnd->*prop = !(wnd->*prop);
   wnd->redraw();
 }
 
 inline void setvalue(fltk::Widget* w, bool v) {
-  fltk::Item* i = (fltk::Item*)w;
+  auto* i = dynamic_cast<fltk::Item*>(w);
   i->type(fltk::Item::TOGGLE);
   i->set_flag(fltk::STATE, v);
 }
 
 template <bool bHor>
 static void SplitViewCB(fltk::Widget* /*w*/, void* data) {
-  EditorViewWindow* v = (EditorViewWindow*)data;
+  auto* v = static_cast<EditorViewWindow*>(data);
 
-  EditorViewWindow* nv;
+  EditorViewWindow* nv = nullptr;
   if (bHor) {
     nv = new EditorViewWindow(v->x(), v->y(), v->w() / 2, v->h(), v->editor);
     v->set_x(v->x() + v->w() / 2);
@@ -782,7 +837,7 @@ static void SplitViewCB(fltk::Widget* /*w*/, void* data) {
 }
 
 void EditorViewWindow::ShowPopupMenu() {
-  fltk::Menu* p = new fltk::Menu(0, 0, PopupBoxW, PopupBoxH);
+  auto* p = new fltk::Menu(0, 0, PopupBoxW, PopupBoxH);
 
   setvalue(p->add("Camera/3D FPS", 0, &CameraModeCB<Camera::FPS>, this),
            mode == MAP_3D && cam.ctlmode == Camera::FPS);
@@ -828,27 +883,37 @@ struct MergeViewData {
 };
 
 static void MergeViewCallback(fltk::Widget* /*w*/, void* data) {
-  MergeViewData* mvd = (MergeViewData*)data;
+  auto* mvd = static_cast<MergeViewData*>(data);
   mvd->editor->MergeView(mvd->own, mvd->other);
 }
 
 const int ViewMergeDistance = 4;
 
 void EditorViewWindow::ShowViewModifyMenu(int cx, int cy) {
-  std::vector<EditorViewWindow*> views = editor->GetViews();
+  std::vector<EditorViewWindow*> const views = editor->GetViews();
 
   const int d = ViewMergeDistance;
-  EditorViewWindow* candidate = 0;
+  EditorViewWindow* candidate = nullptr;
 
-  for (std::uint32_t a = 0; a < views.size(); a++) {
-    EditorViewWindow* nb = views[a];
-    if (nb == this) continue;
+  for (auto* nb : views) {
+    if (nb == this) {
+      continue;
+    }
 
-    bool hor = false, ver = false;
-    if (cx < d && nb->x() + nb->w() == x()) hor = true;
-    if (cx >= w() - d && nb->x() == w() + x()) hor = true;
-    if (cy < d && nb->y() + nb->h() == y()) ver = true;
-    if (cy >= h() - d && nb->y() == y() + h()) ver = true;
+    bool hor = false;
+    bool ver = false;
+    if (cx < d && nb->x() + nb->w() == x()) {
+      hor = true;
+    }
+    if (cx >= w() - d && nb->x() == w() + x()) {
+      hor = true;
+    }
+    if (cy < d && nb->y() + nb->h() == y()) {
+      ver = true;
+    }
+    if (cy >= h() - d && nb->y() == y() + h()) {
+      ver = true;
+    }
 
     // does it have the same vertical/horizontal dimensions?
     if ((hor && nb->h() == h() && nb->y() == y()) || (ver && nb->w() == w() && nb->x() == x())) {
@@ -856,15 +921,15 @@ void EditorViewWindow::ShowViewModifyMenu(int cx, int cy) {
       break;
     }
   }
-  if (candidate) {
-    MergeViewData mvd;
+  if (candidate != nullptr) {
+    MergeViewData mvd{};
     mvd.editor = editor;
     mvd.other = candidate;
     mvd.own = this;
 
-    fltk::Menu* p = new fltk::Menu(0, 0, PopupBoxW, PopupBoxH);
+    auto* p = new fltk::Menu(0, 0, PopupBoxW, PopupBoxH);
     p->add("Merge", 0, MergeViewCallback, &mvd);
-    p->popup(fltk::Rectangle(cx + x(), cy + y(), PopupBoxW, PopupBoxH), 0);  //"View config");
+    p->popup(fltk::Rectangle(cx + x(), cy + y(), PopupBoxW, PopupBoxH), nullptr);  //"View config");
     delete p;
   }
 }
@@ -872,19 +937,21 @@ void EditorViewWindow::ShowViewModifyMenu(int cx, int cy) {
 float EditorViewWindow::GetConfig(int cfg) {
   switch (cfg) {
     case CFG_OBJCENTERS:
-      return true;  // bDrawCenters ? 1 : 0;
+      return 1.0F;  // bDrawCenters ? 1 : 0;
     case CFG_DRAWRADIUS:
     case CFG_DRAWHEIGHT:  // radius and height drawing are coupled atm
       return bDrawRadius ? 1 : 0;
     case CFG_POLYSELECT: {
       Tool* t = editor->GetTool();
-      if (t) return t->needsPolySelect() ? 1 : 0;
+      if (t != nullptr) {
+        return t->needsPolySelect() ? 1 : 0;
+      }
       return 0;
     }
     case CFG_VRTNORMALS:
-      return bDrawVertexNormals ? 1.0f : 0.0f;
+      return bDrawVertexNormals ? 1.0F : 0.0F;
     case CFG_MESHSMOOTH:
-      return bDrawMeshSmoothing ? 1.0f : 0.0f;
+      return bDrawMeshSmoothing ? 1.0F : 0.0F;
   }
   return 0;
 }
@@ -900,12 +967,13 @@ int EditorViewWindow::handle(int msg) {
   if (msg == fltk::DRAG) {
     if (!bBoxSelect) {
       Tool* tool = editor->GetTool();
-      if (tool)
+      if (tool != nullptr) {
         tool->mouse(this, fltk::DRAG, Point(fltk::event_x() - last.x, fltk::event_y() - last.y));
+      }
     }
   }
 
-  int r = ViewWindow::handle(msg);
+  int const r = ViewWindow::handle(msg);
 
   if (msg == fltk::PUSH) {
     if (click.x < PopupBoxW && click.y < PopupBoxH) {
@@ -929,7 +997,7 @@ void EditorViewWindow::Serialize(CfgList& cfg, bool store) {
   if (store) {
     CFG_STOREN(cfg, mode);
     CFG_STOREN(cfg, rendermode);
-    cfg.AddNumeric("camCtlMode", (int)camCtlMode);
+    cfg.AddNumeric("camCtlMode", static_cast<int>(camCtlMode));
     CFG_STORE(cfg, bDrawCenters);
     CFG_STORE(cfg, bCullFaces);
     CFG_STORE(cfg, bLighting);
@@ -939,7 +1007,7 @@ void EditorViewWindow::Serialize(CfgList& cfg, bool store) {
     CFG_LOADN(cfg, mode);
     SetMode(mode);
     CFG_LOADN(cfg, rendermode);
-    camCtlMode = (Camera::CtlMode)cfg.GetInt("camCtlMode", 0);
+    camCtlMode = static_cast<Camera::CtlMode>(cfg.GetInt("camCtlMode", 0));
     CFG_LOAD(cfg, bDrawCenters);
     CFG_LOAD(cfg, bCullFaces);
     CFG_LOAD(cfg, bLighting);

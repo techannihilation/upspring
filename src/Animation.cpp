@@ -11,20 +11,25 @@
 
 #include "Animation.h"
 
+#include <utility>
+
 //-----------------------------------------------------------------------
 // Animation controllers for Quaternion,Vector3 and float
 //-----------------------------------------------------------------------
 
 class FloatController : public AnimController {
  public:
-  int GetSize() { return sizeof(float); }
-  void LinearInterp(void* a, void* b, float x, void* out) {
-    *(float*)out = *(float*)a * (1.0f - x) + *(float*)b * x;
+  virtual ~FloatController() = default;
+  int GetSize() override { return sizeof(float); }
+  void LinearInterp(void* a, void* b, float x, void* out) override {
+    *static_cast<float*>(out) = *static_cast<float*>(a) * (1.0F - x) + *static_cast<float*>(b) * x;
   }
-  void Copy(void* src, void* dst) { *(float*)dst = *(float*)src; }
-  bool CanConvertToFloat() { return true; }
-  float ToFloat(void* v) { return *(float*)v; }
-  AnimKeyType GetType() { return ANIMKEY_Float; }
+  void Copy(void* src, void* dst) override {
+    *static_cast<float*>(dst) = *static_cast<float*>(src);
+  }
+  bool CanConvertToFloat() override { return true; }
+  float ToFloat(void* v) override { return *static_cast<float*>(v); }
+  AnimKeyType GetType() override { return ANIMKEY_Float; }
 };
 
 AnimController* AnimController::GetFloatController() {
@@ -34,30 +39,34 @@ AnimController* AnimController::GetFloatController() {
 
 class QuatController : public AnimController {
  public:
-  int GetSize() { return sizeof(Quaternion); }
-  void LinearInterp(void* a, void* b, float x, void* out) {
-    Quaternion* qa = (Quaternion*)a;
-    Quaternion* qb = (Quaternion*)b;
+  virtual ~QuatController() = default;
+  int GetSize() override { return sizeof(Quaternion); }
+  void LinearInterp(void* a, void* b, float x, void* out) override {
+    auto* qa = static_cast<Quaternion*>(a);
+    auto* qb = static_cast<Quaternion*>(b);
 
-    qa->slerp(qb, x, (Quaternion*)out, Quaternion::qshort);
+    qa->slerp(qb, x, static_cast<Quaternion*>(out), Quaternion::qshort);
   }
-  void Copy(void* src, void* dst) { *(Quaternion*)dst = *(Quaternion*)src; }
+  void Copy(void* src, void* dst) override {
+    *static_cast<Quaternion*>(dst) = *static_cast<Quaternion*>(src);
+  }
 
   // Fake euler angles
   template <int Axis>
   class QuatToEulerController : public FloatController {
    public:
-    float ToFloat(void* v) {
-      Quaternion* q = (Quaternion*)v;
+    ~QuatToEulerController() override = default;
+    float ToFloat(void* v) override {
+      auto* q = static_cast<Quaternion*>(v);
       Matrix m;
       q->makematrix(&m);
-      Vector3 euler = m.calcEulerYXZ();
+      Vector3 const euler = m.calcEulerYXZ();
       return euler.v[Axis];
     }
   };
 
-  int GetNumMembers() { return 3; }
-  std::pair<AnimController*, void*> GetMemberCtl(int m, void* inst) {
+  int GetNumMembers() override { return 3; }
+  std::pair<AnimController*, void*> GetMemberCtl(int m, void* inst) override {
     static QuatToEulerController<0> q2e0;
     static QuatToEulerController<1> q2e1;
     static QuatToEulerController<2> q2e2;
@@ -65,11 +74,11 @@ class QuatController : public AnimController {
 
     return std::pair<AnimController*, void*>(actl[m], inst);
   }
-  const char* GetMemberName(int m) {
+  const char* GetMemberName(int m) override {
     const char* axis[] = {"x", "y", "z"};
     return axis[m];
   }
-  AnimKeyType GetType() { return ANIMKEY_Quat; }
+  AnimKeyType GetType() override { return ANIMKEY_Quat; }
 };
 
 AnimController* AnimController::GetQuaternionController() {
@@ -79,22 +88,32 @@ AnimController* AnimController::GetQuaternionController() {
 
 class EulerAngleController : public FloatController {
  public:
-  void LinearInterp(void* A, void* B, float x, void* out) {
-    float& a = *(float*)A;
-    float& b = *(float*)B;
-    float& o = *(float*)out;
+  ~EulerAngleController() override = default;
+  void LinearInterp(void* A, void* B, float x, void* out) override {
+    float& a = *static_cast<float*>(A);
+    float& b = *static_cast<float*>(B);
+    float& o = *static_cast<float*>(out);
 
-    if (a > 2 * M_PI) a -= 2 * M_PI;
-    if (a < 0.0f) a += 2 * M_PI;
-    if (b > 2 * M_PI) b -= 2 * M_PI;
-    if (b < 0.0f) b += 2 * M_PI;
+    if (a > 2 * M_PI) {
+      a -= 2 * M_PI;
+    }
+    if (a < 0.0F) {
+      a += 2 * M_PI;
+    }
+    if (b > 2 * M_PI) {
+      b -= 2 * M_PI;
+    }
+    if (b < 0.0F) {
+      b += 2 * M_PI;
+    }
 
     float v = b - a;
     if (fabsf(v) > M_PI) {
-      if (v > 0)
+      if (v > 0) {
         v -= 2 * M_PI;
-      else
+      } else {
         v += 2 * M_PI;
+      }
     }
 
     o = a + v * x;
@@ -110,41 +129,47 @@ AnimController* AnimController::GetEulerAngleController() {
 // AnimProperty - holds animation info for an object property
 //-----------------------------------------------------------------------
 
-AnimProperty::AnimProperty(AnimController* ctl, const std::string& name, int offset)
-    : offset(offset), name(name), controller(ctl) {
-  elemSize = sizeof(float) + controller->GetSize();
-}
+AnimProperty::AnimProperty(AnimController* ctl, std::string name, int offset)
+    : offset(offset),
+      elemSize(sizeof(float) + controller->GetSize()),
+      name(std::move(name)),
+      controller(ctl) {}
 
-AnimProperty::AnimProperty() {
-  controller = 0;
-  elemSize = 0;
-}
+AnimProperty::AnimProperty() = default;
 
-AnimProperty::~AnimProperty() {}
+AnimProperty::~AnimProperty() = default;
 
-int AnimProperty::GetKeyIndex(float time, int* lastkey) {
-  int nk = NumKeys();
+int AnimProperty::GetKeyIndex(float time, const int* lastkey) {
+  int const nk = NumKeys();
   int a = 0;
-  if (lastkey && *lastkey >= 0) a = *lastkey;
+  if ((lastkey != nullptr) && *lastkey >= 0) {
+    a = *lastkey;
+  }
   for (; a < nk; a++) {
-    if (GetKeyTime(a) > time) return a - 1;
+    if (GetKeyTime(a) > time) {
+      return a - 1;
+    }
   }
   return NumKeys() - 1;
 }
 
 void AnimProperty::Evaluate(float time, void* value, int* lastkey) {
-  if (keyData.empty()) return;
+  if (keyData.empty()) {
+    return;
+  }
 
-  int index = GetKeyIndex(time, lastkey);
-  if (lastkey) *lastkey = index;
+  int const index = GetKeyIndex(time, lastkey);
+  if (lastkey != nullptr) {
+    *lastkey = index;
+  }
 
-  if (index < 0)
+  if (index < 0) {
     controller->Copy(GetKeyData(0), value);
-  else if (index + 1 < NumKeys()) {
-    float timeA = GetKeyTime(index);
-    float timeB = GetKeyTime(index + 1);
+  } else if (index + 1 < NumKeys()) {
+    float const timeA = GetKeyTime(index);
+    float const timeB = GetKeyTime(index + 1);
 
-    float x = (time - timeA) / (timeB - timeA);
+    float const x = (time - timeA) / (timeB - timeA);
     controller->LinearInterp(GetKeyData(index), GetKeyData(index + 1), x, value);
   } else {
     // return the value of a single key
@@ -153,31 +178,33 @@ void AnimProperty::Evaluate(float time, void* value, int* lastkey) {
 }
 
 void AnimProperty::InsertKey(void* data, float time) {
-  int index = GetKeyIndex(time);
+  int const index = GetKeyIndex(time);
 
   // create a new key or modify an existing one?
-  if (keyData.empty() ||
-      !(GetKeyTime(index) > time - EPSILON && GetKeyTime(index) < time + EPSILON)) {
+  if (keyData.empty() || GetKeyTime(index) <= time - EPSILON ||
+      GetKeyTime(index) >= time + EPSILON) {
     assert(!keyData.empty() || index == -1);
     keyData.insert(keyData.begin() + elemSize * (index + 1), elemSize, 0);
 
     // set keyframe
     GetKeyTime(index + 1) = time;
     controller->Copy(data, GetKeyData(index + 1));
-  } else
+  } else {
     controller->Copy(data, GetKeyData(index));
+  }
 }
 
 void AnimProperty::ChopAnimation(float endTime) {
-  for (int k = 0; k < NumKeys(); k++)
+  for (int k = 0; k < NumKeys(); k++) {
     if (GetKeyTime(k) > endTime) {
       keyData.erase(keyData.begin() + elemSize * k, keyData.end());
       break;
     }
+  }
 }
 
-AnimProperty* AnimProperty::Clone() {
-  AnimProperty* cp = new AnimProperty();
+AnimProperty* AnimProperty::Clone() const {
+  auto* cp = new AnimProperty();
 
   cp->keyData = keyData;
   cp->controller = controller;
@@ -193,8 +220,9 @@ AnimProperty* AnimProperty::Clone() {
 //-----------------------------------------------------------------------
 
 AnimationInfo::~AnimationInfo() {
-  for (std::vector<AnimProperty*>::iterator i = properties.begin(); i != properties.end(); ++i)
-    delete *i;
+  for (auto& propertie : properties) {
+    delete propertie;
+  }
 }
 
 void AnimationInfo::AddProperty(AnimController* ctl, const char* name, int offset) {
@@ -202,20 +230,19 @@ void AnimationInfo::AddProperty(AnimController* ctl, const char* name, int offse
 }
 
 void AnimationInfo::InsertKeyFrames(void* obj, float time) {
-  for (std::vector<AnimProperty*>::iterator ppi = properties.begin(); ppi != properties.end();
-       ++ppi) {
+  for (auto* pi : properties) {
     bool edited = false;
-    AnimProperty* pi = *ppi;
-    int size = pi->controller->GetSize();
-    char* currentValue = ((char*)obj) + pi->offset;
+    int const size = pi->controller->GetSize();
+    char* currentValue = (static_cast<char*>(obj)) + pi->offset;
 
-    if (pi->keyData.empty() || pi->GetKeyTime(0) > time || pi->GetKeyTime(pi->NumKeys() - 1) < time)
+    if (pi->keyData.empty() || pi->GetKeyTime(0) > time ||
+        pi->GetKeyTime(pi->NumKeys() - 1) < time) {
       edited = true;
-    else {
+    } else {
       char* value = new char[size];
 
       pi->Evaluate(time, value);
-      if (memcmp(value, currentValue, size)) {
+      if (memcmp(value, currentValue, size) != 0) {
         // value is not the same as calculated value, so it is edited and a new key
         // should be added for it
         edited = true;
@@ -224,26 +251,32 @@ void AnimationInfo::InsertKeyFrames(void* obj, float time) {
       delete[] value;
     }
 
-    if (edited) pi->InsertKey(currentValue, time);
+    if (edited) {
+      pi->InsertKey(currentValue, time);
+    }
   }
 }
 
 void AnimationInfo::Evaluate(void* obj, float time) {
-  for (std::vector<AnimProperty*>::iterator pi = properties.begin(); pi != properties.end(); ++pi)
-    (*pi)->Evaluate(time, (char*)obj + (*pi)->offset);
+  for (auto& propertie : properties) {
+    propertie->Evaluate(time, static_cast<char*>(obj) + propertie->offset);
+  }
 }
 
 void AnimationInfo::ClearAnimData() {
-  for (std::vector<AnimProperty*>::iterator pi = properties.begin(); pi != properties.end(); ++pi)
-    (*pi)->Clear();
+  for (auto& propertie : properties) {
+    propertie->Clear();
+  }
 }
 
 void AnimationInfo::CopyTo(AnimationInfo& animInfo) {
   // free anim data of the destination object
-  for (std::vector<AnimProperty*>::iterator i = animInfo.properties.begin();
-       i != animInfo.properties.end(); ++i)
-    delete *i;
+  for (auto& propertie : animInfo.properties) {
+    delete propertie;
+  }
 
   animInfo.properties.resize(properties.size());
-  for (uint i = 0; i < properties.size(); i++) animInfo.properties[i] = properties[i]->Clone();
+  for (uint i = 0; i < properties.size(); i++) {
+    animInfo.properties[i] = properties[i]->Clone();
+  }
 }

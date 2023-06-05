@@ -13,10 +13,10 @@ void menuFileLoad();
 void menuFileSave();
 void menuFileSaveAs();
 void menuFileNew();
-void menuFileExit();
-void menuHelpAbout();
+void menuFileExit() const;
+static void menuHelpAbout();
 void menuObjectLoad();
-void menuObjectSave();
+void menuObjectSave() const;
 void menuObjectReplace();
 void menuObjectMerge();
 void menuObjectLoad3DS();
@@ -27,24 +27,24 @@ void menuObjectResetTransform();
 void menuObjectResetScaleRot();
 void menuObjectFlipPolygons();
 void menuObjectRecalcNormals();
-void menuObjectShowAnimWindows();
-void menuObjectGenCSurf();
-void menuEditOptimizeAll();
-void menuEditOptimizeSelected();
+void menuObjectShowAnimWindows() const;
+void menuObjectGenCSurf() const;
+void menuEditOptimizeAll() const;
+void menuEditOptimizeSelected() const;
 void menuEditUndo();
 void menuEditRedo();
 void menuEditShowUndoBufferViewer();
 void menuMappingImportUV();
-void menuMappingExportUV();
-void menuMappingShow();
-void menuMappingShowTexBuilder();
+void menuMappingExportUV() const;
+void menuMappingShow() const;
+void menuMappingShowTexBuilder() const;
 void menuSettingsShowArchiveList();
-void menuSettingsTextureGroups();
+void menuSettingsTextureGroups() const;
 void menuSettingsRestoreViews();
 void SaveSettings();
-void menuSettingsSetBgColor();
-void menuSetSpringDir();
-void menuScriptLoad();
+void menuSettingsSetBgColor() const;
+static void menuSetSpringDir();
+void menuScriptLoad() const;
 
 // Function callbacks for the UI components
 void uiAddObject();
@@ -58,7 +58,7 @@ void uiApplyTransform();
 void uiUniformScale();
 void uiCalculateMidPos();
 void uiCalculateRadius();
-void uiSetRenderMethod(RenderMethod rm);
+void uiSetRenderMethod(RenderMethod rm) const;
 
 void uiRotate3DOTex();  // rotate tool button
 
@@ -68,8 +68,8 @@ void uiObjectStateChanged(Vector3 MdlObject::*state, float Vector3::*axis, fltk:
 void uiModelStateChanged(float* prop, fltk::Input* o);
 void uiObjectRotationChanged(int axis, fltk::Input* o);
 void uiObjectPositionChanged(int axis, fltk::Input* o);
-void browserSetObjectName(MdlObject* obj);
-void uiAddUnitTextures();
+void browserSetObjectName(MdlObject* obj) const;
+void uiAddUnitTextures() const;
 
 void Show(bool initial);
 void Update();
@@ -79,34 +79,34 @@ bool Save();
 bool Load(const std::string& fn);
 void SetModel(Model* mdl);
 void SetTool(Tool* t);
-void RenderScene(IView* view);
-void SetMapping(int mapping);
+void RenderScene(IView* view) const;
+void SetMapping(int mapping) const;
 void BrowseForTexture(int index);
 void SetModelTexture(int index, std::shared_ptr<Texture> par_texture);
 void ReloadTexture(int index);
 void ConvertToS3O();
-MdlObject* GetSingleSel();
+MdlObject* GetSingleSel() const;
 void SelectionUpdated();
 // Texture groups
-void UpdateTextureGroups();
-void SelectTextureGroup(fltk::Widget* w, void* d);
-void InitTexBrowser();
-TextureGroup* GetCurrentTexGroup();
+void UpdateTextureGroups() const;
+void SelectTextureGroup(fltk::Widget* w, void* d) const;
+void InitTexBrowser() const;
+TextureGroup* GetCurrentTexGroup() const;
 fltk::Color SetTeamColor();
 void LoadSettings();
-void LoadToolWindowSettings();
+void LoadToolWindowSettings() const;
 void SerializeConfig(CfgList& cfg, bool store);
 
-fltk::Color teamColor;
+fltk::Color teamColor{};
 std::string filename, windowTitle;
-Model* model;
-ModelDrawer* modelDrawer;
-Tool* currentTool;
+Model* model{};
+ModelDrawer* modelDrawer{};
+Tool* currentTool{};
 
 Tools tools;
 
 class ObjectView;
-ObjectView* objectViewer;
+ObjectView* objectViewer{};
 
 class EditorCB : public IEditor {
  public:
@@ -133,16 +133,16 @@ CopyBuffer copyBuffer;
 ArchiveList archives;
 
 std::shared_ptr<TextureHandler> textureHandler;
-TextureGroupHandler* textureGroupHandler;
+TextureGroupHandler* textureGroupHandler{};
 
-BackupViewerUI* uiBackupViewer;
-RotatorUI* uiRotator;
-IK_UI* uiIK;
-TimelineUI* uiTimeline;
-MappingUI* uiMapping;
-TexBuilderUI* uiTexBuilder;
-AnimTrackEditorUI* uiAnimTrackEditor;
-bool optimizeOnLoad;
+BackupViewerUI* uiBackupViewer{};
+RotatorUI* uiRotator{};
+IK_UI* uiIK{};
+TimelineUI* uiTimeline{};
+MappingUI* uiMapping{};
+TexBuilderUI* uiTexBuilder{};
+AnimTrackEditorUI* uiAnimTrackEditor{};
+bool optimizeOnLoad{};
 
-lua_State* luaState;
+lua_State* luaState{};
 std::vector<ScriptedMenuItem*> scripts;

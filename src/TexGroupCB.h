@@ -13,12 +13,12 @@ private:
 void SelectGroup();
 void SetGroupName();
 void RemoveGroup();
-void RemoveFromGroup();
+void RemoveFromGroup() const;
 void AddGroup();
-void AddToGroup();
+void AddToGroup() const;
 void UpdateGroupList();
-void InitGroupTexBrowser();
-void SaveGroup();
+void InitGroupTexBrowser() const;
+void SaveGroup() const;
 void LoadGroup();
 
 public:

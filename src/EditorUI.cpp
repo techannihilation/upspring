@@ -2,18 +2,18 @@
 
 #include "EditorUI.h"
 
-inline void MappingUI::cb_Flip_i(fltk::Item*, void*) { flipUVs(); }
+inline void MappingUI::cb_Flip_i(fltk::Item* /*unused*/, void* /*unused*/) { flipUVs(); }
 void MappingUI::cb_Flip(fltk::Item* o, void* v) {
-  ((MappingUI*)(o->parent()->parent()->parent()->user_data()))->cb_Flip_i(o, v);
+  (static_cast<MappingUI*>(o->parent()->parent()->parent()->user_data()))->cb_Flip_i(o, v);
 }
 
-inline void MappingUI::cb_Mirror_i(fltk::Item*, void*) { mirrorUVs(); }
+inline void MappingUI::cb_Mirror_i(fltk::Item* /*unused*/, void* /*unused*/) { mirrorUVs(); }
 void MappingUI::cb_Mirror(fltk::Item* o, void* v) {
-  ((MappingUI*)(o->parent()->parent()->parent()->user_data()))->cb_Mirror_i(o, v);
+  (static_cast<MappingUI*>(o->parent()->parent()->parent()->user_data()))->cb_Mirror_i(o, v);
 }
 
 fltk::Window* MappingUI::CreateUI() {
-  fltk::Window* w;
+  fltk::Window* w = nullptr;
   {
     fltk::Window* o = window = new fltk::Window(657, 381, "UV mapping viewer");
     w = o;
@@ -25,19 +25,19 @@ fltk::Window* MappingUI::CreateUI() {
       fltk::Group::current()->resizable(o);
     }
     {
-      fltk::MenuBar* o = new fltk::MenuBar(0, 0, 656, 23);
+      auto* o = new fltk::MenuBar(0, 0, 656, 23);
       o->shortcut(0xffe9);
       o->begin();
       {
-        fltk::PopupMenu* o = new fltk::PopupMenu(11, 11, 84, 12, "Edit");
+        auto* o = new fltk::PopupMenu(11, 11, 84, 12, "Edit");
         o->begin();
         {
-          fltk::Item* o = new fltk::Item("Flip UVs");
-          o->callback((fltk::Callback*)cb_Flip);
+          auto* o = new fltk::Item("Flip UVs");
+          o->callback(reinterpret_cast<fltk::Callback*>(cb_Flip));
         }
         {
-          fltk::Item* o = new fltk::Item("Mirror UVs");
-          o->callback((fltk::Callback*)cb_Mirror);
+          auto* o = new fltk::Item("Mirror UVs");
+          o->callback(reinterpret_cast<fltk::Callback*>(cb_Mirror));
         }
         o->end();
       }
@@ -48,51 +48,59 @@ fltk::Window* MappingUI::CreateUI() {
   return w;
 }
 
-inline void ArchiveListUI::cb_OK_i(fltk::ReturnButton*, void*) {
+inline void ArchiveListUI::cb_OK_i(fltk::ReturnButton* /*unused*/, void* /*unused*/) const {
   SET_WIDGET_VALUE(window, true);
   window->hide();
 }
 void ArchiveListUI::cb_OK(fltk::ReturnButton* o, void* v) {
-  ((ArchiveListUI*)(o->parent()->user_data()))->cb_OK_i(o, v);
+  (static_cast<ArchiveListUI*>(o->parent()->user_data()))->cb_OK_i(o, v);
 }
 
-inline void ArchiveListUI::cb_Cancel_i(fltk::Button*, void*) { window->hide(); }
+inline void ArchiveListUI::cb_Cancel_i(fltk::Button* /*unused*/, void* /*unused*/) const {
+  window->hide();
+}
 void ArchiveListUI::cb_Cancel(fltk::Button* o, void* v) {
-  ((ArchiveListUI*)(o->parent()->user_data()))->cb_Cancel_i(o, v);
+  (static_cast<ArchiveListUI*>(o->parent()->user_data()))->cb_Cancel_i(o, v);
 }
 
-inline void ArchiveListUI::cb_Browse_i(fltk::Button*, void*) {
+inline void ArchiveListUI::cb_Browse_i(fltk::Button* /*unused*/, void* /*unused*/) {
   static std::string fn;
-  bool r = FileOpenDlg("Select zip/sdz file:", "Zip archives\0zip,sdz\0", fn);
-  if (r) edit->value(fn.c_str());
+  bool const r = FileOpenDlg("Select zip/sdz file:", "Zip archives\0zip,sdz\0", fn);
+  if (r) {
+    edit->value(fn.c_str());
+  }
   edit->redraw();
 }
 void ArchiveListUI::cb_Browse(fltk::Button* o, void* v) {
-  ((ArchiveListUI*)(o->parent()->user_data()))->cb_Browse_i(o, v);
+  (static_cast<ArchiveListUI*>(o->parent()->user_data()))->cb_Browse_i(o, v);
 }
 
-inline void ArchiveListUI::cb_archlist_i(fltk::Browser*, void*) {
+inline void ArchiveListUI::cb_archlist_i(fltk::Browser* /*unused*/, void* /*unused*/) {
   fltk::Widget* w = selected();
-  if (w) edit->value(((std::string*)w->user_data())->c_str());
+  if (w != nullptr) {
+    edit->value((static_cast<std::string*>(w->user_data()))->c_str());
+  }
 }
 void ArchiveListUI::cb_archlist(fltk::Browser* o, void* v) {
-  ((ArchiveListUI*)(o->parent()->user_data()))->cb_archlist_i(o, v);
+  (static_cast<ArchiveListUI*>(o->parent()->user_data()))->cb_archlist_i(o, v);
 }
 
-inline void ArchiveListUI::cb_Remove_i(fltk::Button*, void*) {
+inline void ArchiveListUI::cb_Remove_i(fltk::Button* /*unused*/, void* /*unused*/) {
   fltk::Widget* w = selected();
-  if (w) {
-    settings.archives.erase(*(std::string*)w->user_data());
+  if (w != nullptr) {
+    settings.archives.erase(*static_cast<std::string*>(w->user_data()));
     archlist->remove(w);
     archlist->redraw();
   };
 }
 void ArchiveListUI::cb_Remove(fltk::Button* o, void* v) {
-  ((ArchiveListUI*)(o->parent()->user_data()))->cb_Remove_i(o, v);
+  (static_cast<ArchiveListUI*>(o->parent()->user_data()))->cb_Remove_i(o, v);
 }
 
-inline void ArchiveListUI::cb_Add_i(fltk::Button*, void*) {
-  if (!strlen(edit->value())) return;
+inline void ArchiveListUI::cb_Add_i(fltk::Button* /*unused*/, void* /*unused*/) {
+  if (strlen(edit->value()) == 0U) {
+    return;
+  }
   if (settings.archives.find(edit->value()) == settings.archives.end()) {
     // NOTE: cast to void* to fix "invalid conversion from const void*"
     archlist->add(edit->value(), (void*)&(*settings.archives.insert(edit->value()).first));
@@ -101,10 +109,10 @@ inline void ArchiveListUI::cb_Add_i(fltk::Button*, void*) {
 }
 
 void ArchiveListUI::cb_Add(fltk::Button* o, void* v) {
-  ((ArchiveListUI*)(o->parent()->user_data()))->cb_Add_i(o, v);
+  (static_cast<ArchiveListUI*>(o->parent()->user_data()))->cb_Add_i(o, v);
 }
 
-ArchiveListUI::ArchiveListUI(const ArchiveList& s) {
+ArchiveListUI::ArchiveListUI(ArchiveList s) : settings(std::move(s)) {
   /*fltk::Window* w;*/
   {
     fltk::Window* o = window = new fltk::Window(589, 314, "Texture archives");
@@ -113,102 +121,110 @@ ArchiveListUI::ArchiveListUI(const ArchiveList& s) {
     o->user_data((void*)(this));
     o->begin();
     {
-      fltk::ReturnButton* o = new fltk::ReturnButton(361, 281, 125, 25, "OK");
+      auto* o = new fltk::ReturnButton(361, 281, 125, 25, "OK");
       o->shortcut(0xff0d);
-      o->callback((fltk::Callback*)cb_OK);
+      o->callback(reinterpret_cast<fltk::Callback*>(cb_OK));
     }
     {
-      fltk::Button* o = new fltk::Button(493, 281, 88, 25, "Cancel");
-      o->callback((fltk::Callback*)cb_Cancel);
+      auto* o = new fltk::Button(493, 281, 88, 25, "Cancel");
+      o->callback(reinterpret_cast<fltk::Callback*>(cb_Cancel));
     }
     edit = new fltk::Input(7, 248, 479, 25);
     {
-      fltk::Button* o = new fltk::Button(493, 248, 88, 25, "Browse");
-      o->callback((fltk::Callback*)cb_Browse);
+      auto* o = new fltk::Button(493, 248, 88, 25, "Browse");
+      o->callback(reinterpret_cast<fltk::Callback*>(cb_Browse));
     }
     {
       fltk::Browser* o = archlist = new fltk::Browser(6, 8, 480, 228);
-      o->callback((fltk::Callback*)cb_archlist);
+      o->callback(reinterpret_cast<fltk::Callback*>(cb_archlist));
     }
     {
-      fltk::Button* o = new fltk::Button(491, 8, 93, 25, "Remove");
-      o->callback((fltk::Callback*)cb_Remove);
+      auto* o = new fltk::Button(491, 8, 93, 25, "Remove");
+      o->callback(reinterpret_cast<fltk::Callback*>(cb_Remove));
     }
     {
-      fltk::Button* o = new fltk::Button(493, 215, 88, 27, "Add");
-      o->callback((fltk::Callback*)cb_Add);
+      auto* o = new fltk::Button(493, 215, 88, 27, "Add");
+      o->callback(reinterpret_cast<fltk::Callback*>(cb_Add));
     }
     o->end();
     o->resizable(o);
   }
-  settings = s;
-  for (std::set<std::string>::iterator i = settings.archives.begin(); i != settings.archives.end();
-       ++i) {
+
+  for (const auto& archive : settings.archives) {
     // NOTE: cast to void* to fix "invalid conversion from const void*"
-    archlist->add(i->c_str(), (void*)&(*i));
+    archlist->add(archive.c_str(), (void*)&archive);
   }
 }
 
 ArchiveListUI::~ArchiveListUI() { delete window; }
 
-fltk::Widget* ArchiveListUI::selected() {
-  for (int a = 0; a < archlist->children(); a++)
-    if (archlist->child(a)->selected()) return archlist->child(a);
-  return 0;
+fltk::Widget* ArchiveListUI::selected() const {
+  for (int a = 0; a < archlist->children(); a++) {
+    if (archlist->child(a)->selected()) {
+      return archlist->child(a);
+    }
+  }
+  return nullptr;
 }
 
-inline void TexGroupUI::cb_Add1_i(fltk::Button*, void*) { AddToGroup(); }
+inline void TexGroupUI::cb_Add1_i(fltk::Button* /*unused*/, void* /*unused*/) { AddToGroup(); }
 void TexGroupUI::cb_Add1(fltk::Button* o, void* v) {
-  ((TexGroupUI*)(o->parent()->user_data()))->cb_Add1_i(o, v);
+  (static_cast<TexGroupUI*>(o->parent()->user_data()))->cb_Add1_i(o, v);
 }
 
-inline void TexGroupUI::cb_groups_i(fltk::Choice*, void*) { SelectGroup(); }
+inline void TexGroupUI::cb_groups_i(fltk::Choice* /*unused*/, void* /*unused*/) { SelectGroup(); }
 void TexGroupUI::cb_groups(fltk::Choice* o, void* v) {
-  ((TexGroupUI*)(o->parent()->user_data()))->cb_groups_i(o, v);
+  (static_cast<TexGroupUI*>(o->parent()->user_data()))->cb_groups_i(o, v);
 }
 
-inline void TexGroupUI::cb_Set_i(fltk::Button*, void*) { SetGroupName(); }
+inline void TexGroupUI::cb_Set_i(fltk::Button* /*unused*/, void* /*unused*/) { SetGroupName(); }
 void TexGroupUI::cb_Set(fltk::Button* o, void* v) {
-  ((TexGroupUI*)(o->parent()->user_data()))->cb_Set_i(o, v);
+  (static_cast<TexGroupUI*>(o->parent()->user_data()))->cb_Set_i(o, v);
 }
 
-inline void TexGroupUI::cb_Remove1_i(fltk::Button*, void*) { RemoveGroup(); }
+inline void TexGroupUI::cb_Remove1_i(fltk::Button* /*unused*/, void* /*unused*/) { RemoveGroup(); }
 void TexGroupUI::cb_Remove1(fltk::Button* o, void* v) {
-  ((TexGroupUI*)(o->parent()->user_data()))->cb_Remove1_i(o, v);
+  (static_cast<TexGroupUI*>(o->parent()->user_data()))->cb_Remove1_i(o, v);
 }
 
-inline void TexGroupUI::cb_Add2_i(fltk::Button*, void*) { AddGroup(); }
+inline void TexGroupUI::cb_Add2_i(fltk::Button* /*unused*/, void* /*unused*/) { AddGroup(); }
 void TexGroupUI::cb_Add2(fltk::Button* o, void* v) {
-  ((TexGroupUI*)(o->parent()->user_data()))->cb_Add2_i(o, v);
+  (static_cast<TexGroupUI*>(o->parent()->user_data()))->cb_Add2_i(o, v);
 }
 
-inline void TexGroupUI::cb_Close_i(fltk::Button*, void*) { window->hide(); }
+inline void TexGroupUI::cb_Close_i(fltk::Button* /*unused*/, void* /*unused*/) const {
+  window->hide();
+}
 void TexGroupUI::cb_Close(fltk::Button* o, void* v) {
-  ((TexGroupUI*)(o->parent()->user_data()))->cb_Close_i(o, v);
+  (static_cast<TexGroupUI*>(o->parent()->user_data()))->cb_Close_i(o, v);
 }
 
-inline void TexGroupUI::cb_Remove2_i(fltk::Button*, void*) { RemoveFromGroup(); }
+inline void TexGroupUI::cb_Remove2_i(fltk::Button* /*unused*/, void* /*unused*/) {
+  RemoveFromGroup();
+}
 void TexGroupUI::cb_Remove2(fltk::Button* o, void* v) {
-  ((TexGroupUI*)(o->parent()->user_data()))->cb_Remove2_i(o, v);
+  (static_cast<TexGroupUI*>(o->parent()->user_data()))->cb_Remove2_i(o, v);
 }
 
-inline void TexGroupUI::cb_Select_i(fltk::Button*, void*) { texBrowser->SelectAll(); }
+inline void TexGroupUI::cb_Select_i(fltk::Button* /*unused*/, void* /*unused*/) const {
+  texBrowser->SelectAll();
+}
 void TexGroupUI::cb_Select(fltk::Button* o, void* v) {
-  ((TexGroupUI*)(o->parent()->user_data()))->cb_Select_i(o, v);
+  (static_cast<TexGroupUI*>(o->parent()->user_data()))->cb_Select_i(o, v);
 }
 
-inline void TexGroupUI::cb_Load_i(fltk::Button*, void*) { LoadGroup(); }
+inline void TexGroupUI::cb_Load_i(fltk::Button* /*unused*/, void* /*unused*/) { LoadGroup(); }
 void TexGroupUI::cb_Load(fltk::Button* o, void* v) {
-  ((TexGroupUI*)(o->parent()->user_data()))->cb_Load_i(o, v);
+  (static_cast<TexGroupUI*>(o->parent()->user_data()))->cb_Load_i(o, v);
 }
 
-inline void TexGroupUI::cb_Save_i(fltk::Button*, void*) { SaveGroup(); }
+inline void TexGroupUI::cb_Save_i(fltk::Button* /*unused*/, void* /*unused*/) { SaveGroup(); }
 void TexGroupUI::cb_Save(fltk::Button* o, void* v) {
-  ((TexGroupUI*)(o->parent()->user_data()))->cb_Save_i(o, v);
+  (static_cast<TexGroupUI*>(o->parent()->user_data()))->cb_Save_i(o, v);
 }
 
 fltk::Window* TexGroupUI::CreateUI() {
-  fltk::Window* w;
+  fltk::Window* w = nullptr;
   {
     fltk::Window* o = window = new fltk::Window(791, 728, "Texture Group Manager");
     w = o;
@@ -216,11 +232,11 @@ fltk::Window* TexGroupUI::CreateUI() {
     o->user_data((void*)(this));
     o->begin();
     {
-      fltk::Button* o = new fltk::Button(212, 37, 138, 25, "Add selected to group");
-      o->callback((fltk::Callback*)cb_Add1);
+      auto* o = new fltk::Button(212, 37, 138, 25, "Add selected to group");
+      o->callback(reinterpret_cast<fltk::Callback*>(cb_Add1));
     }
     {
-      fltk::TiledGroup* o = new fltk::TiledGroup(3, 68, 784, 657);
+      auto* o = new fltk::TiledGroup(3, 68, 784, 657);
       o->begin();
       {
         TextureBrowser* o = groupTexBrowser = new TextureBrowser(0, 0, 204, 657);
@@ -231,7 +247,7 @@ fltk::Window* TexGroupUI::CreateUI() {
         TextureBrowser* o = texBrowser = new TextureBrowser(204, 0, 580, 657);
         o->set_vertical();
         o->box(fltk::DOWN_BOX);
-        o->color((fltk::Color)0xffffff00);
+        o->color(static_cast<fltk::Color>(0xffffff00));
         fltk::Group::current()->resizable(o);
       }
       o->end();
@@ -239,39 +255,39 @@ fltk::Window* TexGroupUI::CreateUI() {
     }
     {
       fltk::Choice* o = groups = new fltk::Choice(53, 4, 154, 25, "Group:");
-      o->callback((fltk::Callback*)cb_groups);
+      o->callback(reinterpret_cast<fltk::Callback*>(cb_groups));
     }
     {
-      fltk::Button* o = new fltk::Button(609, 37, 111, 25, "Set group name");
-      o->callback((fltk::Callback*)cb_Set);
+      auto* o = new fltk::Button(609, 37, 111, 25, "Set group name");
+      o->callback(reinterpret_cast<fltk::Callback*>(cb_Set));
     }
     {
-      fltk::Button* o = new fltk::Button(356, 4, 107, 25, "Remove group");
-      o->callback((fltk::Callback*)cb_Remove1);
+      auto* o = new fltk::Button(356, 4, 107, 25, "Remove group");
+      o->callback(reinterpret_cast<fltk::Callback*>(cb_Remove1));
     }
     {
-      fltk::Button* o = new fltk::Button(356, 37, 107, 25, "Add group");
-      o->callback((fltk::Callback*)cb_Add2);
+      auto* o = new fltk::Button(356, 37, 107, 25, "Add group");
+      o->callback(reinterpret_cast<fltk::Callback*>(cb_Add2));
     }
     {
-      fltk::Button* o = new fltk::Button(704, 4, 82, 25, "Close");
-      o->callback((fltk::Callback*)cb_Close);
+      auto* o = new fltk::Button(704, 4, 82, 25, "Close");
+      o->callback(reinterpret_cast<fltk::Callback*>(cb_Close));
     }
     {
-      fltk::Button* o = new fltk::Button(14, 37, 188, 25, "Remove selected from group");
-      o->callback((fltk::Callback*)cb_Remove2);
+      auto* o = new fltk::Button(14, 37, 188, 25, "Remove selected from group");
+      o->callback(reinterpret_cast<fltk::Callback*>(cb_Remove2));
     }
     {
-      fltk::Button* o = new fltk::Button(212, 4, 138, 25, "Select All");
-      o->callback((fltk::Callback*)cb_Select);
+      auto* o = new fltk::Button(212, 4, 138, 25, "Select All");
+      o->callback(reinterpret_cast<fltk::Callback*>(cb_Select));
     }
     {
-      fltk::Button* o = new fltk::Button(471, 4, 131, 25, "Load group from file");
-      o->callback((fltk::Callback*)cb_Load);
+      auto* o = new fltk::Button(471, 4, 131, 25, "Load group from file");
+      o->callback(reinterpret_cast<fltk::Callback*>(cb_Load));
     }
     {
-      fltk::Button* o = new fltk::Button(471, 37, 131, 25, "Save group to file");
-      o->callback((fltk::Callback*)cb_Save);
+      auto* o = new fltk::Button(471, 37, 131, 25, "Save group to file");
+      o->callback(reinterpret_cast<fltk::Callback*>(cb_Save));
     }
     o->end();
     o->set_modal();
@@ -279,48 +295,70 @@ fltk::Window* TexGroupUI::CreateUI() {
   return w;
 }
 
-inline void TexBuilderUI::cb_Browse1_i(fltk::Button*, void*) { Browse(selfIllumTex); }
+inline void TexBuilderUI::cb_Browse1_i(fltk::Button* /*unused*/, void* /*unused*/) const {
+  Browse(selfIllumTex);
+}
 void TexBuilderUI::cb_Browse1(fltk::Button* o, void* v) {
-  ((TexBuilderUI*)(o->parent()->parent()->parent()->parent()->user_data()))->cb_Browse1_i(o, v);
+  (static_cast<TexBuilderUI*>(o->parent()->parent()->parent()->parent()->user_data()))
+      ->cb_Browse1_i(o, v);
 }
 
-inline void TexBuilderUI::cb_Browse2_i(fltk::Button*, void*) { Browse(reflectTex); }
+inline void TexBuilderUI::cb_Browse2_i(fltk::Button* /*unused*/, void* /*unused*/) const {
+  Browse(reflectTex);
+}
 void TexBuilderUI::cb_Browse2(fltk::Button* o, void* v) {
-  ((TexBuilderUI*)(o->parent()->parent()->parent()->parent()->user_data()))->cb_Browse2_i(o, v);
+  (static_cast<TexBuilderUI*>(o->parent()->parent()->parent()->parent()->user_data()))
+      ->cb_Browse2_i(o, v);
 }
 
-inline void TexBuilderUI::cb_Browse3_i(fltk::Button*, void*) { Browse(output2, true); }
+inline void TexBuilderUI::cb_Browse3_i(fltk::Button* /*unused*/, void* /*unused*/) const {
+  Browse(output2, true);
+}
 void TexBuilderUI::cb_Browse3(fltk::Button* o, void* v) {
-  ((TexBuilderUI*)(o->parent()->parent()->parent()->parent()->user_data()))->cb_Browse3_i(o, v);
+  (static_cast<TexBuilderUI*>(o->parent()->parent()->parent()->parent()->user_data()))
+      ->cb_Browse3_i(o, v);
 }
 
-inline void TexBuilderUI::cb_Build_i(fltk::Button*, void*) { BuildTexture2(); }
+inline void TexBuilderUI::cb_Build_i(fltk::Button* /*unused*/, void* /*unused*/) {
+  BuildTexture2();
+}
 void TexBuilderUI::cb_Build(fltk::Button* o, void* v) {
-  ((TexBuilderUI*)(o->parent()->parent()->parent()->user_data()))->cb_Build_i(o, v);
+  (static_cast<TexBuilderUI*>(o->parent()->parent()->parent()->user_data()))->cb_Build_i(o, v);
 }
 
-inline void TexBuilderUI::cb_Browse4_i(fltk::Button*, void*) { Browse(colorTex); }
+inline void TexBuilderUI::cb_Browse4_i(fltk::Button* /*unused*/, void* /*unused*/) const {
+  Browse(colorTex);
+}
 void TexBuilderUI::cb_Browse4(fltk::Button* o, void* v) {
-  ((TexBuilderUI*)(o->parent()->parent()->parent()->parent()->user_data()))->cb_Browse4_i(o, v);
+  (static_cast<TexBuilderUI*>(o->parent()->parent()->parent()->parent()->user_data()))
+      ->cb_Browse4_i(o, v);
 }
 
-inline void TexBuilderUI::cb_Browse5_i(fltk::Button*, void*) { Browse(teamColorTex); }
+inline void TexBuilderUI::cb_Browse5_i(fltk::Button* /*unused*/, void* /*unused*/) const {
+  Browse(teamColorTex);
+}
 void TexBuilderUI::cb_Browse5(fltk::Button* o, void* v) {
-  ((TexBuilderUI*)(o->parent()->parent()->parent()->parent()->user_data()))->cb_Browse5_i(o, v);
+  (static_cast<TexBuilderUI*>(o->parent()->parent()->parent()->parent()->user_data()))
+      ->cb_Browse5_i(o, v);
 }
 
-inline void TexBuilderUI::cb_Browse6_i(fltk::Button*, void*) { Browse(output1, true); }
+inline void TexBuilderUI::cb_Browse6_i(fltk::Button* /*unused*/, void* /*unused*/) const {
+  Browse(output1, true);
+}
 void TexBuilderUI::cb_Browse6(fltk::Button* o, void* v) {
-  ((TexBuilderUI*)(o->parent()->parent()->parent()->parent()->user_data()))->cb_Browse6_i(o, v);
+  (static_cast<TexBuilderUI*>(o->parent()->parent()->parent()->parent()->user_data()))
+      ->cb_Browse6_i(o, v);
 }
 
-inline void TexBuilderUI::cb_Build1_i(fltk::Button*, void*) { BuildTexture1(); }
+inline void TexBuilderUI::cb_Build1_i(fltk::Button* /*unused*/, void* /*unused*/) {
+  BuildTexture1();
+}
 void TexBuilderUI::cb_Build1(fltk::Button* o, void* v) {
-  ((TexBuilderUI*)(o->parent()->parent()->parent()->user_data()))->cb_Build1_i(o, v);
+  (static_cast<TexBuilderUI*>(o->parent()->parent()->parent()->user_data()))->cb_Build1_i(o, v);
 }
 
 fltk::Window* TexBuilderUI::CreateUI() {
-  fltk::Window* w;
+  fltk::Window* w = nullptr;
   {
     fltk::Window* o = window = new fltk::Window(568, 269, "S3O Texture Builder");
     w = o;
@@ -328,13 +366,13 @@ fltk::Window* TexBuilderUI::CreateUI() {
     o->user_data((void*)(this));
     o->begin();
     {
-      fltk::TabGroup* o = new fltk::TabGroup(5, 6, 558, 268);
+      auto* o = new fltk::TabGroup(5, 6, 558, 268);
       o->begin();
       {
-        fltk::Group* o = new fltk::Group(0, 25, 558, 231, "Texture 2");
+        auto* o = new fltk::Group(0, 25, 558, 231, "Texture 2");
         o->begin();
         {
-          fltk::Group* o = new fltk::Group(6, 5, 548, 113, "Input textures");
+          auto* o = new fltk::Group(6, 5, 548, 113, "Input textures");
           o->box(fltk::THIN_DOWN_BOX);
           o->align(fltk::ALIGN_TOP | fltk::ALIGN_CENTER);
           o->begin();
@@ -346,12 +384,12 @@ nerates");
             o->align(fltk::ALIGN_TOP | fltk::ALIGN_LEFT);
           }
           {
-            fltk::Button* o = new fltk::Button(424, 78, 94, 23, "Browse");
-            o->callback((fltk::Callback*)cb_Browse1);
+            auto* o = new fltk::Button(424, 78, 94, 23, "Browse");
+            o->callback(reinterpret_cast<fltk::Callback*>(cb_Browse1));
           }
           {
-            fltk::Button* o = new fltk::Button(424, 25, 94, 28, "Browse");
-            o->callback((fltk::Callback*)cb_Browse2);
+            auto* o = new fltk::Button(424, 25, 94, 28, "Browse");
+            o->callback(reinterpret_cast<fltk::Callback*>(cb_Browse2));
           }
           {
             fltk::Input* o = reflectTex = new fltk::Input(
@@ -362,7 +400,7 @@ nerates");
           o->end();
         }
         {
-          fltk::Group* o = new fltk::Group(6, 122, 548, 75, "Output texture");
+          auto* o = new fltk::Group(6, 122, 548, 75, "Output texture");
           o->box(fltk::THIN_DOWN_BOX);
           o->align(fltk::ALIGN_TOP | fltk::ALIGN_CENTER);
           o->begin();
@@ -371,24 +409,24 @@ nerates");
             o->align(fltk::ALIGN_TOP | fltk::ALIGN_LEFT);
           }
           {
-            fltk::Button* o = new fltk::Button(427, 39, 93, 23, "Browse");
-            o->callback((fltk::Callback*)cb_Browse3);
+            auto* o = new fltk::Button(427, 39, 93, 23, "Browse");
+            o->callback(reinterpret_cast<fltk::Callback*>(cb_Browse3));
           }
           o->end();
         }
         {
-          fltk::Button* o = new fltk::Button(219, 201, 113, 27, "Build texture 2");
-          o->callback((fltk::Callback*)cb_Build);
+          auto* o = new fltk::Button(219, 201, 113, 27, "Build texture 2");
+          o->callback(reinterpret_cast<fltk::Callback*>(cb_Build));
           o->tooltip("Build texture 2 from the reflection and self-illumination images");
         }
         o->end();
       }
       {
-        fltk::Group* o = new fltk::Group(0, 25, 558, 227, "Texture 1");
+        auto* o = new fltk::Group(0, 25, 558, 227, "Texture 1");
         o->hide();
         o->begin();
         {
-          fltk::Group* o = new fltk::Group(6, 5, 548, 113, "Input textures");
+          auto* o = new fltk::Group(6, 5, 548, 113, "Input textures");
           o->box(fltk::THIN_DOWN_BOX);
           o->align(fltk::ALIGN_TOP | fltk::ALIGN_CENTER);
           o->begin();
@@ -404,18 +442,18 @@ nerates");
             o->align(fltk::ALIGN_TOP | fltk::ALIGN_LEFT);
           }
           {
-            fltk::Button* o = new fltk::Button(425, 28, 94, 23, "Browse");
-            o->callback((fltk::Callback*)cb_Browse4);
+            auto* o = new fltk::Button(425, 28, 94, 23, "Browse");
+            o->callback(reinterpret_cast<fltk::Callback*>(cb_Browse4));
           }
           {
-            fltk::Button* o = new fltk::Button(425, 79, 94, 23, "Browse");
-            o->callback((fltk::Callback*)cb_Browse5);
+            auto* o = new fltk::Button(425, 79, 94, 23, "Browse");
+            o->callback(reinterpret_cast<fltk::Callback*>(cb_Browse5));
           }
           invertTeamCol = new fltk::CheckButton(337, 78, 64, 25, "Invert");
           o->end();
         }
         {
-          fltk::Group* o = new fltk::Group(6, 122, 548, 69, "Output texture");
+          auto* o = new fltk::Group(6, 122, 548, 69, "Output texture");
           o->box(fltk::THIN_DOWN_BOX);
           o->align(fltk::ALIGN_TOP | fltk::ALIGN_CENTER);
           o->begin();
@@ -424,14 +462,14 @@ nerates");
             o->align(fltk::ALIGN_TOP | fltk::ALIGN_LEFT);
           }
           {
-            fltk::Button* o = new fltk::Button(427, 31, 93, 23, "Browse");
-            o->callback((fltk::Callback*)cb_Browse6);
+            auto* o = new fltk::Button(427, 31, 93, 23, "Browse");
+            o->callback(reinterpret_cast<fltk::Callback*>(cb_Browse6));
           }
           o->end();
         }
         {
-          fltk::Button* o = new fltk::Button(213, 200, 117, 25, "Build texture 1");
-          o->callback((fltk::Callback*)cb_Build1);
+          auto* o = new fltk::Button(213, 200, 117, 25, "Build texture 1");
+          o->callback(reinterpret_cast<fltk::Callback*>(cb_Build1));
           o->tooltip("Build texture 1 from the RGB color image and Team color grayscale image.");
         }
         o->end();
@@ -443,48 +481,62 @@ nerates");
   return w;
 }
 
-inline void RotatorUI::cb_inputAbsX_i(fltk::NumericInput* o, void*) { ApplyRotation(true, 0, o); }
+inline void RotatorUI::cb_inputAbsX_i(fltk::NumericInput* o, void* /*unused*/) {
+  ApplyRotation(true, 0, o);
+}
 void RotatorUI::cb_inputAbsX(fltk::NumericInput* o, void* v) {
-  ((RotatorUI*)(o->parent()->parent()->user_data()))->cb_inputAbsX_i(o, v);
+  (static_cast<RotatorUI*>(o->parent()->parent()->user_data()))->cb_inputAbsX_i(o, v);
 }
 
-inline void RotatorUI::cb_inputAbsY_i(fltk::NumericInput* o, void*) { ApplyRotation(true, 1, o); }
+inline void RotatorUI::cb_inputAbsY_i(fltk::NumericInput* o, void* /*unused*/) {
+  ApplyRotation(true, 1, o);
+}
 void RotatorUI::cb_inputAbsY(fltk::NumericInput* o, void* v) {
-  ((RotatorUI*)(o->parent()->parent()->user_data()))->cb_inputAbsY_i(o, v);
+  (static_cast<RotatorUI*>(o->parent()->parent()->user_data()))->cb_inputAbsY_i(o, v);
 }
 
-inline void RotatorUI::cb_inputAbsZ_i(fltk::NumericInput* o, void*) { ApplyRotation(true, 2, o); }
+inline void RotatorUI::cb_inputAbsZ_i(fltk::NumericInput* o, void* /*unused*/) {
+  ApplyRotation(true, 2, o);
+}
 void RotatorUI::cb_inputAbsZ(fltk::NumericInput* o, void* v) {
-  ((RotatorUI*)(o->parent()->parent()->user_data()))->cb_inputAbsZ_i(o, v);
+  (static_cast<RotatorUI*>(o->parent()->parent()->user_data()))->cb_inputAbsZ_i(o, v);
 }
 
-inline void RotatorUI::cb_inputRelX_i(fltk::NumericInput* o, void*) { ApplyRotation(false, 0, o); }
+inline void RotatorUI::cb_inputRelX_i(fltk::NumericInput* o, void* /*unused*/) {
+  ApplyRotation(false, 0, o);
+}
 void RotatorUI::cb_inputRelX(fltk::NumericInput* o, void* v) {
-  ((RotatorUI*)(o->parent()->parent()->user_data()))->cb_inputRelX_i(o, v);
+  (static_cast<RotatorUI*>(o->parent()->parent()->user_data()))->cb_inputRelX_i(o, v);
 }
 
-inline void RotatorUI::cb_inputRelY_i(fltk::NumericInput* o, void*) { ApplyRotation(false, 1, o); }
+inline void RotatorUI::cb_inputRelY_i(fltk::NumericInput* o, void* /*unused*/) {
+  ApplyRotation(false, 1, o);
+}
 void RotatorUI::cb_inputRelY(fltk::NumericInput* o, void* v) {
-  ((RotatorUI*)(o->parent()->parent()->user_data()))->cb_inputRelY_i(o, v);
+  (static_cast<RotatorUI*>(o->parent()->parent()->user_data()))->cb_inputRelY_i(o, v);
 }
 
-inline void RotatorUI::cb_inputRelZ_i(fltk::NumericInput* o, void*) { ApplyRotation(false, 2, o); }
+inline void RotatorUI::cb_inputRelZ_i(fltk::NumericInput* o, void* /*unused*/) {
+  ApplyRotation(false, 2, o);
+}
 void RotatorUI::cb_inputRelZ(fltk::NumericInput* o, void* v) {
-  ((RotatorUI*)(o->parent()->parent()->user_data()))->cb_inputRelZ_i(o, v);
+  (static_cast<RotatorUI*>(o->parent()->parent()->user_data()))->cb_inputRelZ_i(o, v);
 }
 
-inline void RotatorUI::cb_Reset_i(fltk::Button*, void*) { ResetRotation(); }
+inline void RotatorUI::cb_Reset_i(fltk::Button* /*unused*/, void* /*unused*/) { ResetRotation(); }
 void RotatorUI::cb_Reset(fltk::Button* o, void* v) {
-  ((RotatorUI*)(o->parent()->user_data()))->cb_Reset_i(o, v);
+  (static_cast<RotatorUI*>(o->parent()->user_data()))->cb_Reset_i(o, v);
 }
 
-inline void RotatorUI::cb_Apply_i(fltk::Button*, void*) { ApplyRotationToGeom(); }
+inline void RotatorUI::cb_Apply_i(fltk::Button* /*unused*/, void* /*unused*/) {
+  ApplyRotationToGeom();
+}
 void RotatorUI::cb_Apply(fltk::Button* o, void* v) {
-  ((RotatorUI*)(o->parent()->user_data()))->cb_Apply_i(o, v);
+  (static_cast<RotatorUI*>(o->parent()->user_data()))->cb_Apply_i(o, v);
 }
 
 fltk::Window* RotatorUI::CreateUI(IEditor* editor) {
-  fltk::Window* w;
+  fltk::Window* w = nullptr;
   {
     fltk::Window* o = window = new fltk::Window(233, 251, "Object Rotator");
     w = o;
@@ -493,54 +545,54 @@ fltk::Window* RotatorUI::CreateUI(IEditor* editor) {
     o->user_data((void*)(this));
     o->begin();
     {
-      fltk::Group* o = new fltk::Group(10, 18, 217, 89, "Apply absolute rotation");
+      auto* o = new fltk::Group(10, 18, 217, 89, "Apply absolute rotation");
       o->box(fltk::THIN_DOWN_BOX);
       o->begin();
       {
         fltk::NumericInput* o = inputAbsX = new fltk::NumericInput(93, 3, 93, 23, "Around X axis");
         o->type(6);
-        o->callback((fltk::Callback*)cb_inputAbsX);
+        o->callback(reinterpret_cast<fltk::Callback*>(cb_inputAbsX));
       }
       {
         fltk::NumericInput* o = inputAbsY = new fltk::NumericInput(93, 28, 93, 23, "Around Y axis");
         o->type(6);
-        o->callback((fltk::Callback*)cb_inputAbsY);
+        o->callback(reinterpret_cast<fltk::Callback*>(cb_inputAbsY));
       }
       {
         fltk::NumericInput* o = inputAbsZ = new fltk::NumericInput(93, 53, 93, 24, "Around Z axis");
         o->type(6);
-        o->callback((fltk::Callback*)cb_inputAbsZ);
+        o->callback(reinterpret_cast<fltk::Callback*>(cb_inputAbsZ));
       }
       o->end();
     }
     {
-      fltk::Group* o = new fltk::Group(8, 122, 219, 92, "Apply relative rotation");
+      auto* o = new fltk::Group(8, 122, 219, 92, "Apply relative rotation");
       o->box(fltk::THIN_DOWN_BOX);
       o->begin();
       {
         fltk::NumericInput* o = inputRelX = new fltk::NumericInput(93, 5, 95, 23, "Around X axis");
         o->type(6);
-        o->callback((fltk::Callback*)cb_inputRelX);
+        o->callback(reinterpret_cast<fltk::Callback*>(cb_inputRelX));
       }
       {
         fltk::NumericInput* o = inputRelY = new fltk::NumericInput(93, 30, 95, 23, "Around Y axis");
         o->type(6);
-        o->callback((fltk::Callback*)cb_inputRelY);
+        o->callback(reinterpret_cast<fltk::Callback*>(cb_inputRelY));
       }
       {
         fltk::NumericInput* o = inputRelZ = new fltk::NumericInput(93, 55, 95, 24, "Around Z axis");
         o->type(6);
-        o->callback((fltk::Callback*)cb_inputRelZ);
+        o->callback(reinterpret_cast<fltk::Callback*>(cb_inputRelZ));
       }
       o->end();
     }
     {
-      fltk::Button* o = new fltk::Button(7, 218, 107, 27, "Reset rotation");
-      o->callback((fltk::Callback*)cb_Reset);
+      auto* o = new fltk::Button(7, 218, 107, 27, "Reset rotation");
+      o->callback(reinterpret_cast<fltk::Callback*>(cb_Reset));
     }
     {
-      fltk::Button* o = new fltk::Button(120, 218, 106, 27, "Apply Rotation");
-      o->callback((fltk::Callback*)cb_Apply);
+      auto* o = new fltk::Button(120, 218, 106, 27, "Apply Rotation");
+      o->callback(reinterpret_cast<fltk::Callback*>(cb_Apply));
     }
     o->end();
     o->resizable(o);
@@ -549,25 +601,33 @@ fltk::Window* RotatorUI::CreateUI(IEditor* editor) {
   return w;
 }
 
-inline void EditorUI::cb_window_i(fltk::Window*, void*) { menuFileExit(); }
+inline void EditorUI::cb_window_i(fltk::Window* /*unused*/, void* /*unused*/) const {
+  menuFileExit();
+}
 void EditorUI::cb_window(fltk::Window* o, void* v) {
-  ((EditorUI*)(o->user_data()))->cb_window_i(o, v);
+  (static_cast<EditorUI*>(o->user_data()))->cb_window_i(o, v);
 }
 
-inline void EditorUI::cb_selectCameraTool_i(fltk::Button*, void*) { SetTool(tools.camera); }
+inline void EditorUI::cb_selectCameraTool_i(fltk::Button* /*unused*/, void* /*unused*/) {
+  SetTool(tools.camera);
+}
 void EditorUI::cb_selectCameraTool(fltk::Button* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->user_data()))->cb_selectCameraTool_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->user_data()))->cb_selectCameraTool_i(o, v);
 }
 
 #include <fltk/xbmImage.h>
+
+#include <utility>
 static const unsigned char bits_camera[32] = {0,   0,   128, 1,   192, 3,   224, 7,   128, 1,   128,
                                               1,   128, 1,   128, 1,   128, 1,   128, 1,   128, 1,
                                               128, 1,   224, 7,   192, 3,   128, 1,   0,   0};
 static fltk::xbmImage xbmImage_camera(bits_camera, 16, 16);
 
-inline void EditorUI::cb_selectMoveTool_i(fltk::Button*, void*) { SetTool(tools.move); }
+inline void EditorUI::cb_selectMoveTool_i(fltk::Button* /*unused*/, void* /*unused*/) {
+  SetTool(tools.move);
+}
 void EditorUI::cb_selectMoveTool(fltk::Button* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->user_data()))->cb_selectMoveTool_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->user_data()))->cb_selectMoveTool_i(o, v);
 }
 
 static const unsigned char bits_move[32] = {0,   0,   128, 1,   192, 3,   224, 7,   128, 1,   128,
@@ -575,9 +635,11 @@ static const unsigned char bits_move[32] = {0,   0,   128, 1,   192, 3,   224, 7
                                             128, 1,   224, 7,   192, 3,   128, 1,   0,   0};
 static fltk::xbmImage xbmImage_move(bits_move, 16, 16);
 
-inline void EditorUI::cb_selectRotateTool_i(fltk::Button*, void*) { SetTool(tools.rotate); }
+inline void EditorUI::cb_selectRotateTool_i(fltk::Button* /*unused*/, void* /*unused*/) {
+  SetTool(tools.rotate);
+}
 void EditorUI::cb_selectRotateTool(fltk::Button* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->user_data()))->cb_selectRotateTool_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->user_data()))->cb_selectRotateTool_i(o, v);
 }
 
 static const unsigned char bits_rotate[32] = {0,   0,   128, 1,   192, 3,   224, 7,   128, 1,   128,
@@ -585,9 +647,11 @@ static const unsigned char bits_rotate[32] = {0,   0,   128, 1,   192, 3,   224,
                                               128, 1,   224, 7,   192, 3,   128, 1,   0,   0};
 static fltk::xbmImage xbmImage_rotate(bits_rotate, 16, 16);
 
-inline void EditorUI::cb_selectScaleTool_i(fltk::Button*, void*) { SetTool(tools.scale); }
+inline void EditorUI::cb_selectScaleTool_i(fltk::Button* /*unused*/, void* /*unused*/) {
+  SetTool(tools.scale);
+}
 void EditorUI::cb_selectScaleTool(fltk::Button* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->user_data()))->cb_selectScaleTool_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->user_data()))->cb_selectScaleTool_i(o, v);
 }
 
 static const unsigned char bits_scale[32] = {0,   0,   128, 1,   192, 3,   224, 7,   128, 1,   128,
@@ -595,9 +659,11 @@ static const unsigned char bits_scale[32] = {0,   0,   128, 1,   192, 3,   224, 
                                              128, 1,   224, 7,   192, 3,   128, 1,   0,   0};
 static fltk::xbmImage xbmImage_scale(bits_scale, 16, 16);
 
-inline void EditorUI::cb_selectTextureTool_i(fltk::Button*, void*) { SetTool(tools.texmap); }
+inline void EditorUI::cb_selectTextureTool_i(fltk::Button* /*unused*/, void* /*unused*/) {
+  SetTool(tools.texmap);
+}
 void EditorUI::cb_selectTextureTool(fltk::Button* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->user_data()))->cb_selectTextureTool_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->user_data()))->cb_selectTextureTool_i(o, v);
 }
 
 static const unsigned char bits_texture[32] = {0,   0, 128, 1, 192, 3, 224, 7, 128, 1, 128, 1,
@@ -605,9 +671,11 @@ static const unsigned char bits_texture[32] = {0,   0, 128, 1, 192, 3, 224, 7, 1
                                                224, 7, 192, 3, 128, 1, 0,   0};
 static fltk::xbmImage xbmImage_texture(bits_texture, 16, 16);
 
-inline void EditorUI::cb_selectColorTool_i(fltk::Button*, void*) { SetTool(tools.color); }
+inline void EditorUI::cb_selectColorTool_i(fltk::Button* /*unused*/, void* /*unused*/) {
+  SetTool(tools.color);
+}
 void EditorUI::cb_selectColorTool(fltk::Button* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->user_data()))->cb_selectColorTool_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->user_data()))->cb_selectColorTool_i(o, v);
 }
 
 static const unsigned char bits_color[32] = {0,   0,   128, 1,   192, 3,   224, 7,   128, 1,   128,
@@ -615,441 +683,538 @@ static const unsigned char bits_color[32] = {0,   0,   128, 1,   192, 3,   224, 
                                              128, 1,   224, 7,   192, 3,   128, 1,   0,   0};
 static fltk::xbmImage xbmImage_color(bits_color, 16, 16);
 
-inline void EditorUI::cb_selectFlipTool_i(fltk::Button*, void*) { SetTool(tools.flip); }
+inline void EditorUI::cb_selectFlipTool_i(fltk::Button* /*unused*/, void* /*unused*/) {
+  SetTool(tools.flip);
+}
 void EditorUI::cb_selectFlipTool(fltk::Button* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->user_data()))->cb_selectFlipTool_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->user_data()))->cb_selectFlipTool_i(o, v);
 }
 
-inline void EditorUI::cb_selectRotateTexTool_i(fltk::Button*, void*) { SetTool(tools.rotateTex); }
+inline void EditorUI::cb_selectRotateTexTool_i(fltk::Button* /*unused*/, void* /*unused*/) {
+  SetTool(tools.rotateTex);
+}
 void EditorUI::cb_selectRotateTexTool(fltk::Button* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->user_data()))->cb_selectRotateTexTool_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->user_data()))->cb_selectRotateTexTool_i(o, v);
 }
 
-inline void EditorUI::cb_selectOriginMoveTool_i(fltk::Button*, void*) { SetTool(tools.originMove); }
+inline void EditorUI::cb_selectOriginMoveTool_i(fltk::Button* /*unused*/, void* /*unused*/) {
+  SetTool(tools.originMove);
+}
 void EditorUI::cb_selectOriginMoveTool(fltk::Button* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->user_data()))->cb_selectOriginMoveTool_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->user_data()))->cb_selectOriginMoveTool_i(o, v);
 }
 
-inline void EditorUI::cb_selectCurvedPolyTool_i(fltk::Button*, void*) {
+inline void EditorUI::cb_selectCurvedPolyTool_i(fltk::Button* /*unused*/, void* /*unused*/) {
   SetTool(tools.toggleCurvedPoly);
 }
 void EditorUI::cb_selectCurvedPolyTool(fltk::Button* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->user_data()))->cb_selectCurvedPolyTool_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->user_data()))->cb_selectCurvedPolyTool_i(o, v);
 }
 
-inline void EditorUI::cb_inputCenterX_i(fltk::NumericInput* o, void*) {
+inline void EditorUI::cb_inputCenterX_i(fltk::NumericInput* o, void* /*unused*/) {
   uiModelStateChanged(&model->mid.x, o);
 }
 void EditorUI::cb_inputCenterX(fltk::NumericInput* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->user_data()))->cb_inputCenterX_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->user_data()))->cb_inputCenterX_i(o, v);
 }
 
-inline void EditorUI::cb_inputCenterY_i(fltk::NumericInput* o, void*) {
+inline void EditorUI::cb_inputCenterY_i(fltk::NumericInput* o, void* /*unused*/) {
   uiModelStateChanged(&model->mid.y, o);
 }
 void EditorUI::cb_inputCenterY(fltk::NumericInput* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->user_data()))->cb_inputCenterY_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->user_data()))->cb_inputCenterY_i(o, v);
 }
 
-inline void EditorUI::cb_inputCenterZ_i(fltk::NumericInput* o, void*) {
+inline void EditorUI::cb_inputCenterZ_i(fltk::NumericInput* o, void* /*unused*/) {
   uiModelStateChanged(&model->mid.z, o);
 }
 void EditorUI::cb_inputCenterZ(fltk::NumericInput* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->user_data()))->cb_inputCenterZ_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->user_data()))->cb_inputCenterZ_i(o, v);
 }
 
-inline void EditorUI::cb_Estimate_i(fltk::Button*, void*) { uiCalculateMidPos(); }
+inline void EditorUI::cb_Estimate_i(fltk::Button* /*unused*/, void* /*unused*/) {
+  uiCalculateMidPos();
+}
 void EditorUI::cb_Estimate(fltk::Button* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->user_data()))->cb_Estimate_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->user_data()))->cb_Estimate_i(o, v);
 }
 
-inline void EditorUI::cb_inputRadius_i(fltk::NumericInput* o, void*) {
+inline void EditorUI::cb_inputRadius_i(fltk::NumericInput* o, void* /*unused*/) {
   uiModelStateChanged(&model->radius, o);
 }
 void EditorUI::cb_inputRadius(fltk::NumericInput* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->user_data()))->cb_inputRadius_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->user_data()))->cb_inputRadius_i(o, v);
 }
 
-inline void EditorUI::cb_Estimate1_i(fltk::Button*, void*) { uiCalculateRadius(); }
+inline void EditorUI::cb_Estimate1_i(fltk::Button* /*unused*/, void* /*unused*/) {
+  uiCalculateRadius();
+}
 void EditorUI::cb_Estimate1(fltk::Button* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->user_data()))->cb_Estimate1_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->user_data()))->cb_Estimate1_i(o, v);
 }
 
-inline void EditorUI::cb_inputHeight_i(fltk::NumericInput* o, void*) {
+inline void EditorUI::cb_inputHeight_i(fltk::NumericInput* o, void* /*unused*/) {
   uiModelStateChanged(&model->height, o);
 }
 void EditorUI::cb_inputHeight(fltk::NumericInput* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->user_data()))->cb_inputHeight_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->user_data()))->cb_inputHeight_i(o, v);
 }
 
-inline void EditorUI::cb_Delete_i(fltk::Button*, void*) { uiDeleteSelection(); }
+inline void EditorUI::cb_Delete_i(fltk::Button* /*unused*/, void* /*unused*/) {
+  uiDeleteSelection();
+}
 void EditorUI::cb_Delete(fltk::Button* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->user_data()))->cb_Delete_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->user_data()))->cb_Delete_i(o, v);
 }
 
-inline void EditorUI::cb_Add3_i(fltk::Button*, void*) { uiAddObject(); }
+inline void EditorUI::cb_Add3_i(fltk::Button* /*unused*/, void* /*unused*/) { uiAddObject(); }
 void EditorUI::cb_Add3(fltk::Button* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->user_data()))->cb_Add3_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->user_data()))->cb_Add3_i(o, v);
 }
 
-inline void EditorUI::cb_Copy_i(fltk::Button*, void*) { uiCopy(); }
+inline void EditorUI::cb_Copy_i(fltk::Button* /*unused*/, void* /*unused*/) { uiCopy(); }
 void EditorUI::cb_Copy(fltk::Button* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->user_data()))->cb_Copy_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->user_data()))->cb_Copy_i(o, v);
 }
 
-inline void EditorUI::cb_Cut_i(fltk::Button*, void*) { uiCut(); }
+inline void EditorUI::cb_Cut_i(fltk::Button* /*unused*/, void* /*unused*/) { uiCut(); }
 void EditorUI::cb_Cut(fltk::Button* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->user_data()))->cb_Cut_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->user_data()))->cb_Cut_i(o, v);
 }
 
-inline void EditorUI::cb_Paste_i(fltk::Button*, void*) { uiPaste(); }
+inline void EditorUI::cb_Paste_i(fltk::Button* /*unused*/, void* /*unused*/) { uiPaste(); }
 void EditorUI::cb_Paste(fltk::Button* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->user_data()))->cb_Paste_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->user_data()))->cb_Paste_i(o, v);
 }
 
-inline void EditorUI::cb_Apply1_i(fltk::Button*, void*) { uiApplyTransform(); }
+inline void EditorUI::cb_Apply1_i(fltk::Button* /*unused*/, void* /*unused*/) {
+  uiApplyTransform();
+}
 void EditorUI::cb_Apply1(fltk::Button* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->user_data()))->cb_Apply1_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->user_data()))->cb_Apply1_i(o, v);
 }
 
-inline void EditorUI::cb_Uniform_i(fltk::Button*, void*) { uiUniformScale(); }
+inline void EditorUI::cb_Uniform_i(fltk::Button* /*unused*/, void* /*unused*/) { uiUniformScale(); }
 void EditorUI::cb_Uniform(fltk::Button* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->user_data()))->cb_Uniform_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->user_data()))->cb_Uniform_i(o, v);
 }
 
-inline void EditorUI::cb_Set1_i(fltk::Button*, void*) {
+inline void EditorUI::cb_Set1_i(fltk::Button* /*unused*/, void* /*unused*/) const {
   MdlObject* obj = GetSingleSel();
-  if (obj) browserSetObjectName(obj);
+  if (obj != nullptr) {
+    browserSetObjectName(obj);
+  }
 }
 void EditorUI::cb_Set1(fltk::Button* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->user_data()))->cb_Set1_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->user_data()))->cb_Set1_i(o, v);
 }
 
-inline void EditorUI::cb_inputPosX_i(fltk::NumericInput* o, void*) {
+inline void EditorUI::cb_inputPosX_i(fltk::NumericInput* o, void* /*unused*/) {
   uiObjectPositionChanged(0, o);
 }
 void EditorUI::cb_inputPosX(fltk::NumericInput* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->user_data()))->cb_inputPosX_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->user_data()))->cb_inputPosX_i(o, v);
 }
 
-inline void EditorUI::cb_inputPosY_i(fltk::NumericInput* o, void*) {
+inline void EditorUI::cb_inputPosY_i(fltk::NumericInput* o, void* /*unused*/) {
   uiObjectPositionChanged(1, o);
 }
 void EditorUI::cb_inputPosY(fltk::NumericInput* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->user_data()))->cb_inputPosY_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->user_data()))->cb_inputPosY_i(o, v);
 }
 
-inline void EditorUI::cb_inputPosZ_i(fltk::NumericInput* o, void*) {
+inline void EditorUI::cb_inputPosZ_i(fltk::NumericInput* o, void* /*unused*/) {
   uiObjectPositionChanged(2, o);
 }
 void EditorUI::cb_inputPosZ(fltk::NumericInput* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->user_data()))->cb_inputPosZ_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->user_data()))->cb_inputPosZ_i(o, v);
 }
 
-inline void EditorUI::cb_inputScaleX_i(fltk::NumericInput* o, void*) {
+inline void EditorUI::cb_inputScaleX_i(fltk::NumericInput* o, void* /*unused*/) {
   uiObjectStateChanged(&MdlObject::scale, &Vector3::x, o);
 }
 void EditorUI::cb_inputScaleX(fltk::NumericInput* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->user_data()))->cb_inputScaleX_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->user_data()))->cb_inputScaleX_i(o, v);
 }
 
-inline void EditorUI::cb_inputScaleY_i(fltk::NumericInput* o, void*) {
+inline void EditorUI::cb_inputScaleY_i(fltk::NumericInput* o, void* /*unused*/) {
   uiObjectStateChanged(&MdlObject::scale, &Vector3::y, o);
 }
 void EditorUI::cb_inputScaleY(fltk::NumericInput* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->user_data()))->cb_inputScaleY_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->user_data()))->cb_inputScaleY_i(o, v);
 }
 
-inline void EditorUI::cb_inputScaleZ_i(fltk::NumericInput* o, void*) {
+inline void EditorUI::cb_inputScaleZ_i(fltk::NumericInput* o, void* /*unused*/) {
   uiObjectStateChanged(&MdlObject::scale, &Vector3::z, o);
 }
 void EditorUI::cb_inputScaleZ(fltk::NumericInput* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->user_data()))->cb_inputScaleZ_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->user_data()))->cb_inputScaleZ_i(o, v);
 }
 
-inline void EditorUI::cb_inputRotX_i(fltk::NumericInput* o, void*) {
+inline void EditorUI::cb_inputRotX_i(fltk::NumericInput* o, void* /*unused*/) {
   uiObjectRotationChanged(0, o);
 }
 void EditorUI::cb_inputRotX(fltk::NumericInput* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->user_data()))->cb_inputRotX_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->user_data()))->cb_inputRotX_i(o, v);
 }
 
-inline void EditorUI::cb_inputRotZ_i(fltk::NumericInput* o, void*) {
+inline void EditorUI::cb_inputRotZ_i(fltk::NumericInput* o, void* /*unused*/) {
   uiObjectRotationChanged(2, o);
 }
 void EditorUI::cb_inputRotZ(fltk::NumericInput* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->user_data()))->cb_inputRotZ_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->user_data()))->cb_inputRotZ_i(o, v);
 }
 
-inline void EditorUI::cb_inputRotY_i(fltk::NumericInput* o, void*) {
+inline void EditorUI::cb_inputRotY_i(fltk::NumericInput* o, void* /*unused*/) {
   uiObjectRotationChanged(1, o);
 }
 void EditorUI::cb_inputRotY(fltk::NumericInput* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->user_data()))->cb_inputRotY_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->user_data()))->cb_inputRotY_i(o, v);
 }
 
-inline void EditorUI::cb_Swap_i(fltk::Button*, void*) { uiSwapObjects(); }
+inline void EditorUI::cb_Swap_i(fltk::Button* /*unused*/, void* /*unused*/) { uiSwapObjects(); }
 void EditorUI::cb_Swap(fltk::Button* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->user_data()))->cb_Swap_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->user_data()))->cb_Swap_i(o, v);
 }
 
-inline void EditorUI::cb_Rotator_i(fltk::Button*, void*) { uiRotator->Show(); }
+inline void EditorUI::cb_Rotator_i(fltk::Button* /*unused*/, void* /*unused*/) const {
+  uiRotator->Show();
+}
 void EditorUI::cb_Rotator(fltk::Button* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->user_data()))->cb_Rotator_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->user_data()))->cb_Rotator_i(o, v);
 }
 
-inline void EditorUI::cb_S3O_i(fltk::Item*, void*) { SetMapping(MAPPING_S3O); }
+inline void EditorUI::cb_S3O_i(fltk::Item* /*unused*/, void* /*unused*/) const {
+  SetMapping(MAPPING_S3O);
+}
 void EditorUI::cb_S3O(fltk::Item* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->parent()->user_data()))->cb_S3O_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->parent()->user_data()))->cb_S3O_i(o, v);
 }
 
-inline void EditorUI::cb_3DO_i(fltk::Item*, void*) { SetMapping(MAPPING_3DO); }
+inline void EditorUI::cb_3DO_i(fltk::Item* /*unused*/, void* /*unused*/) const {
+  SetMapping(MAPPING_3DO);
+}
 void EditorUI::cb_3DO(fltk::Item* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->parent()->user_data()))->cb_3DO_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->parent()->user_data()))->cb_3DO_i(o, v);
 }
 
-inline void EditorUI::cb_inputTexture1_i(fltk::FileInput* o, void*) {
+inline void EditorUI::cb_inputTexture1_i(fltk::FileInput* o, void* /*unused*/) const {
   model->SetTextureName(0, o->value());
 }
 void EditorUI::cb_inputTexture1(fltk::FileInput* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->parent()->user_data()))->cb_inputTexture1_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->parent()->user_data()))
+      ->cb_inputTexture1_i(o, v);
 }
 
-inline void EditorUI::cb_inputTexture2_i(fltk::FileInput* o, void*) {
+inline void EditorUI::cb_inputTexture2_i(fltk::FileInput* o, void* /*unused*/) const {
   model->SetTextureName(1, o->value());
 }
 void EditorUI::cb_inputTexture2(fltk::FileInput* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->parent()->user_data()))->cb_inputTexture2_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->parent()->user_data()))
+      ->cb_inputTexture2_i(o, v);
 }
 
-inline void EditorUI::cb_Browse7_i(fltk::Button*, void*) { BrowseForTexture(0); }
+inline void EditorUI::cb_Browse7_i(fltk::Button* /*unused*/, void* /*unused*/) {
+  BrowseForTexture(0);
+}
 void EditorUI::cb_Browse7(fltk::Button* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->parent()->user_data()))->cb_Browse7_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->parent()->user_data()))
+      ->cb_Browse7_i(o, v);
 }
 
-inline void EditorUI::cb_Browse8_i(fltk::Button*, void*) { BrowseForTexture(1); }
+inline void EditorUI::cb_Browse8_i(fltk::Button* /*unused*/, void* /*unused*/) {
+  BrowseForTexture(1);
+}
 void EditorUI::cb_Browse8(fltk::Button* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->parent()->user_data()))->cb_Browse8_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->parent()->user_data()))
+      ->cb_Browse8_i(o, v);
 }
 
-inline void EditorUI::cb_Reload_i(fltk::Button*, void*) { ReloadTexture(0); }
+inline void EditorUI::cb_Reload_i(fltk::Button* /*unused*/, void* /*unused*/) { ReloadTexture(0); }
 void EditorUI::cb_Reload(fltk::Button* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->parent()->user_data()))->cb_Reload_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->parent()->user_data()))
+      ->cb_Reload_i(o, v);
 }
 
-inline void EditorUI::cb_Reload1_i(fltk::Button*, void*) { ReloadTexture(1); }
+inline void EditorUI::cb_Reload1_i(fltk::Button* /*unused*/, void* /*unused*/) { ReloadTexture(1); }
 void EditorUI::cb_Reload1(fltk::Button* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->parent()->user_data()))->cb_Reload1_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->parent()->user_data()))
+      ->cb_Reload1_i(o, v);
 }
 
-inline void EditorUI::cb_Example_i(fltk::Button* o, void*) {
+inline void EditorUI::cb_Example_i(fltk::Button* o, void* /*unused*/) {
   o->color(SetTeamColor());
   o->redraw();
 }
 void EditorUI::cb_Example(fltk::Button* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->parent()->user_data()))->cb_Example_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->parent()->user_data()))
+      ->cb_Example_i(o, v);
 }
 
-inline void EditorUI::cb_Full_i(fltk::Item*, void*) { uiSetRenderMethod(RM_S3OFULL); }
+inline void EditorUI::cb_Full_i(fltk::Item* /*unused*/, void* /*unused*/) const {
+  uiSetRenderMethod(RM_S3OFULL);
+}
 void EditorUI::cb_Full(fltk::Item* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->parent()->parent()->user_data()))->cb_Full_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->parent()->parent()->user_data()))
+      ->cb_Full_i(o, v);
 }
 
-inline void EditorUI::cb_Basic_i(fltk::Item*, void*) { uiSetRenderMethod(RM_S3OBASIC); }
+inline void EditorUI::cb_Basic_i(fltk::Item* /*unused*/, void* /*unused*/) const {
+  uiSetRenderMethod(RM_S3OBASIC);
+}
 void EditorUI::cb_Basic(fltk::Item* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->parent()->parent()->user_data()))->cb_Basic_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->parent()->parent()->user_data()))
+      ->cb_Basic_i(o, v);
 }
 
-inline void EditorUI::cb_Texture_i(fltk::Item*, void*) { uiSetRenderMethod(RM_TEXTURE0COLOR); }
+inline void EditorUI::cb_Texture_i(fltk::Item* /*unused*/, void* /*unused*/) const {
+  uiSetRenderMethod(RM_TEXTURE0COLOR);
+}
 void EditorUI::cb_Texture(fltk::Item* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->parent()->parent()->user_data()))
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->parent()->parent()->user_data()))
       ->cb_Texture_i(o, v);
 }
 
-inline void EditorUI::cb_Texture1_i(fltk::Item*, void*) { uiSetRenderMethod(RM_TEXTURE1COLOR); }
+inline void EditorUI::cb_Texture1_i(fltk::Item* /*unused*/, void* /*unused*/) const {
+  uiSetRenderMethod(RM_TEXTURE1COLOR);
+}
 void EditorUI::cb_Texture1(fltk::Item* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->parent()->parent()->user_data()))
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->parent()->parent()->user_data()))
       ->cb_Texture1_i(o, v);
 }
 
-inline void EditorUI::cb_Convert_i(fltk::Button*, void*) { ConvertToS3O(); }
+inline void EditorUI::cb_Convert_i(fltk::Button* /*unused*/, void* /*unused*/) { ConvertToS3O(); }
 void EditorUI::cb_Convert(fltk::Button* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->parent()->user_data()))->cb_Convert_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->parent()->user_data()))
+      ->cb_Convert_i(o, v);
 }
 
-inline void EditorUI::cb_textureGroupMenu_i(fltk::Choice* o, void* v) { SelectTextureGroup(o, v); }
+inline void EditorUI::cb_textureGroupMenu_i(fltk::Choice* o, void* v) const {
+  SelectTextureGroup(o, v);
+}
 void EditorUI::cb_textureGroupMenu(fltk::Choice* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->user_data()))->cb_textureGroupMenu_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->user_data()))
+      ->cb_textureGroupMenu_i(o, v);
 }
 
-inline void EditorUI::cb_Add4_i(fltk::Button*, void*) { uiAddUnitTextures(); }
+inline void EditorUI::cb_Add4_i(fltk::Button* /*unused*/, void* /*unused*/) const {
+  uiAddUnitTextures();
+}
 void EditorUI::cb_Add4(fltk::Button* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->user_data()))->cb_Add4_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->user_data()))->cb_Add4_i(o, v);
 }
 
-inline void EditorUI::cb_New_i(fltk::Item*, void*) { menuFileNew(); }
+inline void EditorUI::cb_New_i(fltk::Item* /*unused*/, void* /*unused*/) { menuFileNew(); }
 void EditorUI::cb_New(fltk::Item* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->user_data()))->cb_New_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->user_data()))->cb_New_i(o, v);
 }
 
-inline void EditorUI::cb_Load1_i(fltk::Item*, void*) { menuFileLoad(); }
+inline void EditorUI::cb_Load1_i(fltk::Item* /*unused*/, void* /*unused*/) { menuFileLoad(); }
 void EditorUI::cb_Load1(fltk::Item* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->user_data()))->cb_Load1_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->user_data()))->cb_Load1_i(o, v);
 }
 
-inline void EditorUI::cb_Save1_i(fltk::Item*, void*) { menuFileSave(); }
+inline void EditorUI::cb_Save1_i(fltk::Item* /*unused*/, void* /*unused*/) { menuFileSave(); }
 void EditorUI::cb_Save1(fltk::Item* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->user_data()))->cb_Save1_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->user_data()))->cb_Save1_i(o, v);
 }
 
-inline void EditorUI::cb_Save2_i(fltk::Item*, void*) { menuFileSaveAs(); }
+inline void EditorUI::cb_Save2_i(fltk::Item* /*unused*/, void* /*unused*/) { menuFileSaveAs(); }
 void EditorUI::cb_Save2(fltk::Item* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->user_data()))->cb_Save2_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->user_data()))->cb_Save2_i(o, v);
 }
 
-inline void EditorUI::cb_Exit_i(fltk::Item*, void*) { menuFileExit(); }
+inline void EditorUI::cb_Exit_i(fltk::Item* /*unused*/, void* /*unused*/) const { menuFileExit(); }
 void EditorUI::cb_Exit(fltk::Item* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->user_data()))->cb_Exit_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->user_data()))->cb_Exit_i(o, v);
 }
 
-inline void EditorUI::cb_All_i(fltk::Item*, void*) { menuEditOptimizeAll(); }
+inline void EditorUI::cb_All_i(fltk::Item* /*unused*/, void* /*unused*/) const {
+  menuEditOptimizeAll();
+}
 void EditorUI::cb_All(fltk::Item* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->parent()->user_data()))->cb_All_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->parent()->user_data()))->cb_All_i(o, v);
 }
 
-inline void EditorUI::cb_Selected_i(fltk::Item*, void*) { menuEditOptimizeSelected(); }
+inline void EditorUI::cb_Selected_i(fltk::Item* /*unused*/, void* /*unused*/) const {
+  menuEditOptimizeSelected();
+}
 void EditorUI::cb_Selected(fltk::Item* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->parent()->user_data()))->cb_Selected_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->parent()->user_data()))
+      ->cb_Selected_i(o, v);
 }
 
-inline void EditorUI::cb_Insert_i(fltk::Item*, void*) { menuObjectLoad(); }
+inline void EditorUI::cb_Insert_i(fltk::Item* /*unused*/, void* /*unused*/) { menuObjectLoad(); }
 void EditorUI::cb_Insert(fltk::Item* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->user_data()))->cb_Insert_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->user_data()))->cb_Insert_i(o, v);
 }
 
-inline void EditorUI::cb_Save3_i(fltk::Item*, void*) { menuObjectSave(); }
+inline void EditorUI::cb_Save3_i(fltk::Item* /*unused*/, void* /*unused*/) const {
+  menuObjectSave();
+}
 void EditorUI::cb_Save3(fltk::Item* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->user_data()))->cb_Save3_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->user_data()))->cb_Save3_i(o, v);
 }
 
-inline void EditorUI::cb_Replace_i(fltk::Item*, void*) { menuObjectReplace(); }
+inline void EditorUI::cb_Replace_i(fltk::Item* /*unused*/, void* /*unused*/) {
+  menuObjectReplace();
+}
 void EditorUI::cb_Replace(fltk::Item* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->user_data()))->cb_Replace_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->user_data()))->cb_Replace_i(o, v);
 }
 
-inline void EditorUI::cb_Merge_i(fltk::Item*, void*) { menuObjectMerge(); }
+inline void EditorUI::cb_Merge_i(fltk::Item* /*unused*/, void* /*unused*/) { menuObjectMerge(); }
 void EditorUI::cb_Merge(fltk::Item* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->user_data()))->cb_Merge_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->user_data()))->cb_Merge_i(o, v);
 }
 
-inline void EditorUI::cb_Approximate_i(fltk::Item*, void*) { menuObjectApproxOffset(); }
+inline void EditorUI::cb_Approximate_i(fltk::Item* /*unused*/, void* /*unused*/) {
+  menuObjectApproxOffset();
+}
 void EditorUI::cb_Approximate(fltk::Item* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->user_data()))->cb_Approximate_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->user_data()))->cb_Approximate_i(o, v);
 }
 
-inline void EditorUI::cb_object_i(fltk::Item*, void*) { menuObjectResetPos(); }
+inline void EditorUI::cb_object_i(fltk::Item* /*unused*/, void* /*unused*/) {
+  menuObjectResetPos();
+}
 void EditorUI::cb_object(fltk::Item* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->parent()->user_data()))->cb_object_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->parent()->user_data()))
+      ->cb_object_i(o, v);
 }
 
-inline void EditorUI::cb_object1_i(fltk::Item*, void*) { menuObjectResetScaleRot(); }
+inline void EditorUI::cb_object1_i(fltk::Item* /*unused*/, void* /*unused*/) {
+  menuObjectResetScaleRot();
+}
 void EditorUI::cb_object1(fltk::Item* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->parent()->user_data()))->cb_object1_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->parent()->user_data()))
+      ->cb_object1_i(o, v);
 }
 
-inline void EditorUI::cb_object2_i(fltk::Item*, void*) { menuObjectResetTransform(); }
+inline void EditorUI::cb_object2_i(fltk::Item* /*unused*/, void* /*unused*/) {
+  menuObjectResetTransform();
+}
 void EditorUI::cb_object2(fltk::Item* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->parent()->user_data()))->cb_object2_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->parent()->user_data()))
+      ->cb_object2_i(o, v);
 }
 
-inline void EditorUI::cb_Recalculate_i(fltk::Item*, void*) { menuObjectRecalcNormals(); }
+inline void EditorUI::cb_Recalculate_i(fltk::Item* /*unused*/, void* /*unused*/) {
+  menuObjectRecalcNormals();
+}
 void EditorUI::cb_Recalculate(fltk::Item* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->user_data()))->cb_Recalculate_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->user_data()))->cb_Recalculate_i(o, v);
 }
 
-inline void EditorUI::cb_Flip1_i(fltk::Item*, void*) { menuObjectFlipPolygons(); }
+inline void EditorUI::cb_Flip1_i(fltk::Item* /*unused*/, void* /*unused*/) {
+  menuObjectFlipPolygons();
+}
 void EditorUI::cb_Flip1(fltk::Item* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->user_data()))->cb_Flip1_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->user_data()))->cb_Flip1_i(o, v);
 }
 
-inline void EditorUI::cb_Generate_i(fltk::Item*, void*) { menuObjectGenCSurf(); }
+inline void EditorUI::cb_Generate_i(fltk::Item* /*unused*/, void* /*unused*/) const {
+  menuObjectGenCSurf();
+}
 void EditorUI::cb_Generate(fltk::Item* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->user_data()))->cb_Generate_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->user_data()))->cb_Generate_i(o, v);
 }
 
-inline void EditorUI::cb_Export_i(fltk::Item*, void*) { menuMappingExportUV(); }
+inline void EditorUI::cb_Export_i(fltk::Item* /*unused*/, void* /*unused*/) const {
+  menuMappingExportUV();
+}
 void EditorUI::cb_Export(fltk::Item* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->user_data()))->cb_Export_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->user_data()))->cb_Export_i(o, v);
 }
 
-inline void EditorUI::cb_Import_i(fltk::Item*, void*) { menuMappingImportUV(); }
+inline void EditorUI::cb_Import_i(fltk::Item* /*unused*/, void* /*unused*/) {
+  menuMappingImportUV();
+}
 void EditorUI::cb_Import(fltk::Item* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->user_data()))->cb_Import_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->user_data()))->cb_Import_i(o, v);
 }
 
-inline void EditorUI::cb_Show1_i(fltk::Item*, void*) { uiMapping->Show(); }
+inline void EditorUI::cb_Show1_i(fltk::Item* /*unused*/, void* /*unused*/) const {
+  uiMapping->Show();
+}
 void EditorUI::cb_Show1(fltk::Item* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->user_data()))->cb_Show1_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->user_data()))->cb_Show1_i(o, v);
 }
 
-inline void EditorUI::cb_Show2_i(fltk::Item*, void*) { uiTexBuilder->Show(); }
+inline void EditorUI::cb_Show2_i(fltk::Item* /*unused*/, void* /*unused*/) const {
+  uiTexBuilder->Show();
+}
 void EditorUI::cb_Show2(fltk::Item* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->user_data()))->cb_Show2_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->user_data()))->cb_Show2_i(o, v);
 }
 
-inline void EditorUI::cb_Show3_i(fltk::Item*, void*) { uiTimeline->Show(); }
+inline void EditorUI::cb_Show3_i(fltk::Item* /*unused*/, void* /*unused*/) const {
+  uiTimeline->Show();
+}
 void EditorUI::cb_Show3(fltk::Item* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->user_data()))->cb_Show3_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->user_data()))->cb_Show3_i(o, v);
 }
 
-inline void EditorUI::cb_Show4_i(fltk::Item*, void*) { uiIK->Show(); }
+inline void EditorUI::cb_Show4_i(fltk::Item* /*unused*/, void* /*unused*/) const { uiIK->Show(); }
 void EditorUI::cb_Show4(fltk::Item* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->user_data()))->cb_Show4_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->user_data()))->cb_Show4_i(o, v);
 }
 
-inline void EditorUI::cb_Show5_i(fltk::Item*, void*) { uiAnimTrackEditor->Show(); }
+inline void EditorUI::cb_Show5_i(fltk::Item* /*unused*/, void* /*unused*/) const {
+  uiAnimTrackEditor->Show();
+}
 void EditorUI::cb_Show5(fltk::Item* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->user_data()))->cb_Show5_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->user_data()))->cb_Show5_i(o, v);
 }
 
-inline void EditorUI::cb_Load2_i(fltk::Item*, void*) { menuScriptLoad(); }
+inline void EditorUI::cb_Load2_i(fltk::Item* /*unused*/, void* /*unused*/) const {
+  menuScriptLoad();
+}
 void EditorUI::cb_Load2(fltk::Item* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->user_data()))->cb_Load2_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->user_data()))->cb_Load2_i(o, v);
 }
 
-inline void EditorUI::cb_Texture2_i(fltk::Item*, void*) { menuSettingsShowArchiveList(); }
+inline void EditorUI::cb_Texture2_i(fltk::Item* /*unused*/, void* /*unused*/) {
+  menuSettingsShowArchiveList();
+}
 void EditorUI::cb_Texture2(fltk::Item* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->user_data()))->cb_Texture2_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->user_data()))->cb_Texture2_i(o, v);
 }
 
-inline void EditorUI::cb_Texture3_i(fltk::Item*, void*) { menuSettingsTextureGroups(); }
+inline void EditorUI::cb_Texture3_i(fltk::Item* /*unused*/, void* /*unused*/) const {
+  menuSettingsTextureGroups();
+}
 void EditorUI::cb_Texture3(fltk::Item* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->user_data()))->cb_Texture3_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->user_data()))->cb_Texture3_i(o, v);
 }
 
-inline void EditorUI::cb_Save4_i(fltk::Item*, void*) { SaveSettings(); }
+inline void EditorUI::cb_Save4_i(fltk::Item* /*unused*/, void* /*unused*/) { SaveSettings(); }
 void EditorUI::cb_Save4(fltk::Item* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->user_data()))->cb_Save4_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->user_data()))->cb_Save4_i(o, v);
 }
 
-inline void EditorUI::cb_Revert_i(fltk::Item*, void*) { menuSettingsRestoreViews(); }
+inline void EditorUI::cb_Revert_i(fltk::Item* /*unused*/, void* /*unused*/) {
+  menuSettingsRestoreViews();
+}
 void EditorUI::cb_Revert(fltk::Item* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->user_data()))->cb_Revert_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->user_data()))->cb_Revert_i(o, v);
 }
 
-inline void EditorUI::cb_Set2_i(fltk::Item*, void*) { menuSettingsSetBgColor(); }
+inline void EditorUI::cb_Set2_i(fltk::Item* /*unused*/, void* /*unused*/) const {
+  menuSettingsSetBgColor();
+}
 void EditorUI::cb_Set2(fltk::Item* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->user_data()))->cb_Set2_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->user_data()))->cb_Set2_i(o, v);
 }
 
-inline void EditorUI::cb_Set3_i(fltk::Item*, void*) { menuSetSpringDir(); }
+inline void EditorUI::cb_Set3_i(fltk::Item* /*unused*/, void* /*unused*/) { menuSetSpringDir(); }
 void EditorUI::cb_Set3(fltk::Item* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->user_data()))->cb_Set3_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->user_data()))->cb_Set3_i(o, v);
 }
 
-inline void EditorUI::cb_About_i(fltk::Item*, void*) { menuHelpAbout(); }
+inline void EditorUI::cb_About_i(fltk::Item* /*unused*/, void* /*unused*/) { menuHelpAbout(); }
 void EditorUI::cb_About(fltk::Item* o, void* v) {
-  ((EditorUI*)(o->parent()->parent()->parent()->user_data()))->cb_About_i(o, v);
+  (static_cast<EditorUI*>(o->parent()->parent()->parent()->user_data()))->cb_About_i(o, v);
 }
 
 EditorUI::EditorUI() {
@@ -1060,7 +1225,7 @@ EditorUI::EditorUI() {
     o->labelfont(fltk::COURIER);
     o->textfont(fltk::COURIER);
     o->shortcut(0xff1b);
-    o->callback((fltk::Callback*)cb_window, (void*)(this));
+    o->callback(reinterpret_cast<fltk::Callback*>(cb_window), (void*)(this));
     o->begin();
     {
       fltk::Group* o = toolbox = new fltk::Group(0, 19, 37, 501);
@@ -1071,7 +1236,7 @@ EditorUI::EditorUI() {
         o->type(fltk::Button::RADIO);
         o->image(xbmImage_camera);
         o->shortcut(0x31);
-        o->callback((fltk::Callback*)cb_selectCameraTool);
+        o->callback(reinterpret_cast<fltk::Callback*>(cb_selectCameraTool));
         o->tooltip("Move the camera in one of the views (middle button to zoom)");
         SET_WIDGET_VALUE(o, true);
       }
@@ -1080,7 +1245,7 @@ EditorUI::EditorUI() {
         o->type(fltk::Button::RADIO);
         o->image(xbmImage_move);
         o->shortcut(0x32);
-        o->callback((fltk::Callback*)cb_selectMoveTool);
+        o->callback(reinterpret_cast<fltk::Callback*>(cb_selectMoveTool));
         o->tooltip("Move the selected objects in a mapview");
       }
       {
@@ -1088,7 +1253,7 @@ EditorUI::EditorUI() {
         o->type(fltk::Button::RADIO);
         o->image(xbmImage_rotate);
         o->shortcut(0x33);
-        o->callback((fltk::Callback*)cb_selectRotateTool);
+        o->callback(reinterpret_cast<fltk::Callback*>(cb_selectRotateTool));
         o->tooltip("Rotate objects");
       }
       {
@@ -1096,7 +1261,7 @@ EditorUI::EditorUI() {
         o->type(fltk::Button::RADIO);
         o->image(xbmImage_scale);
         o->shortcut(0x34);
-        o->callback((fltk::Callback*)cb_selectScaleTool);
+        o->callback(reinterpret_cast<fltk::Callback*>(cb_selectScaleTool));
         o->tooltip("Scale the selected objects (If they can be scaled)");
       }
       {
@@ -1104,7 +1269,7 @@ EditorUI::EditorUI() {
         o->type(fltk::Button::RADIO);
         o->image(xbmImage_texture);
         o->shortcut(0x35);
-        o->callback((fltk::Callback*)cb_selectTextureTool);
+        o->callback(reinterpret_cast<fltk::Callback*>(cb_selectTextureTool));
         o->tooltip(
             "Enable polygon selection mode. When this is on, you can click on a texture in\
  the 3DO textures tab, or you can click on the color tool to give the selected\
@@ -1114,7 +1279,7 @@ EditorUI::EditorUI() {
         fltk::Button* o = selectColorTool = new fltk::Button(2, 175, 35, 32);
         o->image(xbmImage_color);
         o->shortcut(0x36);
-        o->callback((fltk::Callback*)cb_selectColorTool);
+        o->callback(reinterpret_cast<fltk::Callback*>(cb_selectColorTool));
         o->tooltip(
             "Set polygon color. To use this, first select the texture mode, because it wil\
 l allow you to select the polygons. When you have selected them, click this bu\
@@ -1123,29 +1288,29 @@ tton to choose a color.");
       {
         fltk::Button* o = selectFlipTool = new fltk::Button(2, 207, 35, 34, "Flip");
         o->shortcut(0x66);
-        o->callback((fltk::Callback*)cb_selectFlipTool);
+        o->callback(reinterpret_cast<fltk::Callback*>(cb_selectFlipTool));
         o->tooltip("Flip the selected polygons");
       }
       {
-        fltk::InvisibleBox* o = new fltk::InvisibleBox(2, 344, 35, 156);
+        auto* o = new fltk::InvisibleBox(2, 344, 35, 156);
         o->set_vertical();
         fltk::Group::current()->resizable(o);
       }
       {
         fltk::Button* o = selectRotateTexTool = new fltk::Button(2, 241, 35, 34, "Rot T");
-        o->callback((fltk::Callback*)cb_selectRotateTexTool);
+        o->callback(reinterpret_cast<fltk::Callback*>(cb_selectRotateTexTool));
         o->tooltip("Rotate 3DO texture.");
       }
       {
         fltk::Button* o = selectOriginMoveTool = new fltk::Button(2, 141, 35, 34, "Orig");
         o->type(fltk::Button::RADIO);
-        o->callback((fltk::Callback*)cb_selectOriginMoveTool);
+        o->callback(reinterpret_cast<fltk::Callback*>(cb_selectOriginMoveTool));
         o->tooltip("Select origin move tool");
       }
       {
         fltk::Button* o = selectCurvedPolyTool = new fltk::Button(2, 310, 35, 36, "Curv");
         o->set_vertical();
-        o->callback((fltk::Callback*)cb_selectCurvedPolyTool);
+        o->callback(reinterpret_cast<fltk::Callback*>(cb_selectCurvedPolyTool));
         o->hide();
         o->tooltip("Toggle polygon curved-surface mode");
       }
@@ -1154,7 +1319,7 @@ tton to choose a color.");
     {
       fltk::Output* o = status = new fltk::Output(1, 525, 719, 26, "status");
       o->box(fltk::THIN_UP_BOX);
-      o->color((fltk::Color)0xcfcfcf00);
+      o->color(static_cast<fltk::Color>(0xcfcfcf00));
       o->align(fltk::ALIGN_LEFT | fltk::ALIGN_CENTER | fltk::ALIGN_CLIP);
     }
     {
@@ -1163,13 +1328,13 @@ tton to choose a color.");
       fltk::Group::current()->resizable(o);
     }
     {
-      fltk::TabGroup* o = new fltk::TabGroup(464, 19, 260, 505);
+      auto* o = new fltk::TabGroup(464, 19, 260, 505);
       o->set_vertical();
-      o->color((fltk::Color)0xc7c4bc00);
+      o->color(static_cast<fltk::Color>(0xc7c4bc00));
       o->textsize(10);
       o->begin();
       {
-        fltk::Group* o = new fltk::Group(4, 23, 252, 481, "Model");
+        auto* o = new fltk::Group(4, 23, 252, 481, "Model");
         o->set_vertical();
         o->box(fltk::PLASTIC_UP_BOX);
         o->labelsize(10);
@@ -1179,47 +1344,47 @@ tton to choose a color.");
           fltk::NumericInput* o = inputCenterX =
               new fltk::NumericInput(113, 7, 114, 22, "Model center X");
           o->type(6);
-          o->callback((fltk::Callback*)cb_inputCenterX);
+          o->callback(reinterpret_cast<fltk::Callback*>(cb_inputCenterX));
           o->when(fltk::WHEN_ENTER_KEY);
         }
         {
           fltk::NumericInput* o = inputCenterY =
               new fltk::NumericInput(113, 33, 114, 22, "Model center Y");
           o->type(6);
-          o->callback((fltk::Callback*)cb_inputCenterY);
+          o->callback(reinterpret_cast<fltk::Callback*>(cb_inputCenterY));
           o->when(fltk::WHEN_ENTER_KEY);
         }
         {
           fltk::NumericInput* o = inputCenterZ =
               new fltk::NumericInput(113, 60, 114, 22, "Model center Z");
           o->type(6);
-          o->callback((fltk::Callback*)cb_inputCenterZ);
+          o->callback(reinterpret_cast<fltk::Callback*>(cb_inputCenterZ));
           o->when(fltk::WHEN_ENTER_KEY);
         }
         {
-          fltk::Button* o = new fltk::Button(139, 86, 88, 15, "Estimate");
-          o->callback((fltk::Callback*)cb_Estimate);
+          auto* o = new fltk::Button(139, 86, 88, 15, "Estimate");
+          o->callback(reinterpret_cast<fltk::Callback*>(cb_Estimate));
         }
         {
           fltk::NumericInput* o = inputRadius =
               new fltk::NumericInput(114, 120, 114, 22, "Radius:");
           o->type(6);
-          o->callback((fltk::Callback*)cb_inputRadius);
+          o->callback(reinterpret_cast<fltk::Callback*>(cb_inputRadius));
           o->when(fltk::WHEN_ENTER_KEY);
         }
         {
-          fltk::Button* o = new fltk::Button(138, 145, 89, 16, "Estimate");
-          o->callback((fltk::Callback*)cb_Estimate1);
+          auto* o = new fltk::Button(138, 145, 89, 16, "Estimate");
+          o->callback(reinterpret_cast<fltk::Callback*>(cb_Estimate1));
         }
         {
           fltk::NumericInput* o = inputHeight =
               new fltk::NumericInput(112, 181, 114, 22, "Model height:");
           o->type(6);
-          o->callback((fltk::Callback*)cb_inputHeight);
+          o->callback(reinterpret_cast<fltk::Callback*>(cb_inputHeight));
           o->when(fltk::WHEN_ENTER_KEY);
         }
         {
-          fltk::InvisibleBox* o = new fltk::InvisibleBox(22, 212, 222, 239);
+          auto* o = new fltk::InvisibleBox(22, 212, 222, 239);
           o->set_vertical();
           fltk::Group::current()->resizable(o);
         }
@@ -1240,119 +1405,119 @@ tton to choose a color.");
           fltk::Group::current()->resizable(o);
         }
         {
-          fltk::Button* o = new fltk::Button(3, 78, 55, 25, "Delete");
+          auto* o = new fltk::Button(3, 78, 55, 25, "Delete");
           o->shortcut(0xffff);
-          o->callback((fltk::Callback*)cb_Delete);
+          o->callback(reinterpret_cast<fltk::Callback*>(cb_Delete));
           o->hide();
           o->tooltip("Delete the selected objects");
         }
         {
-          fltk::Button* o = new fltk::Button(20, 192, 83, 25, "Add empty");
+          auto* o = new fltk::Button(20, 192, 83, 25, "Add empty");
           o->shortcut(0x80065);
-          o->callback((fltk::Callback*)cb_Add3);
+          o->callback(reinterpret_cast<fltk::Callback*>(cb_Add3));
           o->tooltip("Add an empty object");
         }
         {
-          fltk::Button* o = new fltk::Button(19, 223, 70, 25, "Copy");
+          auto* o = new fltk::Button(19, 223, 70, 25, "Copy");
           o->shortcut(0x40063);
-          o->callback((fltk::Callback*)cb_Copy);
+          o->callback(reinterpret_cast<fltk::Callback*>(cb_Copy));
           o->tooltip("Shortcut: Ctrl+C");
         }
         {
-          fltk::Button* o = new fltk::Button(95, 223, 65, 25, "Cut");
+          auto* o = new fltk::Button(95, 223, 65, 25, "Cut");
           o->shortcut(0x40078);
-          o->callback((fltk::Callback*)cb_Cut);
+          o->callback(reinterpret_cast<fltk::Callback*>(cb_Cut));
           o->tooltip("Shortcut: Ctrl+X");
         }
         {
-          fltk::Button* o = new fltk::Button(165, 223, 78, 25, "Paste");
+          auto* o = new fltk::Button(165, 223, 78, 25, "Paste");
           o->shortcut(0x40076);
-          o->callback((fltk::Callback*)cb_Paste);
-          ((fltk::Window*)(o->parent()->parent()->parent()))->hotspot(o);
+          o->callback(reinterpret_cast<fltk::Callback*>(cb_Paste));
+          (dynamic_cast<fltk::Window*>(o->parent()->parent()->parent()))->hotspot(o);
           o->tooltip("Shortcut: Ctrl+V");
         }
         {
-          fltk::Button* o = new fltk::Button(144, 111, 101, 25, "Apply transform");
-          o->callback((fltk::Callback*)cb_Apply1);
+          auto* o = new fltk::Button(144, 111, 101, 25, "Apply transform");
+          o->callback(reinterpret_cast<fltk::Callback*>(cb_Apply1));
           o->tooltip(
               "Apply the current object transformation to itself. This is basically the same\
  as \"Use current position as Object Origin\" from 3DO builder, expect that ro\
 tation and scaling is removed here as well.");
         }
         {
-          fltk::Button* o = new fltk::Button(144, 84, 101, 23, "Uniform scale");
-          o->callback((fltk::Callback*)cb_Uniform);
+          auto* o = new fltk::Button(144, 84, 101, 23, "Uniform scale");
+          o->callback(reinterpret_cast<fltk::Callback*>(cb_Uniform));
           o->tooltip("Scale the selected objects by a given factor");
         }
         {
-          fltk::Button* o = new fltk::Button(107, 192, 70, 25, "Set name");
-          o->callback((fltk::Callback*)cb_Set1);
+          auto* o = new fltk::Button(107, 192, 70, 25, "Set name");
+          o->callback(reinterpret_cast<fltk::Callback*>(cb_Set1));
           o->tooltip("Edit the name of the selected object");
         }
         {
           fltk::NumericInput* o = inputPosX = new fltk::NumericInput(58, 86, 66, 19, "X pos:");
           o->type(6);
-          o->callback((fltk::Callback*)cb_inputPosX);
+          o->callback(reinterpret_cast<fltk::Callback*>(cb_inputPosX));
           o->when(fltk::WHEN_ENTER_KEY);
         }
         {
           fltk::NumericInput* o = inputPosY = new fltk::NumericInput(58, 110, 66, 19, "Y pos:");
           o->type(6);
-          o->callback((fltk::Callback*)cb_inputPosY);
+          o->callback(reinterpret_cast<fltk::Callback*>(cb_inputPosY));
           o->when(fltk::WHEN_ENTER_KEY);
         }
         {
           fltk::NumericInput* o = inputPosZ = new fltk::NumericInput(58, 134, 66, 19, "Z pos:");
           o->type(6);
-          o->callback((fltk::Callback*)cb_inputPosZ);
+          o->callback(reinterpret_cast<fltk::Callback*>(cb_inputPosZ));
           o->when(fltk::WHEN_ENTER_KEY);
         }
         {
           fltk::NumericInput* o = inputScaleX = new fltk::NumericInput(173, 13, 66, 19, "X scale");
           o->type(6);
-          o->callback((fltk::Callback*)cb_inputScaleX);
+          o->callback(reinterpret_cast<fltk::Callback*>(cb_inputScaleX));
           o->when(fltk::WHEN_ENTER_KEY);
         }
         {
           fltk::NumericInput* o = inputScaleY = new fltk::NumericInput(173, 37, 66, 19, "Y scale");
           o->type(6);
-          o->callback((fltk::Callback*)cb_inputScaleY);
+          o->callback(reinterpret_cast<fltk::Callback*>(cb_inputScaleY));
           o->when(fltk::WHEN_ENTER_KEY);
         }
         {
           fltk::NumericInput* o = inputScaleZ = new fltk::NumericInput(173, 61, 66, 19, "Z scale");
           o->type(6);
-          o->callback((fltk::Callback*)cb_inputScaleZ);
+          o->callback(reinterpret_cast<fltk::Callback*>(cb_inputScaleZ));
           o->when(fltk::WHEN_ENTER_KEY);
         }
         {
           fltk::NumericInput* o = inputRotX = new fltk::NumericInput(59, 13, 66, 19, "X rotation:");
           o->type(6);
-          o->callback((fltk::Callback*)cb_inputRotX);
+          o->callback(reinterpret_cast<fltk::Callback*>(cb_inputRotX));
           o->when(fltk::WHEN_ENTER_KEY);
           o->tooltip("Rotation around X axis");
         }
         {
           fltk::NumericInput* o = inputRotZ = new fltk::NumericInput(59, 61, 66, 20, "Z rotation:");
           o->type(6);
-          o->callback((fltk::Callback*)cb_inputRotZ);
+          o->callback(reinterpret_cast<fltk::Callback*>(cb_inputRotZ));
           o->when(fltk::WHEN_ENTER_KEY);
           o->tooltip("Rotation around Z axis");
         }
         {
           fltk::NumericInput* o = inputRotY = new fltk::NumericInput(59, 37, 66, 19, "Y rotation:");
           o->type(6);
-          o->callback((fltk::Callback*)cb_inputRotY);
+          o->callback(reinterpret_cast<fltk::Callback*>(cb_inputRotY));
           o->when(fltk::WHEN_ENTER_KEY);
           o->tooltip("Rotation around Y axis");
         }
         {
-          fltk::Button* o = new fltk::Button(180, 192, 63, 25, "Swap");
-          o->callback((fltk::Callback*)cb_Swap);
+          auto* o = new fltk::Button(180, 192, 63, 25, "Swap");
+          o->callback(reinterpret_cast<fltk::Callback*>(cb_Swap));
         }
         {
-          fltk::Button* o = new fltk::Button(144, 140, 101, 24, "Rotator UI");
-          o->callback((fltk::Callback*)cb_Rotator);
+          auto* o = new fltk::Button(144, 140, 101, 24, "Rotator UI");
+          o->callback(reinterpret_cast<fltk::Callback*>(cb_Rotator));
         }
         {
           fltk::CheckButton* o = chkOnlyMoveOrigin =
@@ -1364,7 +1529,7 @@ child objects. Similar to the origin-move tool");
         o->end();
       }
       {
-        fltk::Group* o = new fltk::Group(4, 23, 253, 481, "Mapping");
+        auto* o = new fltk::Group(4, 23, 253, 481, "Mapping");
         o->set_vertical();
         o->box(fltk::PLASTIC_UP_BOX);
         o->labelsize(10);
@@ -1374,12 +1539,12 @@ child objects. Similar to the origin-move tool");
           o->align(fltk::ALIGN_TOP | fltk::ALIGN_LEFT);
           o->begin();
           {
-            fltk::Item* o = new fltk::Item("S3O: 2 UV mapped textures");
-            o->callback((fltk::Callback*)cb_S3O);
+            auto* o = new fltk::Item("S3O: 2 UV mapped textures");
+            o->callback(reinterpret_cast<fltk::Callback*>(cb_S3O));
           }
           {
-            fltk::Item* o = new fltk::Item("3DO: per-polygon texture");
-            o->callback((fltk::Callback*)cb_3DO);
+            auto* o = new fltk::Item("3DO: per-polygon texture");
+            o->callback(reinterpret_cast<fltk::Callback*>(cb_3DO));
           }
           o->end();
         }
@@ -1390,58 +1555,58 @@ child objects. Similar to the origin-move tool");
           o->begin();
           {
             fltk::FileInput* o = inputTexture1 = new fltk::FileInput(14, 24, 185, 31, "Texture 1");
-            o->callback((fltk::Callback*)cb_inputTexture1);
+            o->callback(reinterpret_cast<fltk::Callback*>(cb_inputTexture1));
             o->align(fltk::ALIGN_TOP | fltk::ALIGN_LEFT);
             o->when(fltk::WHEN_CHANGED);
             o->tooltip("S3O texture 1, this specifies color. Alpha channel is used for teamcolor.");
           }
           {
             fltk::FileInput* o = inputTexture2 = new fltk::FileInput(14, 100, 185, 35, "Texture 2");
-            o->callback((fltk::Callback*)cb_inputTexture2);
+            o->callback(reinterpret_cast<fltk::Callback*>(cb_inputTexture2));
             o->align(fltk::ALIGN_TOP | fltk::ALIGN_LEFT);
             o->when(fltk::WHEN_CHANGED);
             o->tooltip("S3O texture 2, green=reflectivity, red=self illumination,blue=unused");
           }
           {
-            fltk::Button* o = new fltk::Button(103, 60, 85, 25, "Browse");
-            o->callback((fltk::Callback*)cb_Browse7);
+            auto* o = new fltk::Button(103, 60, 85, 25, "Browse");
+            o->callback(reinterpret_cast<fltk::Callback*>(cb_Browse7));
           }
           {
-            fltk::Button* o = new fltk::Button(104, 140, 85, 25, "Browse");
-            o->callback((fltk::Callback*)cb_Browse8);
+            auto* o = new fltk::Button(104, 140, 85, 25, "Browse");
+            o->callback(reinterpret_cast<fltk::Callback*>(cb_Browse8));
           }
           {
-            fltk::Button* o = new fltk::Button(13, 60, 85, 25, "Reload");
-            o->callback((fltk::Callback*)cb_Reload);
+            auto* o = new fltk::Button(13, 60, 85, 25, "Reload");
+            o->callback(reinterpret_cast<fltk::Callback*>(cb_Reload));
           }
           {
-            fltk::Button* o = new fltk::Button(14, 140, 85, 25, "Reload");
-            o->callback((fltk::Callback*)cb_Reload1);
+            auto* o = new fltk::Button(14, 140, 85, 25, "Reload");
+            o->callback(reinterpret_cast<fltk::Callback*>(cb_Reload1));
           }
           {
-            fltk::Button* o = new fltk::Button(155, 174, 33, 25, "Example team color:");
-            o->callback((fltk::Callback*)cb_Example);
+            auto* o = new fltk::Button(155, 174, 33, 25, "Example team color:");
+            o->callback(reinterpret_cast<fltk::Callback*>(cb_Example));
             o->align(fltk::ALIGN_LEFT);
           }
           {
-            fltk::Choice* o = new fltk::Choice(15, 226, 188, 24, "Current rendering method");
+            auto* o = new fltk::Choice(15, 226, 188, 24, "Current rendering method");
             o->align(fltk::ALIGN_TOP | fltk::ALIGN_LEFT);
             o->begin();
             {
-              fltk::Item* o = new fltk::Item("Full (teamcolor, reflection, self-illumination)");
-              o->callback((fltk::Callback*)cb_Full);
+              auto* o = new fltk::Item("Full (teamcolor, reflection, self-illumination)");
+              o->callback(reinterpret_cast<fltk::Callback*>(cb_Full));
             }
             {
-              fltk::Item* o = new fltk::Item("Basic (only texture 1: color+teamcolor)");
-              o->callback((fltk::Callback*)cb_Basic);
+              auto* o = new fltk::Item("Basic (only texture 1: color+teamcolor)");
+              o->callback(reinterpret_cast<fltk::Callback*>(cb_Basic));
             }
             {
-              fltk::Item* o = new fltk::Item("Texture 1 color");
-              o->callback((fltk::Callback*)cb_Texture);
+              auto* o = new fltk::Item("Texture 1 color");
+              o->callback(reinterpret_cast<fltk::Callback*>(cb_Texture));
             }
             {
-              fltk::Item* o = new fltk::Item("Texture 2 color");
-              o->callback((fltk::Callback*)cb_Texture1);
+              auto* o = new fltk::Item("Texture 2 color");
+              o->callback(reinterpret_cast<fltk::Callback*>(cb_Texture1));
             }
             o->end();
           }
@@ -1452,8 +1617,8 @@ child objects. Similar to the origin-move tool");
           o->box(fltk::THIN_DOWN_BOX);
           o->begin();
           {
-            fltk::Button* o = new fltk::Button(12, 10, 201, 25, "Convert to S3O texturing");
-            o->callback((fltk::Callback*)cb_Convert);
+            auto* o = new fltk::Button(12, 10, 201, 25, "Convert to S3O texturing");
+            o->callback(reinterpret_cast<fltk::Callback*>(cb_Convert));
           }
           o->end();
           fltk::Group::current()->resizable(o);
@@ -1461,7 +1626,7 @@ child objects. Similar to the origin-move tool");
         o->end();
       }
       {
-        fltk::Group* o = new fltk::Group(4, 23, 252, 481, "3DO Textures");
+        auto* o = new fltk::Group(4, 23, 252, 481, "3DO Textures");
         o->set_vertical();
         o->box(fltk::PLASTIC_UP_BOX);
         o->labelsize(10);
@@ -1475,11 +1640,11 @@ child objects. Similar to the origin-move tool");
         }
         {
           fltk::Choice* o = textureGroupMenu = new fltk::Choice(99, 2, 151, 24, "Texture group:");
-          o->callback((fltk::Callback*)cb_textureGroupMenu);
+          o->callback(reinterpret_cast<fltk::Callback*>(cb_textureGroupMenu));
         }
         {
-          fltk::Button* o = new fltk::Button(3, 28, 112, 24, "Add unit textures");
-          o->callback((fltk::Callback*)cb_Add4);
+          auto* o = new fltk::Button(3, 28, 112, 24, "Add unit textures");
+          o->callback(reinterpret_cast<fltk::Callback*>(cb_Add4));
         }
         o->end();
         fltk::Group::current()->resizable(o);
@@ -1498,45 +1663,45 @@ child objects. Similar to the origin-move tool");
         fltk::PopupMenu* o = menuFile = new fltk::PopupMenu(355, 10, 60, 15, "File");
         o->begin();
         {
-          fltk::Item* o = new fltk::Item("New");
+          auto* o = new fltk::Item("New");
           o->shortcut(0x4006e);
-          o->callback((fltk::Callback*)cb_New);
+          o->callback(reinterpret_cast<fltk::Callback*>(cb_New));
         }
         new fltk::Divider();
         {
-          fltk::Item* o = new fltk::Item("Load model");
+          auto* o = new fltk::Item("Load model");
           o->shortcut(0x4006f);
-          o->callback((fltk::Callback*)cb_Load1);
+          o->callback(reinterpret_cast<fltk::Callback*>(cb_Load1));
         }
         {
-          fltk::Item* o = new fltk::Item("Save model");
+          auto* o = new fltk::Item("Save model");
           o->shortcut(0x40073);
-          o->callback((fltk::Callback*)cb_Save1);
+          o->callback(reinterpret_cast<fltk::Callback*>(cb_Save1));
         }
         {
-          fltk::Item* o = new fltk::Item("Save model as");
-          o->callback((fltk::Callback*)cb_Save2);
+          auto* o = new fltk::Item("Save model as");
+          o->callback(reinterpret_cast<fltk::Callback*>(cb_Save2));
         }
         new fltk::Divider();
         {
-          fltk::Item* o = new fltk::Item("Exit");
-          o->callback((fltk::Callback*)cb_Exit);
+          auto* o = new fltk::Item("Exit");
+          o->callback(reinterpret_cast<fltk::Callback*>(cb_Exit));
         }
         o->end();
       }
       {
-        fltk::PopupMenu* o = new fltk::PopupMenu(9, 9, 73, 10, "Edit");
+        auto* o = new fltk::PopupMenu(9, 9, 73, 10, "Edit");
         o->begin();
         {
-          fltk::ItemGroup* o = new fltk::ItemGroup("Optimize");
+          auto* o = new fltk::ItemGroup("Optimize");
           o->begin();
           {
-            fltk::Item* o = new fltk::Item("All objects");
-            o->callback((fltk::Callback*)cb_All);
+            auto* o = new fltk::Item("All objects");
+            o->callback(reinterpret_cast<fltk::Callback*>(cb_All));
           }
           {
-            fltk::Item* o = new fltk::Item("Selected objects");
-            o->callback((fltk::Callback*)cb_Selected);
+            auto* o = new fltk::Item("Selected objects");
+            o->callback(reinterpret_cast<fltk::Callback*>(cb_Selected));
           }
           o->end();
         }
@@ -1546,80 +1711,80 @@ child objects. Similar to the origin-move tool");
         fltk::PopupMenu* o = menuObject = new fltk::PopupMenu(235, 0, 85, 10, "Object");
         o->begin();
         {
-          fltk::Item* o = new fltk::Item("Insert object from file");
-          o->callback((fltk::Callback*)cb_Insert);
+          auto* o = new fltk::Item("Insert object from file");
+          o->callback(reinterpret_cast<fltk::Callback*>(cb_Insert));
         }
         {
-          fltk::Item* o = new fltk::Item("Save object");
+          auto* o = new fltk::Item("Save object");
           o->shortcut(0x80073);
-          o->callback((fltk::Callback*)cb_Save3);
+          o->callback(reinterpret_cast<fltk::Callback*>(cb_Save3));
         }
         {
-          fltk::Item* o = new fltk::Item("Replace object (keep child objects)");
+          auto* o = new fltk::Item("Replace object (keep child objects)");
           o->shortcut(0x80072);
-          o->callback((fltk::Callback*)cb_Replace);
+          o->callback(reinterpret_cast<fltk::Callback*>(cb_Replace));
         }
         {
-          fltk::Item* o = new fltk::Item("Merge object into parent");
+          auto* o = new fltk::Item("Merge object into parent");
           o->shortcut(0x6d);
-          o->callback((fltk::Callback*)cb_Merge);
+          o->callback(reinterpret_cast<fltk::Callback*>(cb_Merge));
         }
         {
-          fltk::Item* o = new fltk::Item("Approximate Object Origins");
-          o->callback((fltk::Callback*)cb_Approximate);
+          auto* o = new fltk::Item("Approximate Object Origins");
+          o->callback(reinterpret_cast<fltk::Callback*>(cb_Approximate));
         }
         {
-          fltk::ItemGroup* o = new fltk::ItemGroup("Reset");
+          auto* o = new fltk::ItemGroup("Reset");
           o->begin();
           {
-            fltk::Item* o = new fltk::Item("object position");
+            auto* o = new fltk::Item("object position");
             o->shortcut(0x40071);
-            o->callback((fltk::Callback*)cb_object);
+            o->callback(reinterpret_cast<fltk::Callback*>(cb_object));
           }
           {
-            fltk::Item* o = new fltk::Item("object rotation+scale");
+            auto* o = new fltk::Item("object rotation+scale");
             o->shortcut(0x40077);
-            o->callback((fltk::Callback*)cb_object1);
+            o->callback(reinterpret_cast<fltk::Callback*>(cb_object1));
           }
           {
-            fltk::Item* o = new fltk::Item("object position+rotation+scale");
+            auto* o = new fltk::Item("object position+rotation+scale");
             o->shortcut(0x40065);
-            o->callback((fltk::Callback*)cb_object2);
+            o->callback(reinterpret_cast<fltk::Callback*>(cb_object2));
           }
           o->end();
         }
         {
-          fltk::Item* o = new fltk::Item("Recalculate vertex normals");
-          o->callback((fltk::Callback*)cb_Recalculate);
+          auto* o = new fltk::Item("Recalculate vertex normals");
+          o->callback(reinterpret_cast<fltk::Callback*>(cb_Recalculate));
         }
         {
-          fltk::Item* o = new fltk::Item("Flip all polygons");
-          o->callback((fltk::Callback*)cb_Flip1);
+          auto* o = new fltk::Item("Flip all polygons");
+          o->callback(reinterpret_cast<fltk::Callback*>(cb_Flip1));
         }
         {
-          fltk::Item* o = new fltk::Item("Generate csurf debug info");
-          o->callback((fltk::Callback*)cb_Generate);
+          auto* o = new fltk::Item("Generate csurf debug info");
+          o->callback(reinterpret_cast<fltk::Callback*>(cb_Generate));
         }
         o->end();
       }
       {
-        fltk::PopupMenu* o = new fltk::PopupMenu(9, 9, 114, 10, "Texture Mapping");
+        auto* o = new fltk::PopupMenu(9, 9, 114, 10, "Texture Mapping");
         o->begin();
         {
-          fltk::Item* o = new fltk::Item("Export model for UV mapping");
-          o->callback((fltk::Callback*)cb_Export);
+          auto* o = new fltk::Item("Export model for UV mapping");
+          o->callback(reinterpret_cast<fltk::Callback*>(cb_Export));
         }
         {
-          fltk::Item* o = new fltk::Item("Import UV coordinates from model");
-          o->callback((fltk::Callback*)cb_Import);
+          auto* o = new fltk::Item("Import UV coordinates from model");
+          o->callback(reinterpret_cast<fltk::Callback*>(cb_Import));
         }
         {
-          fltk::Item* o = new fltk::Item("Show UV mapping");
-          o->callback((fltk::Callback*)cb_Show1);
+          auto* o = new fltk::Item("Show UV mapping");
+          o->callback(reinterpret_cast<fltk::Callback*>(cb_Show1));
         }
         {
-          fltk::Item* o = new fltk::Item("Show S3O texture builder");
-          o->callback((fltk::Callback*)cb_Show2);
+          auto* o = new fltk::Item("Show S3O texture builder");
+          o->callback(reinterpret_cast<fltk::Callback*>(cb_Show2));
         }
         o->end();
       }
@@ -1627,17 +1792,17 @@ child objects. Similar to the origin-move tool");
         fltk::PopupMenu* o = menuAnimation = new fltk::PopupMenu(9, 2, 96, 17, "Animation");
         o->begin();
         {
-          fltk::Item* o = new fltk::Item("Show timeline");
-          o->callback((fltk::Callback*)cb_Show3);
+          auto* o = new fltk::Item("Show timeline");
+          o->callback(reinterpret_cast<fltk::Callback*>(cb_Show3));
         }
         {
-          fltk::Item* o = new fltk::Item("Show object IK properties");
-          o->callback((fltk::Callback*)cb_Show4);
+          auto* o = new fltk::Item("Show object IK properties");
+          o->callback(reinterpret_cast<fltk::Callback*>(cb_Show4));
           o->hide();
         }
         {
-          fltk::Item* o = new fltk::Item("Show track editor");
-          o->callback((fltk::Callback*)cb_Show5);
+          auto* o = new fltk::Item("Show track editor");
+          o->callback(reinterpret_cast<fltk::Callback*>(cb_Show5));
         }
         o->end();
       }
@@ -1645,8 +1810,8 @@ child objects. Similar to the origin-move tool");
         fltk::PopupMenu* o = menuScript = new fltk::PopupMenu(9, 2, 71, 17, "Scripts");
         o->begin();
         {
-          fltk::Item* o = new fltk::Item("Load script");
-          o->callback((fltk::Callback*)cb_Load2);
+          auto* o = new fltk::Item("Load script");
+          o->callback(reinterpret_cast<fltk::Callback*>(cb_Load2));
         }
         { /*fltk::ItemGroup* o =*/
           menuScriptList = new fltk::ItemGroup("Scripts");
@@ -1654,32 +1819,32 @@ child objects. Similar to the origin-move tool");
         o->end();
       }
       {
-        fltk::PopupMenu* o = new fltk::PopupMenu(25, 26, 80, 11, "Settings");
+        auto* o = new fltk::PopupMenu(25, 26, 80, 11, "Settings");
         o->begin();
         {
-          fltk::Item* o = new fltk::Item("Texture archives");
-          o->callback((fltk::Callback*)cb_Texture2);
+          auto* o = new fltk::Item("Texture archives");
+          o->callback(reinterpret_cast<fltk::Callback*>(cb_Texture2));
         }
         {
-          fltk::Item* o = new fltk::Item("Texture groups");
-          o->callback((fltk::Callback*)cb_Texture3);
+          auto* o = new fltk::Item("Texture groups");
+          o->callback(reinterpret_cast<fltk::Callback*>(cb_Texture3));
         }
         {
-          fltk::Item* o = new fltk::Item("Save view settings");
-          o->callback((fltk::Callback*)cb_Save4);
+          auto* o = new fltk::Item("Save view settings");
+          o->callback(reinterpret_cast<fltk::Callback*>(cb_Save4));
         }
         {
-          fltk::Item* o = new fltk::Item("Revert to default view settings");
+          auto* o = new fltk::Item("Revert to default view settings");
           o->shortcut(0xffbf);
-          o->callback((fltk::Callback*)cb_Revert);
+          o->callback(reinterpret_cast<fltk::Callback*>(cb_Revert));
         }
         {
-          fltk::Item* o = new fltk::Item("Set view background color");
-          o->callback((fltk::Callback*)cb_Set2);
+          auto* o = new fltk::Item("Set view background color");
+          o->callback(reinterpret_cast<fltk::Callback*>(cb_Set2));
         }
         {
-          fltk::Item* o = new fltk::Item("Set spring texture directory");
-          o->callback((fltk::Callback*)cb_Set3);
+          auto* o = new fltk::Item("Set spring texture directory");
+          o->callback(reinterpret_cast<fltk::Callback*>(cb_Set3));
         }
         o->end();
       }
@@ -1687,8 +1852,8 @@ child objects. Similar to the origin-move tool");
         fltk::PopupMenu* o = menuHelp = new fltk::PopupMenu(290, 10, 70, 15, "Help");
         o->begin();
         {
-          fltk::Item* o = new fltk::Item("About upspring");
-          o->callback((fltk::Callback*)cb_About);
+          auto* o = new fltk::Item("About upspring");
+          o->callback(reinterpret_cast<fltk::Callback*>(cb_About));
         }
         o->end();
       }

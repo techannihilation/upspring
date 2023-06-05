@@ -40,7 +40,7 @@ struct Tools {
   Tools();
   void SetEditor(IEditor* editor);
   void Disable();
-  Tool* GetDefaultTool();
+  Tool* GetDefaultTool() const;
   void LoadImages();
 
   Tool* camera;

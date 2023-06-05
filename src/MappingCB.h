@@ -7,10 +7,10 @@ protected:
 IEditor* callback;
 
 public:
-MappingUI(IEditor* editor);
+MappingUI(IEditor* callback);
 ~MappingUI();
 
-void Show();
+void Show() const;
 void Hide() { window->hide(); }
 void flipUVs();
 void mirrorUVs();

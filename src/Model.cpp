@@ -32,74 +32,73 @@
 // Model
 // ------------------------------------------------------------------------------------------------
 
-Model::Model() {
-  root = 0;
-  mapping = MAPPING_S3O;
-  height = radius = 0.0f;
-}
+Model::Model() : height(radius = 0.0F) {}
 
-Model::~Model() {
-  if (root) delete root;
-}
+Model::~Model() { delete root; }
 
 void Model::SetTextureName(uint index, const char* name) {
-  if (texBindings.size() <= index) texBindings.resize(index + 1);
+  if (texBindings.size() <= index) {
+    texBindings.resize(index + 1);
+  }
 
   texBindings[index].name = name;
 }
 
 void Model::SetTexture(uint index, std::shared_ptr<Texture> par_tex) {
-  if (texBindings.size() <= index) texBindings.resize(index + 1);
+  if (texBindings.size() <= index) {
+    texBindings.resize(index + 1);
+  }
 
   texBindings[index].texture = par_tex;
   texBindings[index].name = par_tex ? par_tex->name : "";
 }
 
 void Model::InsertModel(MdlObject* obj, Model* sub) {
-  if (!sub->root) return;
+  if (sub->root == nullptr) {
+    return;
+  }
 
   obj->childs.push_back(sub->root);
   sub->root->parent = obj;
-  sub->root = 0;
+  sub->root = nullptr;
 }
 
-// TODO: Abstract file formats
+// TODO(unknown): Abstract file formats
 Model* Model::Load(const std::string& _fn, bool /*Optimize*/, IProgressCtl& progctl) {
   const char* fn = _fn.c_str();
   const char* ext = fltk::filename_ext(fn);
-  Model* mdl = 0;
+  Model* mdl = nullptr;
 
   try {
-    bool r;
+    bool r = false;
     mdl = new Model;
 
-    if (!STRCASECMP(ext, ".3do"))
+    if (!STRCASECMP(ext, ".3do")) {
       r = mdl->Load3DO(fn, progctl);
-    else if (!STRCASECMP(ext, ".s3o"))
+    } else if (!STRCASECMP(ext, ".s3o")) {
       r = mdl->LoadS3O(fn, progctl);
-    else if (!STRCASECMP(ext, ".3ds"))
-      r = (mdl->root = Load3DSObject(fn, progctl)) != 0;
-    else if (!STRCASECMP(ext, ".obj"))
-      r = (mdl->root = LoadWavefrontObject(fn, progctl)) != 0;
-    else {
+    } else if (!STRCASECMP(ext, ".3ds")) {
+      r = (mdl->root = Load3DSObject(fn, progctl)) != nullptr;
+    } else if (!STRCASECMP(ext, ".obj")) {
+      r = (mdl->root = LoadWavefrontObject(fn, progctl)) != nullptr;
+    } else {
       fltk::message("Unknown extension %s\n", fltk::filename_ext(fn));
       delete mdl;
       return nullptr;
     }
     if (!r) {
       delete mdl;
-      mdl = 0;
+      mdl = nullptr;
     }
   } catch (std::runtime_error err) {
     fltk::message(err.what());
     return nullptr;
   }
-  if (mdl)
+  if (mdl != nullptr) {
     return mdl;
-  else {
-    fltk::message("Failed to read file %s:\n", fn);
-    return nullptr;
   }
+  fltk::message("Failed to read file %s:\n", fn);
+  return nullptr;
 }
 
 bool Model::Save(Model* mdl, const std::string& _fn, IProgressCtl& progctl) {
@@ -107,22 +106,23 @@ bool Model::Save(Model* mdl, const std::string& _fn, IProgressCtl& progctl) {
   const char* fn = _fn.c_str();
   const char* ext = fltk::filename_ext(fn);
 
-  if (!mdl->root) {
+  if (mdl->root == nullptr) {
     fltk::message("No objects");
     return false;
   }
 
   assert(fn && fn[0]);
-  if (!STRCASECMP(ext, ".3do"))
+  if (!STRCASECMP(ext, ".3do")) {
     r = mdl->Save3DO(fn, progctl);
-  else if (!STRCASECMP(ext, ".s3o")) {
+  } else if (!STRCASECMP(ext, ".s3o")) {
     r = mdl->SaveS3O(fn, progctl);
-  } else if (!STRCASECMP(ext, ".3ds"))
+  } else if (!STRCASECMP(ext, ".3ds")) {
     r = Save3DSObject(fn, mdl->root, progctl);
-  else if (!STRCASECMP(ext, ".obj"))
+  } else if (!STRCASECMP(ext, ".obj")) {
     r = SaveWavefrontObject(fn, mdl->root);
-  else
+  } else {
     fltk::message("Unknown extension %s\n", fltk::filename_ext(fn));
+  }
   if (!r) {
     fltk::message("Failed to save file %s\n", fn);
   }
@@ -130,33 +130,40 @@ bool Model::Save(Model* mdl, const std::string& _fn, IProgressCtl& progctl) {
 }
 
 static void GetSelectedObjectsHelper(MdlObject* obj, std::vector<MdlObject*>& sel) {
-  if (obj->isSelected) sel.push_back(obj);
+  if (obj->isSelected) {
+    sel.push_back(obj);
+  }
 
-  for (std::uint32_t a = 0; a < obj->childs.size(); a++)
-    GetSelectedObjectsHelper(obj->childs[a], sel);
+  for (auto& child : obj->childs) {
+    GetSelectedObjectsHelper(child, sel);
+  }
 }
 
-std::vector<MdlObject*> Model::GetSelectedObjects() {
+std::vector<MdlObject*> Model::GetSelectedObjects() const {
   std::vector<MdlObject*> sel;
-  if (root) GetSelectedObjectsHelper(root, sel);
+  if (root != nullptr) {
+    GetSelectedObjectsHelper(root, sel);
+  }
   return sel;
 }
 
 void Model::DeleteObject(MdlObject* obj) {
-  if (obj->parent) {
-    std::vector<MdlObject*>::iterator i =
-        find(obj->parent->childs.begin(), obj->parent->childs.end(), obj);
-    if (i != obj->parent->childs.end()) obj->parent->childs.erase(i);
+  if (obj->parent != nullptr) {
+    auto const i = find(obj->parent->childs.begin(), obj->parent->childs.end(), obj);
+    if (i != obj->parent->childs.end()) {
+      obj->parent->childs.erase(i);
+    }
   } else {
     assert(obj == root);
-    root = 0;
+    root = nullptr;
   }
 
   delete obj;
 }
 
 void Model::SwapObjects(MdlObject* a, MdlObject* b) {
-  MdlObject *ap = a->parent, *bp = b->parent;
+  MdlObject* ap = a->parent;
+  MdlObject* bp = b->parent;
 
   // Unlink both objects from their parents
   // (this will also fix problems if b is a child of a or vice versa)
@@ -166,26 +173,37 @@ void Model::SwapObjects(MdlObject* a, MdlObject* b) {
   // Swap childs
   swap(a->childs, b->childs);
   // assign parents again on the swapped childs
-  for (std::vector<MdlObject*>::iterator ci = a->childs.begin(); ci != a->childs.end(); ci++)
+  for (auto ci = a->childs.begin(); ci != a->childs.end(); ci++) {
     (*ci)->parent = a;
-  for (std::vector<MdlObject*>::iterator ci = b->childs.begin(); ci != b->childs.end(); ci++)
+  }
+  for (auto ci = b->childs.begin(); ci != b->childs.end(); ci++) {
     (*ci)->parent = b;
+  }
 
   if (b == ap) {  // was b originally the parent of a?
     b->LinkToParent(a);
-    if (bp) a->LinkToParent(bp);
+    if (bp != nullptr) {
+      a->LinkToParent(bp);
+    }
   } else if (a == bp) {  // or was a originally the parent of b
     a->LinkToParent(b);
-    if (ap) b->LinkToParent(ap);
+    if (ap != nullptr) {
+      b->LinkToParent(ap);
+    }
   } else {  // no parents of eachother at all
-    if (bp) a->LinkToParent(bp);
-    if (ap) b->LinkToParent(ap);
+    if (bp != nullptr) {
+      a->LinkToParent(bp);
+    }
+    if (ap != nullptr) {
+      b->LinkToParent(ap);
+    }
   }
 
-  if (a == root)
+  if (a == root) {
     root = b;
-  else if (b == root)
+  } else if (b == root) {
     root = a;
+  }
 }
 
 void Model::ReplaceObject(MdlObject* old, MdlObject* _new) {
@@ -198,10 +216,11 @@ void Model::ReplaceObject(MdlObject* old, MdlObject* _new) {
   DeleteObject(old);
 
   // Insert the new object
-  if (parent)
+  if (parent != nullptr) {
     parent->childs.push_back(_new);
-  else
+  } else {
     root = _new;
+  }
 }
 
 static void AddPositions(MdlObject* o, Vector3& p, int& count) {
@@ -214,33 +233,39 @@ static void AddPositions(MdlObject* o, Vector3& p, int& count) {
     p += temp;
     count++;
   }
-  for (std::uint32_t a = 0; a < o->childs.size(); a++) AddPositions(o->childs[a], p, count);
+  for (auto& child : o->childs) {
+    AddPositions(child, p, count);
+  }
 }
 
 void Model::EstimateMidPosition() {
   Vector3 total;
   int count = 0;
-  if (root) AddPositions(root, total, count);
+  if (root != nullptr) {
+    AddPositions(root, total, count);
+  }
 
-  if (count) {
+  if (count != 0) {
     mid = total / count;
-  } else
+  } else {
     mid = Vector3();
-}
-
-void Model::CalculateRadius() {
-  std::vector<MdlObject*> objs = GetObjectList();
-  radius = 0.0f;
-  for (unsigned int o = 0; o < objs.size(); o++) {
-    MdlObject* obj = objs[o];
-    /*PolyMesh *pm = obj->GetPolyMesh();*/
-    Matrix objTransform;
-    obj->GetFullTransform(objTransform);
-    if (obj->geometry) obj->geometry->CalculateRadius(radius, objTransform, mid);
   }
 }
 
-bool Model::ExportUVMesh(const char* fn) {
+void Model::CalculateRadius() {
+  std::vector<MdlObject*> const objs = GetObjectList();
+  radius = 0.0F;
+  for (auto* obj : objs) {
+    /*PolyMesh *pm = obj->GetPolyMesh();*/
+    Matrix objTransform;
+    obj->GetFullTransform(objTransform);
+    if (obj->geometry != nullptr) {
+      obj->geometry->CalculateRadius(radius, objTransform, mid);
+    }
+  }
+}
+
+bool Model::ExportUVMesh(const char* fn) const {
   // create a cloned model
   MdlObject* cloned = root->Clone();
   Model mdl;
@@ -249,17 +274,18 @@ bool Model::ExportUVMesh(const char* fn) {
 
   // merge all objects in the clone
   while (!mdl.root->childs.empty()) {
-    std::vector<MdlObject*> childs = mdl.root->childs;
+    std::vector<MdlObject*> const childs = mdl.root->childs;
 
-    for (std::vector<MdlObject*>::iterator ci = childs.begin(); ci != childs.end(); ++ci)
-      mdl.root->MergeChild(*ci);
+    for (const auto& child : childs) {
+      mdl.root->MergeChild(child);
+    }
   }
 
   return Model::Save(&mdl, fn);
 }
 
 bool Model::ImportUVMesh(const char* fn, IProgressCtl& progctl) {
-  Model* mdl;
+  Model* mdl = nullptr;
   mdl = Model::Load(fn, false);  // an unoptimized mesh so the vertices are not merged
   return false;
 
@@ -276,30 +302,38 @@ int MatchPolygon(MdlObject* root, std::vector<Vector3>& pverts, int& startVertex
   for (PolyIterator pi(root); !pi.End(); pi.Next(), index++) {
     Poly* pl = *pi;
 
-    if (pl->verts.size() != pverts.size() || !pi.verts()) continue;
+    if (pl->verts.size() != pverts.size() || (pi.verts() == nullptr)) {
+      continue;
+    }
 
     // An early out plane comparision, will also make sure that "double-sided" polgyon pairs
     // are handled correctly
-    Plane plane = pl->CalcPlane(*pi.verts());
+    Plane const plane = pl->CalcPlane(*pi.verts());
     Plane tplane;
     tplane.MakePlane(pverts[0], pverts[1], pverts[2]);
 
-    if (!plane.EpsilonCompare(tplane, EPSILON)) continue;
+    if (!plane.EpsilonCompare(tplane, EPSILON)) {
+      continue;
+    }
 
     // in case the polygon vertices have been reordered,
     // this takes care of finding "the first" vertex again
     uint startv = 0;
     for (; startv < pverts.size(); startv++) {
-      if (((*pi.verts())[pl->verts[0]].pos - pverts[startv]).length() < EPSILON) break;
+      if (((*pi.verts())[pl->verts[0]].pos - pverts[startv]).length() < EPSILON) {
+        break;
+      }
     }
     // no start vertex has been found
-    if (startv == pverts.size()) continue;
+    if (startv == pverts.size()) {
+      continue;
+    }
 
     // compare the polygon vertices with eachother...
     uint v = 0;
     for (; v < pverts.size(); v++) {
       if (v == pverts.size()) {
-        startVertex = (int)startv;
+        startVertex = static_cast<int>(startv);
         return index;
       }
     }
@@ -308,19 +342,21 @@ int MatchPolygon(MdlObject* root, std::vector<Vector3>& pverts, int& startVertex
 }
 
 bool Model::ImportUVCoords(Model* other, IProgressCtl& progctl) {
-  std::vector<MdlObject*> objects = GetObjectList();
+  std::vector<MdlObject*> const objects = GetObjectList();
   MdlObject* srcobj = other->root;
 
   std::vector<Vector3> pverts;
 
-  int numPl = 0, curPl = 0;
-  for (std::uint32_t a = 0; a < objects.size(); a++) {
-    PolyMesh* pm = objects[a]->GetPolyMesh();
-    if (pm) numPl += pm->poly.size();
+  int numPl = 0;
+  int curPl = 0;
+  for (const auto& object : objects) {
+    PolyMesh* pm = object->GetPolyMesh();
+    if (pm != nullptr) {
+      numPl += pm->poly.size();
+    }
   }
 
-  for (std::uint32_t a = 0; a < objects.size(); a++) {
-    MdlObject* obj = objects[a];
+  for (auto* obj : objects) {
     Matrix objTransform;
     obj->GetFullTransform(objTransform);
     PolyMesh* pm = obj->GetPolyMesh();
@@ -328,9 +364,9 @@ bool Model::ImportUVCoords(Model* other, IProgressCtl& progctl) {
     // give each polygon an independent set of vertices, this will be optimized back to normal later
     std::vector<Vertex> nverts;
     for (PolyIterator pi(obj); !pi.End(); pi.Next()) {
-      for (uint v = 0; v < pi->verts.size(); v++) {
-        nverts.push_back(pm->verts[pi->verts[v]]);
-        pi->verts[v] = nverts.size() - 1;
+      for (int& vert : pi->verts) {
+        nverts.push_back(pm->verts[vert]);
+        vert = nverts.size() - 1;
       }
     }
     pm->verts = nverts;
@@ -338,14 +374,14 @@ bool Model::ImportUVCoords(Model* other, IProgressCtl& progctl) {
     // match our polygons with the ones of the other model
     for (PolyIterator pi(obj); !pi.End(); pi.Next()) {
       pverts.clear();
-      for (uint pv = 0; pv < pi->verts.size(); pv++) {
+      for (int const vert : pi->verts) {
         Vector3 tpos;
-        objTransform.apply(&pm->verts[pi->verts[pv]].pos, &tpos);
+        objTransform.apply(&pm->verts[vert].pos, &tpos);
         pverts.push_back(tpos);
       }
 
-      int startVertex;
-      int bestpl = MatchPolygon(srcobj, pverts, startVertex);
+      int startVertex = 0;
+      int const bestpl = MatchPolygon(srcobj, pverts, startVertex);
       PolyMesh* srcpm = srcobj->GetPolyMesh();
       if (bestpl >= 0) {
         // copy texture coordinates from rt->poly[bestpl] to pl
@@ -356,7 +392,7 @@ bool Model::ImportUVCoords(Model* other, IProgressCtl& progctl) {
         }
       }
 
-      progctl.Update((float)(curPl++) / numPl);
+      progctl.Update(static_cast<float>(curPl++) / numPl);
     }
     obj->InvalidateRenderData();
   }
@@ -366,35 +402,46 @@ bool Model::ImportUVCoords(Model* other, IProgressCtl& progctl) {
 
 static void GetObjectListHelper(MdlObject* obj, std::vector<MdlObject*>& list) {
   list.push_back(obj);
-  for (std::uint32_t a = 0; a < obj->childs.size(); a++) GetObjectListHelper(obj->childs[a], list);
+  for (auto& child : obj->childs) {
+    GetObjectListHelper(child, list);
+  }
 }
 
-std::vector<MdlObject*> Model::GetObjectList() {
+std::vector<MdlObject*> Model::GetObjectList() const {
   std::vector<MdlObject*> objlist;
-  if (root) GetObjectListHelper(root, objlist);
+  if (root != nullptr) {
+    GetObjectListHelper(root, objlist);
+  }
   return objlist;
 }
 
 std::vector<PolyMesh*> Model::GetPolyMeshList() {
-  std::vector<MdlObject*> objlist = GetObjectList();
+  std::vector<MdlObject*> const objlist = GetObjectList();
   std::vector<PolyMesh*> pmlist;
-  for (std::uint32_t a = 0; a < objlist.size(); a++)
-    if (objlist[a]->GetPolyMesh()) pmlist.push_back(objlist[a]->GetPolyMesh());
+  for (const auto& a : objlist) {
+    if (a->GetPolyMesh() != nullptr) {
+      pmlist.push_back(a->GetPolyMesh());
+    }
+  }
   return pmlist;
 }
 
 // loads textures after a creg read serialization
 void Model::PostLoad() {
-  for (uint t = 0; t < texBindings.size(); t++) {
-    if (texBindings[t].name.empty()) continue;
+  for (auto& texBinding : texBindings) {
+    if (texBinding.name.empty()) {
+      continue;
+    }
 
-    texBindings[t].texture = std::make_shared<Texture>(texBindings[t].name);
-    if (texBindings[t].texture->HasError()) texBindings[t].texture = 0;
+    texBinding.texture = std::make_shared<Texture>(texBinding.name);
+    if (texBinding.texture->HasError()) {
+      texBinding.texture = nullptr;
+    }
   }
 }
 
-Model* Model::Clone() {
-  Model* cpy = new Model();
+Model* Model::Clone() const {
+  auto* cpy = new Model();
 
   cpy->texBindings = texBindings;
   cpy->radius = radius;
@@ -402,7 +449,9 @@ Model* Model::Clone() {
   cpy->mid = mid;
   cpy->mapping = mapping;
 
-  if (root) cpy->root = root->Clone();
+  if (root != nullptr) {
+    cpy->root = root->Clone();
+  }
 
   return cpy;
 }
@@ -410,10 +459,10 @@ Model* Model::Clone() {
 unsigned long Model::ObjectSelectionHash() {
   unsigned long ch = 0;
   unsigned long a = 63689;
-  std::vector<MdlObject*> sel = GetSelectedObjects();
+  std::vector<MdlObject*> const sel = GetSelectedObjects();
 
-  for (uint x = 0; x < sel.size(); x++) {
-    ch = ch * a + (intptr_t)sel[x];
+  for (const auto& x : sel) {
+    ch = ch * a + (intptr_t)x;
     a *= 378551;
   }
 
@@ -421,7 +470,8 @@ unsigned long Model::ObjectSelectionHash() {
 }
 
 uint Vector3ToRGB(Vector3 v) {
-  return (uint(v.x * 255.0f) << 16) | (uint(v.y * 255.0f) << 8) | (uint(v.z * 255.0f) << 0);
+  return (static_cast<uint>(v.x * 255.0F) << 16) | (static_cast<uint>(v.y * 255.0F) << 8) |
+         (static_cast<uint>(v.z * 255.0F) << 0);
 }
 
 bool Model::ConvertToS3O(std::string textureName, int texw, int texh) {
@@ -521,7 +571,7 @@ bool Model::ConvertToS3O(std::string textureName, int texw, int texh) {
       auto* tnode = texToNode[poly->texname];
 
       if (poly->verts.size() <= 4) {
-        const float tc[] = {0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f};
+        const float tc[] = {0.0F, 1.0F, 1.0F, 1.0F, 1.0F, 0.0F, 0.0F, 0.0F};
 
         for (uint v = 0; v < poly->verts.size(); v++) {
           vertices.push_back(polymesh->verts[poly->verts[v]]);
@@ -535,11 +585,11 @@ bool Model::ConvertToS3O(std::string textureName, int texw, int texh) {
           poly->verts[v] = vertices.size() - 1;
         }
       } else {
-        for (uint v = 0; v < poly->verts.size(); v++) {
-          vertices.push_back(polymesh->verts[poly->verts[v]]);
+        for (int& vert : poly->verts) {
+          vertices.push_back(polymesh->verts[vert]);
           Vertex& vrt = vertices.back();
-          vrt.tc[0].x = vrt.tc[0].y = 0.0f;
-          poly->verts[v] = vertices.size() - 1;
+          vrt.tc[0].x = vrt.tc[0].y = 0.0F;
+          vert = vertices.size() - 1;
         }
       }
     }
@@ -556,13 +606,13 @@ bool Model::ConvertToS3O(std::string textureName, int texw, int texh) {
 void removeDuplicatedChildPolys(MdlObject* pObj,
                                 std::unordered_map<std::size_t, MdlObject**>& knownHashes) {
   for (auto& obj : pObj->childs) {
-    if (!obj->GetPolyMesh()) {
+    if (obj->GetPolyMesh() == nullptr) {
       std::cout << "-- Found object without Mesh" << std::endl;
       continue;
     }
 
-    auto pm = obj->GetPolyMesh();
-    if (pm->verts.size() < 0) {
+    auto* pm = obj->GetPolyMesh();
+    if (pm->verts.empty()) {
       std::cout << "-- Found empty Mesh" << std::endl;
       continue;
     }
@@ -601,8 +651,8 @@ void removeInvalidChilds(MdlObject* obj) {
       continue;
     }
 
-    auto pm = oChild->GetPolyMesh();
-    if (!pm) {
+    auto* pm = oChild->GetPolyMesh();
+    if (pm == nullptr) {
       oit = obj->childs.erase(oit);
       continue;
     }
@@ -617,7 +667,7 @@ void removeInvalidChilds(MdlObject* obj) {
 }
 
 void Model::Remove3DOBase() {
-  if (!root) {
+  if (root == nullptr) {
     std::cout << "Cleanup3DO() can only be run on the root object." << std::endl;
     return;
   }
@@ -626,8 +676,8 @@ void Model::Remove3DOBase() {
   root = root->childs[0];
 }
 
-void Model::Cleanup() {
-  if (!root) {
+void Model::Cleanup() const {
+  if (root == nullptr) {
     std::cout << "Cleanup() can only be run on the root object." << std::endl;
     return;
   }

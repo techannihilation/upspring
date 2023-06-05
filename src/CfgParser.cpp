@@ -15,20 +15,16 @@ std::vector<CfgValueClass*> CfgValue::classes;
 // CfgWriter - "outputdevice" for the config value nodes
 //-------------------------------------------------------------------------
 
-CfgWriter::CfgWriter(const char* name) {
-  indentLevel = 0;
-
-  out = fopen(name, "w");
-}
+CfgWriter::CfgWriter(const char* name) : indentLevel(0), out(fopen(name, "w")) {}
 
 CfgWriter::~CfgWriter() {
-  if (out) {
+  if (out != nullptr) {
     fclose(out);
-    out = 0;
+    out = nullptr;
   }
 }
 
-bool CfgWriter::IsFailed() { return out == 0 || ferror(out); }
+bool CfgWriter::IsFailed() { return out == nullptr || (ferror(out) != 0); }
 
 void CfgWriter::DecIndent() { indentLevel--; }
 void CfgWriter::IncIndent() { indentLevel++; }
@@ -41,21 +37,29 @@ CfgWriter& CfgWriter::operator<<(char c) {
 
 CfgWriter& CfgWriter::operator<<(const std::string& s) {
   fputs(s.c_str(), out);
-  if (!s.empty()) MakeIndent(s.at(s.size() - 1));
+  if (!s.empty()) {
+    MakeIndent(s.at(s.size() - 1));
+  }
   return *this;
 }
 
 CfgWriter& CfgWriter::operator<<(const char* str) {
   fputs(str, out);
-  int l = strlen(str);
-  if (l) MakeIndent(str[l - 1]);
+  int const l = strlen(str);
+  if (l != 0) {
+    MakeIndent(str[l - 1]);
+  }
   return *this;
 }
 
 void CfgWriter::MakeIndent(char c) {
-  if (c != 0x0D && c != 0x0A) return;
+  if (c != 0x0D && c != 0x0A) {
+    return;
+  }
 
-  for (int a = 0; a < indentLevel; a++) fputs("  ", out);
+  for (int a = 0; a < indentLevel; a++) {
+    fputs("  ", out);
+  }
 }
 
 //-------------------------------------------------------------------------
@@ -63,24 +67,26 @@ void CfgWriter::MakeIndent(char c) {
 //-------------------------------------------------------------------------
 
 void CfgValue::AddValueClass(CfgValueClass* vc) {
-  if (find(classes.begin(), classes.end(), vc) == classes.end()) classes.push_back(vc);
+  if (find(classes.begin(), classes.end(), vc) == classes.end()) {
+    classes.push_back(vc);
+  }
 }
 
 CfgValue* CfgValue::ParseValue(InputBuffer& buf) {
-  CfgValue* v = 0;
+  CfgValue* v = nullptr;
 
   if (buf.SkipWhitespace()) {
     buf.Expecting("Value");
-    return 0;
+    return nullptr;
   }
 
-  for (unsigned int a = 0; a < classes.size(); a++) {
-    if (classes[a]->Identify(buf)) {
-      v = classes[a]->Create();
+  for (auto& classe : classes) {
+    if (classe->Identify(buf)) {
+      v = classe->Create();
 
       if (!v->Parse(buf)) {
         delete v;
-        return 0;
+        return nullptr;
       }
 
       return v;
@@ -88,24 +94,26 @@ CfgValue* CfgValue::ParseValue(InputBuffer& buf) {
   }
 
   // parse standard value types:
-  char r = Lookahead(buf);
+  char const r = Lookahead(buf);
 
   if (buf.CompareIdent("file")) {
     // load a nested config file
     return LoadNestedFile(buf);
-  } else if (isalpha(*buf)) {
+  }
+  if (isalpha(*buf) != 0) {
     v = new CfgLiteral;
-    ((CfgLiteral*)v)->ident = true;
-  } else if (isdigit(r) || *buf == '.' || *buf == '-')
+    (dynamic_cast<CfgLiteral*>(v))->ident = true;
+  } else if ((isdigit(r) != 0) || *buf == '.' || *buf == '-') {
     v = new CfgNumeric;
-  else if (*buf == '"')
+  } else if (*buf == '"') {
     v = new CfgLiteral;
-  else if (*buf == '{')
+  } else if (*buf == '{') {
     v = new CfgList;
+  }
 
-  if (v && !v->Parse(buf)) {
+  if ((v != nullptr) && !v->Parse(buf)) {
     delete v;
-    return 0;
+    return nullptr;
   }
 
   return v;
@@ -120,13 +128,17 @@ CfgList* CfgValue::LoadNestedFile(InputBuffer& buf) {
   buf.SkipWhitespace();
 
   CfgLiteral l;
-  if (!l.Parse(buf)) return 0;
+  if (!l.Parse(buf)) {
+    return nullptr;
+  }
   s = l.value;
 
   // insert the path of the current file in the string
   int i = strlen(buf.filename) - 1;
   while (i > 0) {
-    if (buf.filename[i] == '\\' || buf.filename[i] == '/') break;
+    if (buf.filename[i] == '\\' || buf.filename[i] == '/') {
+      break;
+    }
     i--;
   }
 
@@ -138,28 +150,28 @@ CfgList* CfgValue::LoadFile(const char* name) {
   InputBuffer buf;
 
   FILE* f = fopen(name, "rb");
-  if (!f) {
-    return 0;
+  if (f == nullptr) {
+    return nullptr;
   }
 
   fseek(f, 0, SEEK_END);
   buf.len = ftell(f);
   buf.data = new char[buf.len];
   fseek(f, 0, SEEK_SET);
-  if (!fread(buf.data, buf.len, 1, f)) {
+  if (fread(buf.data, buf.len, 1, f) == 0U) {
     fclose(f);
     delete[] buf.data;
-    return 0;
+    return nullptr;
   }
   buf.filename = name;
 
   fclose(f);
 
-  CfgList* nlist = new CfgList;
+  auto* nlist = new CfgList;
   if (!nlist->Parse(buf, true)) {
     delete nlist;
     delete[] buf.data;
-    return 0;
+    return nullptr;
   }
 
   delete[] buf.data;
@@ -169,7 +181,9 @@ CfgList* CfgValue::LoadFile(const char* name) {
 char CfgValue::Lookahead(InputBuffer& buf) {
   InputBuffer cp = buf;
 
-  if (!cp.SkipWhitespace()) return *cp;
+  if (!cp.SkipWhitespace()) {
+    return *cp;
+  }
 
   return 0;
 }
@@ -185,19 +199,22 @@ bool CfgNumeric::Parse(InputBuffer& buf) {
   ++buf;
   while (1) {
     if (*buf == '.') {
-      if (dot)
+      if (dot) {
         break;
-      else
-        dot = true;
+      }
+      dot = true;
     }
-    if (!(isdigit(*buf) || *buf == '.')) break;
+    if (!(isdigit(*buf) != 0) && *buf != '.') {
+      break;
+    }
     str += *buf;
     ++buf;
   }
-  if (dot)
+  if (dot) {
     value = atof(str.c_str());
-  else
+  } else {
     value = atoi(str.c_str());
+  }
   return true;
 }
 
@@ -220,14 +237,17 @@ bool CfgLiteral::Parse(InputBuffer& buf) {
 
   ++buf;
   while (*buf != '\n') {
-    if (*buf == '\\')
+    if (*buf == '\\') {
       if (buf[1] == '"') {
         value += buf[1];
         buf.pos += 2;
         continue;
       }
+    }
 
-    if (*buf == '"') break;
+    if (*buf == '"') {
+      break;
+    }
 
     value += *buf;
     ++buf;
@@ -237,10 +257,11 @@ bool CfgLiteral::Parse(InputBuffer& buf) {
 }
 
 void CfgLiteral::Write(CfgWriter& w) {
-  if (ident)
+  if (ident) {
     w << value;
-  else
+  } else {
     w << '"' << value << '"';
+  }
 }
 
 //-------------------------------------------------------------------------
@@ -261,15 +282,15 @@ bool CfgListElem::Parse(InputBuffer& buf) {
 
     value = ParseValue(buf);
 
-    return value != 0;
-  } else
-    return true;
+    return value != nullptr;
+  }
+  return true;
 }
 
 void CfgListElem::Write(CfgWriter& w) {
   w << name;
 
-  if (value) {
+  if (value != nullptr) {
     w << " = ";
     value->Write(w);
   }
@@ -294,15 +315,13 @@ bool CfgList::Parse(InputBuffer& buf, bool root) {
       return true;
     }
 
-    childs.push_back(CfgListElem());
-    if (!childs.back().Parse(buf)) return false;
+    childs.emplace_back();
+    if (!childs.back().Parse(buf)) {
+      return false;
+    }
   }
 
-  if (!root && buf.end()) {
-    return false;
-  }
-
-  return true;
+  return root || !buf.end();
 }
 
 void CfgList::Write(CfgWriter& w, bool root) {
@@ -311,7 +330,9 @@ void CfgList::Write(CfgWriter& w, bool root) {
     w.IncIndent();
     w << "\n";
   }
-  for (std::list<CfgListElem>::iterator i = childs.begin(); i != childs.end(); ++i) i->Write(w);
+  for (auto& child : childs) {
+    child.Write(w);
+  }
   if (!root) {
     w << '}';
     w.DecIndent();
@@ -320,49 +341,60 @@ void CfgList::Write(CfgWriter& w, bool root) {
 }
 
 CfgValue* CfgList::GetValue(const char* name) {
-  for (std::list<CfgListElem>::iterator i = childs.begin(); i != childs.end(); ++i)
-    if (!STRCASECMP(i->name.c_str(), name)) return i->value;
-  return 0;
+  for (auto& child : childs) {
+    if (!STRCASECMP(child.name.c_str(), name)) {
+      return child.value;
+    }
+  }
+  return nullptr;
 }
 
 double CfgList::GetNumeric(const char* name, double def) {
   CfgValue* v = GetValue(name);
-  if (!v) return def;
+  if (v == nullptr) {
+    return def;
+  }
 
-  CfgNumeric* n = dynamic_cast<CfgNumeric*>(v);
-  if (!n) return def;
+  auto* n = dynamic_cast<CfgNumeric*>(v);
+  if (n == nullptr) {
+    return def;
+  }
 
   return n->value;
 }
 
 const char* CfgList::GetLiteral(const char* name, const char* def) {
   CfgValue* v = GetValue(name);
-  if (!v) return def;
+  if (v == nullptr) {
+    return def;
+  }
 
-  CfgLiteral* n = dynamic_cast<CfgLiteral*>(v);
-  if (!n) return def;
+  auto* n = dynamic_cast<CfgLiteral*>(v);
+  if (n == nullptr) {
+    return def;
+  }
 
   return n->value.c_str();
 }
 
 void CfgList::AddLiteral(const char* name, const char* val) {
-  CfgLiteral* l = new CfgLiteral;
+  auto* l = new CfgLiteral;
   l->value = val;
-  childs.push_back(CfgListElem());
+  childs.emplace_back();
   childs.back().value = l;
   childs.back().name = name;
 }
 
 void CfgList::AddNumeric(const char* name, double val) {
-  CfgNumeric* n = new CfgNumeric;
+  auto* n = new CfgNumeric;
   n->value = val;
-  childs.push_back(CfgListElem());
+  childs.emplace_back();
   childs.back().value = n;
   childs.back().name = name;
 }
 
 void CfgList::AddValue(const char* name, CfgValue* val) {
-  childs.push_back(CfgListElem());
+  childs.emplace_back();
   childs.back().value = val;
   childs.back().name = name;
 }

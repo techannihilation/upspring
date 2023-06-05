@@ -10,164 +10,201 @@
 #include "Util.h"
 
 /* Values for wfPart.parttype */
-#define WF_FACE 1
-#define WF_LINE 4
-#define WF_VERTEX 7
-#define WF_NORMAL 8
-#define WF_TEXCOORD 9
-#define WF_UNSUPPORTED 10
+enum {
+  WF_FACE = 1,
+  WF_LINE = 4,
+  WF_VERTEX = 7,
+  WF_NORMAL = 8,
+  WF_TEXCOORD = 9,
+  WF_UNSUPPORTED = 10
+};
 
-struct wf_face_vert {
+struct WfFaceVert {
   int vert, tex, norm;
 };
 
-struct wf_face {
-  std::vector<wf_face_vert> verts;
+struct WfFace {
+  std::vector<WfFaceVert> verts;
 };
 
-struct wf_object {
-  ~wf_object() {
-    for (unsigned int a = 0; a < faces.size(); a++) delete faces[a];
+struct WfObject {
+  ~WfObject() {
+    for (auto& face : faces) {
+      delete face;
+    }
     faces.clear();
   }
   std::vector<Vector3> vert;
   std::vector<Vector3> norm;
   std::vector<Vector2> texc;
-  std::vector<wf_face*> faces;
+  std::vector<WfFace*> faces;
 };
 
 #define whitespace " \t"
 
 /* Types of lines that may be read from object file */
-#define VERTEX 1
-#define NORMAL 2
-#define TEXTURE 3
-#define FACE 4
-#define MTLLIB 5
-#define USEMTL 6
-#define MAPLIB 7
-#define USEMAP 8
-#define LINE 9
-#define COMMENT 99
-#define UNSUPPORTED 999
+enum {
+  VERTEX = 1,
+  NORMAL = 2,
+  TEXTURE = 3,
+  FACE = 4,
+  MTLLIB = 5,
+  USEMTL = 6,
+  MAPLIB = 7,
+  USEMAP = 8,
+  LINE = 9,
+  COMMENT = 99,
+  UNSUPPORTED = 999
+};
 
 char* wfReadLine(char* buf, int bufsize, FILE* fp) {
-  int len;
-  if (!fgets(buf, bufsize, fp)) return NULL;
+  int len = 0;
+  if (fgets(buf, bufsize, fp) == nullptr) {
+    return nullptr;
+  }
   len = strlen(buf) - 1;
-  if (len <= 0) return buf;
+  if (len <= 0) {
+    return buf;
+  }
   while ((len < bufsize) && (buf[len - 1] == '\\')) {
-    if (!fgets(buf + len - 1, bufsize - len, fp)) break;
+    if (fgets(buf + len - 1, bufsize - len, fp) == nullptr) {
+      break;
+    }
     len = strlen(buf) - 1;
   }
   return buf;
 }
 
-static void get_vertex(wf_object* obj) {
-  char* v;
+static void get_vertex(WfObject* obj) {
+  char* v = nullptr;
   Vector3 pos;
-  v = strtok(NULL, whitespace);
-  if (v)
+  v = strtok(nullptr, whitespace);
+  if (v != nullptr) {
     pos.x = atof(v);
-  else
+  } else {
     pos.x = 0;
-  v = strtok(NULL, whitespace);
-  if (v)
+  }
+  v = strtok(nullptr, whitespace);
+  if (v != nullptr) {
     pos.y = atof(v);
-  else
+  } else {
     pos.y = 0;
-  v = strtok(NULL, whitespace);
-  if (v)
+  }
+  v = strtok(nullptr, whitespace);
+  if (v != nullptr) {
     pos.z = atof(v);
-  else
+  } else {
     pos.z = 0;
+  }
   obj->vert.push_back(pos);
 }
 
 /* get_normal - processes a 'vn' line; gets the next vertex normal */
-static void get_normal(wf_object* obj) {
-  char* v;
+static void get_normal(WfObject* obj) {
+  char* v = nullptr;
   Vector3 n;
-  v = strtok(NULL, whitespace);
-  if (v)
+  v = strtok(nullptr, whitespace);
+  if (v != nullptr) {
     n.x = atof(v);
-  else
+  } else {
     n.x = 0;
-  v = strtok(NULL, whitespace);
-  if (v)
+  }
+  v = strtok(nullptr, whitespace);
+  if (v != nullptr) {
     n.y = atof(v);
-  else
+  } else {
     n.y = 0;
-  v = strtok(NULL, whitespace);
-  if (v)
+  }
+  v = strtok(nullptr, whitespace);
+  if (v != nullptr) {
     n.z = atof(v);
-  else
+  } else {
     n.z = 0;
+  }
   obj->norm.push_back(n);
 }
 
 /* get_texcoord - processes a 'vt' line; gets the next texture vertex */
-static void get_texcoord(wf_object* obj) {
-  char* v;
+static void get_texcoord(WfObject* obj) {
+  char* v = nullptr;
   Vector3 tc;
-  v = strtok(NULL, whitespace);
-  if (v)
+  v = strtok(nullptr, whitespace);
+  if (v != nullptr) {
     tc.x = atof(v);
-  else
+  } else {
     tc.x = 0;
-  v = strtok(NULL, whitespace);
-  if (v)
+  }
+  v = strtok(nullptr, whitespace);
+  if (v != nullptr) {
     tc.y = atof(v);
-  else
+  } else {
     tc.y = 0;
-  v = strtok(NULL, whitespace);
-  if (v)
+  }
+  v = strtok(nullptr, whitespace);
+  if (v != nullptr) {
     tc.z = atof(v);
-  else
+  } else {
     tc.z = 0;
-  obj->texc.push_back(Vector2(tc.x, tc.y));
+  }
+  obj->texc.emplace_back(tc.x, tc.y);
 }
 
-static void get_face(char* line, wf_object* obj) {
-  int nverts = 0, i = 0, v, vt, vn;
-  char *s, *r;
+static void get_face(char* line, WfObject* obj) {
+  int nverts = 0;
+  int i = 0;
+  int v = 0;
+  int vt = 0;
+  int vn = 0;
+  char* s = nullptr;
+  char* r = nullptr;
   /* Count the number of vertices on the line */
-  while (strtok(NULL, whitespace)) nverts++;
+  while (strtok(nullptr, whitespace) != nullptr) {
+    nverts++;
+  }
   /* Create the struct */
-  wf_face* f = new wf_face;
+  auto* f = new WfFace;
   s = strtok(line, whitespace);
 
-  while ((s = strtok(NULL, whitespace)) != NULL) {
+  while ((s = strtok(nullptr, whitespace)) != nullptr) {
     v = atoi(s);
 
-    wf_face_vert fv;
-    if (v >= 0)
+    WfFaceVert fv{};
+    if (v >= 0) {
       fv.vert = v;
-    else
+    } else {
       fv.vert = obj->vert.size() + 1 + v;
+    }
     /* Find the vertex texture after the first '/' */
     r = s;
-    while ((*r) && (*r != '/')) r++;
-    if (*r) {
+    while (((*r) != 0) && (*r != '/')) {
+      r++;
+    }
+    if (*r != 0) {
       r++;
       vt = atoi(r);
-      if (vt >= 0)
+      if (vt >= 0) {
         fv.tex = vt;
-      else
+      } else {
         fv.tex = obj->texc.size() + 1 + vt;
-    } else
+      }
+    } else {
       fv.tex = 0;
+    }
     /* Find the vertex normal after the second '/' */
-    while ((*r) && (*r != '/')) r++;
-    if (*r) {
+    while (((*r) != 0) && (*r != '/')) {
+      r++;
+    }
+    if (*r != 0) {
       r++;
       vn = atoi(r);
-      if (vn >= 0)
+      if (vn >= 0) {
         fv.norm = vn;
-      else
+      } else {
         fv.tex = obj->norm.size() + 1 + vn;
-    } else
+      }
+    } else {
       fv.norm = 0;
+    }
 
     f->verts.push_back(fv);
 
@@ -180,24 +217,32 @@ static void get_face(char* line, wf_object* obj) {
         strtok() to get the first std::string on the line, and to prepare it
         for parsing by other routines. */
 static int line_type(char* line) {
-  char* cmd;
+  char* cmd = nullptr;
   cmd = strtok(line, whitespace);
-  if (!cmd) return (COMMENT);
-  if (!strcmp(cmd, "v"))
+  if (cmd == nullptr) {
+    return (COMMENT);
+  }
+  if (strcmp(cmd, "v") == 0) {
     return (VERTEX);
-  else if (!strcmp(cmd, "vn"))
+  }
+  if (strcmp(cmd, "vn") == 0) {
     return (NORMAL);
-  else if (!strcmp(cmd, "vt"))
+  }
+  if (strcmp(cmd, "vt") == 0) {
     return (TEXTURE);
-  else if (!strcmp(cmd, "l"))
+  }
+  if (strcmp(cmd, "l") == 0) {
     return (LINE);
-  else if (!strcmp(cmd, "f"))
+  }
+  if (strcmp(cmd, "f") == 0) {
     return (FACE);
-  else if (!strcmp(cmd, "fo"))
+  }
+  if (strcmp(cmd, "fo") == 0) {
     return (FACE);
-  else if (!strcmp(cmd, "mtllib"))
+  }
+  if (strcmp(cmd, "mtllib") == 0) {
     return (MTLLIB);
-  else if (!strcmp(cmd, "usemtl"))
+  } if (!strcmp(cmd, "usemtl"))
     return (USEMTL);
   else if (!strcmp(cmd, "maplib"))
     return (MAPLIB);
@@ -210,8 +255,8 @@ static int line_type(char* line) {
 
 /* process_line - Determines what 'command' a line contains and adds
         the info to the object */
-static void process_line(char* line, wf_object* obj) {
-  int t;
+static void process_line(char* line, WfObject* obj) {
+  int t = 0;
   char linecopy[1024];
   /* Save a copy of the line for get_face et al, before line_type() strtok's it */
   strcpy(linecopy, line);
@@ -349,22 +394,24 @@ static void addNormalToVertNorms(wfFace *face,wfObject *obj,wfNormal norm)
 }
 
 */
-wf_object* ReadWFObject(char* fname, IProgressCtl& progctl) {
-  FILE* fp;
+WfObject* ReadWFObject(char* fname, IProgressCtl& progctl) {
+  FILE* fp = nullptr;
   char line[1024];
-  if ((fp = fopen(fname, "r")) == 0) return (NULL);
+  if ((fp = fopen(fname, "r")) == nullptr) {
+    return (nullptr);
+  }
   int len = 0;
   fseek(fp, 0, SEEK_END);
   len = ftell(fp);
   fseek(fp, 0, SEEK_SET);
 
-  wf_object* obj = new wf_object;
-  while (wfReadLine(line, 1024, fp)) {
+  auto* obj = new WfObject;
+  while (wfReadLine(line, 1024, fp) != nullptr) {
     line[strlen(line) - 1] = '\0'; /* get rid of newline */
     process_line(line, obj);
 
-    int pos = ftell(fp);
-    progctl.Update(pos / (float)len);
+    int const pos = ftell(fp);
+    progctl.Update(pos / static_cast<float>(len));
   }
   fclose(fp);
   return obj;
@@ -375,34 +422,38 @@ bool SaveWavefrontObject(const char* fn, MdlObject* src) {
   obj->FullMerge();
 
   FILE* f = fopen(fn, "w");
-  if (!f) {
+  if (f == nullptr) {
     delete obj;
     return false;
   }
 
   // write verts pos
   PolyMesh* pm = obj->GetPolyMesh();
-  if (!pm) return false;
+  if (pm == nullptr) {
+    return false;
+  }
 
   fprintf(f, "# %zu vertices, %zu polygons\n", pm->verts.size(), pm->poly.size());
 
-  for (std::vector<Vertex>::iterator v = pm->verts.begin(); v != pm->verts.end(); ++v)
-    fprintf(f, "v %f %f %f\n", v->pos.x, v->pos.y, v->pos.z);
+  for (auto& vert : pm->verts) {
+    fprintf(f, "v %f %f %f\n", vert.pos.x, vert.pos.y, vert.pos.z);
+  }
 
   // write normals
-  for (std::vector<Vertex>::iterator v = pm->verts.begin(); v != pm->verts.end(); ++v)
-    fprintf(f, "vn %f %f %f\n", v->normal.x, v->normal.y, v->normal.z);
+  for (auto& vert : pm->verts) {
+    fprintf(f, "vn %f %f %f\n", vert.normal.x, vert.normal.y, vert.normal.z);
+  }
 
   // write tc's
-  for (std::vector<Vertex>::iterator v = pm->verts.begin(); v != pm->verts.end(); ++v)
-    fprintf(f, "vt %f %f 0.0\n", v->tc[0].x, v->tc[0].y);
+  for (auto& vert : pm->verts) {
+    fprintf(f, "vt %f %f 0.0\n", vert.tc[0].x, vert.tc[0].y);
+  }
 
   // write faces
-  for (unsigned int a = 0; a < pm->poly.size(); a++) {
-    Poly* p = pm->poly[a];
+  for (auto* p : pm->poly) {
     fprintf(f, "f");
-    for (unsigned int v = 0; v < p->verts.size(); v++) {
-      int i = p->verts[v] + 1;
+    for (int const vert : p->verts) {
+      int const i = vert + 1;
       fprintf(f, " %d/%d/%d ", i, i, i);
     }
     fprintf(f, "\n");
@@ -414,31 +465,36 @@ bool SaveWavefrontObject(const char* fn, MdlObject* src) {
 }
 
 MdlObject* LoadWavefrontObject(const char* fn, IProgressCtl& progctl) {
-  wf_object* wfobj = ReadWFObject((char*)fn, progctl);
+  WfObject* wfobj = ReadWFObject(const_cast<char*>(fn), progctl);
 
-  if (!wfobj) return 0;
+  if (wfobj == nullptr) {
+    return nullptr;
+  }
 
-  MdlObject* o = new MdlObject;
-  PolyMesh* pm = new PolyMesh;
+  auto* o = new MdlObject;
+  auto* pm = new PolyMesh;
   o->geometry = pm;
 
   for (unsigned int fi = 0; fi < wfobj->faces.size(); fi++) {
     Poly* pl = new Poly;
-    wf_face* face = wfobj->faces[fi];
+    WfFace* face = wfobj->faces[fi];
     pl->verts.resize(face->verts.size());
 
     for (unsigned int a = 0; a < pl->verts.size(); a++) {
-      pm->verts.push_back(Vertex());
+      pm->verts.emplace_back();
       Vertex& v = pm->verts.back();
 
-      wf_face_vert& fv = face->verts[a];
+      WfFaceVert const& fv = face->verts[a];
 
-      if (!wfobj->norm.empty() && fv.norm - 1 < int(wfobj->norm.size()))
+      if (!wfobj->norm.empty() && fv.norm - 1 < static_cast<int>(wfobj->norm.size())) {
         v.normal = wfobj->norm[fv.norm - 1];
-      if (!wfobj->texc.empty() && fv.tex - 1 < int(wfobj->texc.size()))
+      }
+      if (!wfobj->texc.empty() && fv.tex - 1 < static_cast<int>(wfobj->texc.size())) {
         v.tc[0] = wfobj->texc[fv.tex - 1];
-      if (!wfobj->vert.empty() && fv.vert - 1 < int(wfobj->vert.size()))
+      }
+      if (!wfobj->vert.empty() && fv.vert - 1 < static_cast<int>(wfobj->vert.size())) {
         v.pos = wfobj->vert[fv.vert - 1];
+      }
 
       pl->verts[a] = pm->verts.size() - 1;
     }

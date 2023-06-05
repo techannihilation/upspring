@@ -75,7 +75,12 @@
       "type": "cppdbg",
       "request": "launch",
       "program": "${workspaceFolder}/out/build/gcc-debug/src/Upspring",
-      "args": ["--run", "runscripts/convert.lua", "--", "~/.spring/games/TA.sdd/objects3d/cdevastator.3do"],
+      "args": [
+        "--run",
+        "runscripts/convert.lua",
+        "--",
+        "~/.spring/games/TA.sdd/objects3d/cdevastator.3do"
+      ],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",
       "environment": [],

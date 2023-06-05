@@ -17,8 +17,8 @@
 class MappingUI {
  public:
   fltk::Window* CreateUI();
-  fltk::Window* window;
-  UVViewWindow* view;
+  fltk::Window* window{};
+  UVViewWindow* view{};
 
  private:
   inline void cb_Flip_i(fltk::Item*, void*);
@@ -35,13 +35,13 @@ class MappingUI {
 
 class ArchiveListUI {
  public:
-  ArchiveListUI(const ArchiveList& s);
+  ArchiveListUI(ArchiveList s);
   fltk::Window* window;
 
  private:
-  inline void cb_OK_i(fltk::ReturnButton*, void*);
+  inline void cb_OK_i(fltk::ReturnButton*, void*) const;
   static void cb_OK(fltk::ReturnButton*, void*);
-  inline void cb_Cancel_i(fltk::Button*, void*);
+  inline void cb_Cancel_i(fltk::Button*, void*) const;
   static void cb_Cancel(fltk::Button*, void*);
   fltk::Input* edit;
   inline void cb_Browse_i(fltk::Button*, void*);
@@ -63,7 +63,7 @@ class ArchiveListUI {
   ~ArchiveListUI();
 
  private:
-  fltk::Widget* selected();
+  fltk::Widget* selected() const;
 };
 #include <fltk/Choice.h>
 #include <fltk/TiledGroup.h>
@@ -73,16 +73,16 @@ class ArchiveListUI {
 class TexGroupUI {
  public:
   fltk::Window* CreateUI();
-  fltk::Window* window;
+  fltk::Window* window{};
 
  private:
   inline void cb_Add1_i(fltk::Button*, void*);
   static void cb_Add1(fltk::Button*, void*);
 
  public:
-  TextureBrowser* groupTexBrowser;
-  TextureBrowser* texBrowser;
-  fltk::Choice* groups;
+  TextureBrowser* groupTexBrowser{};
+  TextureBrowser* texBrowser{};
+  fltk::Choice* groups{};
 
  private:
   inline void cb_groups_i(fltk::Choice*, void*);
@@ -93,11 +93,11 @@ class TexGroupUI {
   static void cb_Remove1(fltk::Button*, void*);
   inline void cb_Add2_i(fltk::Button*, void*);
   static void cb_Add2(fltk::Button*, void*);
-  inline void cb_Close_i(fltk::Button*, void*);
+  inline void cb_Close_i(fltk::Button*, void*) const;
   static void cb_Close(fltk::Button*, void*);
   inline void cb_Remove2_i(fltk::Button*, void*);
   static void cb_Remove2(fltk::Button*, void*);
-  inline void cb_Select_i(fltk::Button*, void*);
+  inline void cb_Select_i(fltk::Button*, void*) const;
   static void cb_Select(fltk::Button*, void*);
   inline void cb_Load_i(fltk::Button*, void*);
   static void cb_Load(fltk::Button*, void*);
@@ -112,41 +112,41 @@ class TexGroupUI {
 class TexBuilderUI {
  public:
   fltk::Window* CreateUI();
-  fltk::Window* window;
-  fltk::Input* selfIllumTex;
+  fltk::Window* window{};
+  fltk::Input* selfIllumTex{};
 
  private:
-  inline void cb_Browse1_i(fltk::Button*, void*);
+  inline void cb_Browse1_i(fltk::Button*, void*) const;
   static void cb_Browse1(fltk::Button*, void*);
-  inline void cb_Browse2_i(fltk::Button*, void*);
+  inline void cb_Browse2_i(fltk::Button*, void*) const;
   static void cb_Browse2(fltk::Button*, void*);
 
  public:
-  fltk::Input* reflectTex;
-  fltk::Input* output2;
+  fltk::Input* reflectTex{};
+  fltk::Input* output2{};
 
  private:
-  inline void cb_Browse3_i(fltk::Button*, void*);
+  inline void cb_Browse3_i(fltk::Button*, void*) const;
   static void cb_Browse3(fltk::Button*, void*);
   inline void cb_Build_i(fltk::Button*, void*);
   static void cb_Build(fltk::Button*, void*);
 
  public:
-  fltk::Input* colorTex;
-  fltk::Input* teamColorTex;
+  fltk::Input* colorTex{};
+  fltk::Input* teamColorTex{};
 
  private:
-  inline void cb_Browse4_i(fltk::Button*, void*);
+  inline void cb_Browse4_i(fltk::Button*, void*) const;
   static void cb_Browse4(fltk::Button*, void*);
-  inline void cb_Browse5_i(fltk::Button*, void*);
+  inline void cb_Browse5_i(fltk::Button*, void*) const;
   static void cb_Browse5(fltk::Button*, void*);
 
  public:
-  fltk::CheckButton* invertTeamCol;
-  fltk::Input* output1;
+  fltk::CheckButton* invertTeamCol{};
+  fltk::Input* output1{};
 
  private:
-  inline void cb_Browse6_i(fltk::Button*, void*);
+  inline void cb_Browse6_i(fltk::Button*, void*) const;
   static void cb_Browse6(fltk::Button*, void*);
   inline void cb_Build1_i(fltk::Button*, void*);
   static void cb_Build1(fltk::Button*, void*);
@@ -209,7 +209,7 @@ class RotatorUI {
   void Update();
   void Show();
   ~RotatorUI();
-  void Hide();
+  void Hide() const;
   void ResetRotation();
   void ApplyRotationToGeom();
 };
@@ -230,7 +230,7 @@ class EditorUI {
   fltk::Window* window;
 
  private:
-  inline void cb_window_i(fltk::Window*, void*);
+  inline void cb_window_i(fltk::Window*, void*) const;
   static void cb_window(fltk::Window*, void*);
 
  public:
@@ -364,7 +364,7 @@ class EditorUI {
   static void cb_Apply1(fltk::Button*, void*);
   inline void cb_Uniform_i(fltk::Button*, void*);
   static void cb_Uniform(fltk::Button*, void*);
-  inline void cb_Set1_i(fltk::Button*, void*);
+  inline void cb_Set1_i(fltk::Button*, void*) const;
   static void cb_Set1(fltk::Button*, void*);
 
  public:
@@ -431,7 +431,7 @@ class EditorUI {
   static void cb_inputRotY(fltk::NumericInput*, void*);
   inline void cb_Swap_i(fltk::Button*, void*);
   static void cb_Swap(fltk::Button*, void*);
-  inline void cb_Rotator_i(fltk::Button*, void*);
+  inline void cb_Rotator_i(fltk::Button*, void*) const;
   static void cb_Rotator(fltk::Button*, void*);
 
  public:
@@ -439,9 +439,9 @@ class EditorUI {
   fltk::Choice* mappingChooser;
 
  private:
-  inline void cb_S3O_i(fltk::Item*, void*);
+  inline void cb_S3O_i(fltk::Item*, void*) const;
   static void cb_S3O(fltk::Item*, void*);
-  inline void cb_3DO_i(fltk::Item*, void*);
+  inline void cb_3DO_i(fltk::Item*, void*) const;
   static void cb_3DO(fltk::Item*, void*);
 
  public:
@@ -449,14 +449,14 @@ class EditorUI {
   fltk::FileInput* inputTexture1;
 
  private:
-  inline void cb_inputTexture1_i(fltk::FileInput*, void*);
+  inline void cb_inputTexture1_i(fltk::FileInput*, void*) const;
   static void cb_inputTexture1(fltk::FileInput*, void*);
 
  public:
   fltk::FileInput* inputTexture2;
 
  private:
-  inline void cb_inputTexture2_i(fltk::FileInput*, void*);
+  inline void cb_inputTexture2_i(fltk::FileInput*, void*) const;
   static void cb_inputTexture2(fltk::FileInput*, void*);
   inline void cb_Browse7_i(fltk::Button*, void*);
   static void cb_Browse7(fltk::Button*, void*);
@@ -468,13 +468,13 @@ class EditorUI {
   static void cb_Reload1(fltk::Button*, void*);
   inline void cb_Example_i(fltk::Button*, void*);
   static void cb_Example(fltk::Button*, void*);
-  inline void cb_Full_i(fltk::Item*, void*);
+  inline void cb_Full_i(fltk::Item*, void*) const;
   static void cb_Full(fltk::Item*, void*);
-  inline void cb_Basic_i(fltk::Item*, void*);
+  inline void cb_Basic_i(fltk::Item*, void*) const;
   static void cb_Basic(fltk::Item*, void*);
-  inline void cb_Texture_i(fltk::Item*, void*);
+  inline void cb_Texture_i(fltk::Item*, void*) const;
   static void cb_Texture(fltk::Item*, void*);
-  inline void cb_Texture1_i(fltk::Item*, void*);
+  inline void cb_Texture1_i(fltk::Item*, void*) const;
   static void cb_Texture1(fltk::Item*, void*);
 
  public:
@@ -489,9 +489,9 @@ class EditorUI {
   fltk::Choice* textureGroupMenu;
 
  private:
-  inline void cb_textureGroupMenu_i(fltk::Choice*, void*);
+  inline void cb_textureGroupMenu_i(fltk::Choice*, void*) const;
   static void cb_textureGroupMenu(fltk::Choice*, void*);
-  inline void cb_Add4_i(fltk::Button*, void*);
+  inline void cb_Add4_i(fltk::Button*, void*) const;
   static void cb_Add4(fltk::Button*, void*);
 
  public:
@@ -508,27 +508,27 @@ class EditorUI {
   static void cb_Save1(fltk::Item*, void*);
   inline void cb_Save2_i(fltk::Item*, void*);
   static void cb_Save2(fltk::Item*, void*);
-  inline void cb_Exit_i(fltk::Item*, void*);
+  inline void cb_Exit_i(fltk::Item*, void*) const;
   static void cb_Exit(fltk::Item*, void*);
 
  public:
-  fltk::Item* menuEdit_Undo;
+  fltk::Item* menuEdit_Undo{};
 
  private:
   inline void cb_menuEdit_Undo_i(fltk::Item*, void*);
   static void cb_menuEdit_Undo(fltk::Item*, void*);
 
  public:
-  fltk::Item* menuEdit_Redo;
+  fltk::Item* menuEdit_Redo{};
 
  private:
   inline void cb_menuEdit_Redo_i(fltk::Item*, void*);
   static void cb_menuEdit_Redo(fltk::Item*, void*);
   inline void cb_Show_i(fltk::Item*, void*);
   static void cb_Show(fltk::Item*, void*);
-  inline void cb_All_i(fltk::Item*, void*);
+  inline void cb_All_i(fltk::Item*, void*) const;
   static void cb_All(fltk::Item*, void*);
-  inline void cb_Selected_i(fltk::Item*, void*);
+  inline void cb_Selected_i(fltk::Item*, void*) const;
   static void cb_Selected(fltk::Item*, void*);
 
  public:
@@ -537,7 +537,7 @@ class EditorUI {
  private:
   inline void cb_Insert_i(fltk::Item*, void*);
   static void cb_Insert(fltk::Item*, void*);
-  inline void cb_Save3_i(fltk::Item*, void*);
+  inline void cb_Save3_i(fltk::Item*, void*) const;
   static void cb_Save3(fltk::Item*, void*);
   inline void cb_Replace_i(fltk::Item*, void*);
   static void cb_Replace(fltk::Item*, void*);
@@ -555,33 +555,33 @@ class EditorUI {
   static void cb_Recalculate(fltk::Item*, void*);
   inline void cb_Flip1_i(fltk::Item*, void*);
   static void cb_Flip1(fltk::Item*, void*);
-  inline void cb_Generate_i(fltk::Item*, void*);
+  inline void cb_Generate_i(fltk::Item*, void*) const;
   static void cb_Generate(fltk::Item*, void*);
-  inline void cb_Export_i(fltk::Item*, void*);
+  inline void cb_Export_i(fltk::Item*, void*) const;
   static void cb_Export(fltk::Item*, void*);
   inline void cb_Import_i(fltk::Item*, void*);
   static void cb_Import(fltk::Item*, void*);
-  inline void cb_Show1_i(fltk::Item*, void*);
+  inline void cb_Show1_i(fltk::Item*, void*) const;
   static void cb_Show1(fltk::Item*, void*);
-  inline void cb_Show2_i(fltk::Item*, void*);
+  inline void cb_Show2_i(fltk::Item*, void*) const;
   static void cb_Show2(fltk::Item*, void*);
 
  public:
   fltk::PopupMenu* menuAnimation;
 
  private:
-  inline void cb_Show3_i(fltk::Item*, void*);
+  inline void cb_Show3_i(fltk::Item*, void*) const;
   static void cb_Show3(fltk::Item*, void*);
-  inline void cb_Show4_i(fltk::Item*, void*);
+  inline void cb_Show4_i(fltk::Item*, void*) const;
   static void cb_Show4(fltk::Item*, void*);
-  inline void cb_Show5_i(fltk::Item*, void*);
+  inline void cb_Show5_i(fltk::Item*, void*) const;
   static void cb_Show5(fltk::Item*, void*);
 
  public:
   fltk::PopupMenu* menuScript;
 
  private:
-  inline void cb_Load2_i(fltk::Item*, void*);
+  inline void cb_Load2_i(fltk::Item*, void*) const;
   static void cb_Load2(fltk::Item*, void*);
 
  public:
@@ -590,22 +590,22 @@ class EditorUI {
  private:
   inline void cb_Texture2_i(fltk::Item*, void*);
   static void cb_Texture2(fltk::Item*, void*);
-  inline void cb_Texture3_i(fltk::Item*, void*);
+  inline void cb_Texture3_i(fltk::Item*, void*) const;
   static void cb_Texture3(fltk::Item*, void*);
   inline void cb_Save4_i(fltk::Item*, void*);
   static void cb_Save4(fltk::Item*, void*);
   inline void cb_Revert_i(fltk::Item*, void*);
   static void cb_Revert(fltk::Item*, void*);
-  inline void cb_Set2_i(fltk::Item*, void*);
+  inline void cb_Set2_i(fltk::Item*, void*) const;
   static void cb_Set2(fltk::Item*, void*);
-  inline void cb_Set3_i(fltk::Item*, void*);
+  static inline void cb_Set3_i(fltk::Item*, void*);
   static void cb_Set3(fltk::Item*, void*);
 
  public:
   fltk::PopupMenu* menuHelp;
 
  private:
-  inline void cb_About_i(fltk::Item*, void*);
+  static inline void cb_About_i(fltk::Item*, void*);
   static void cb_About(fltk::Item*, void*);
 #include "EditorCB.h"
 };

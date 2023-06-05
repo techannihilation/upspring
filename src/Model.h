@@ -100,7 +100,7 @@ struct IKinfo {
   ~IKinfo();
 
   IKJointType jointType;
-  BaseJoint* joint;
+  BaseJoint* joint{};
 };
 
 struct IRenderData {
@@ -113,16 +113,16 @@ class Rotator {
   Rotator();
   void AddEulerAbsolute(const Vector3& rot);
   void AddEulerRelative(const Vector3& rot);
-  Vector3 GetEuler();
+  Vector3 GetEuler() const;
   void SetEuler(Vector3 euler);
-  void ToMatrix(Matrix& o);
+  void ToMatrix(Matrix& o) const;
   void FromMatrix(const Matrix& r);
-  Quaternion GetQuat();
+  Quaternion GetQuat() const;
   void SetQuat(Quaternion q);
 
   Vector3 euler;
   //	Quaternion q;
-  bool eulerInterp;  // Use euler angles to interpolate
+  bool eulerInterp{};  // Use euler angles to interpolate
 };
 
 class PolyMesh;
@@ -176,8 +176,8 @@ struct MdlObject {
   bool IsEmpty();
   void MergeChild(MdlObject* ch);
   void FullMerge();                   // merge all childs and their subchilds
-  void GetTransform(Matrix& tr);      // calculates the object space -> parent space transform
-  void GetFullTransform(Matrix& tr);  // object space -> world space
+  void GetTransform(Matrix& mat) const;      // calculates the object space -> parent space transform
+  void GetFullTransform(Matrix& tr) const;  // object space -> world space
   std::vector<MdlObject*> GetChildObjects();  // returns all child objects (recursively)
 
   void UnlinkFromParent();
@@ -194,18 +194,18 @@ struct MdlObject {
 
   void load_3do_textures(std::shared_ptr<TextureHandler> par_texhandler);
 
-  bool HasSelectedParent();
+  bool HasSelectedParent() const;
 
   void ApplyTransform(bool rotation, bool scaling, bool position);
   void ApplyParentSpaceTransform(const Matrix& transform);
-  void TransformVertices(const Matrix& transform);
+  void TransformVertices(const Matrix& transform) const;
   void ApproximateOffset();
   void SetPropertiesFromMatrix(Matrix& transform);
   // Apply transform to contents of object,
   // does not touch the properties such as position/scale/rotation
-  void Transform(const Matrix& matrix);
+  void Transform(const Matrix& transform);
 
-  void InvalidateRenderData();
+  void InvalidateRenderData() const;
   void NormalizeNormals();
 
   void MoveOrigin(Vector3 move);
@@ -214,7 +214,7 @@ struct MdlObject {
   void AddChild(MdlObject* o);
   void RemoveChild(MdlObject* o);
 
-  PolyMesh* GetPolyMesh();
+  PolyMesh* GetPolyMesh() const;
   PolyMesh* ToPolyMesh() {
     return geometry ? geometry->ToPolyMesh() : 0;
   }  // returns a new PolyMesh
@@ -230,20 +230,20 @@ struct MdlObject {
   Rotator rotation;
   Vector3 scale;
 
-  Geometry* geometry;
+  Geometry* geometry{};
 
   AnimationInfo animInfo;
 
   std::string name;
-  bool isSelected;
-  bool isOpen;  // childs visible in object browser
+  bool isSelected{};
+  bool isOpen{};  // childs visible in object browser
   IKinfo ikInfo;
 
-  MdlObject* parent;
+  MdlObject* parent{};
   std::vector<MdlObject*> childs;
 
 #ifndef SWIG
-  csurf::Object* csurfobj;
+  csurf::Object* csurfobj{};
 
   struct Selector : ViewSelector {
     Selector(MdlObject* obj) : obj(obj) {}
@@ -254,7 +254,7 @@ struct MdlObject {
     MdlObject* obj;
   };
   Selector* selector;
-  bool bTexturesLoaded;
+  bool bTexturesLoaded{};
 #endif
 };
 
@@ -294,7 +294,7 @@ struct Model {
   void PostLoad();
 
   bool Load3DO(const char* filename, IProgressCtl& progctl = defprogctl);
-  bool Save3DO(const char* filename, IProgressCtl& progctl = defprogctl);
+  bool Save3DO(const char* fn, IProgressCtl& progctl = defprogctl) const;
 
   bool LoadS3O(const char* filename, IProgressCtl& progctl = defprogctl);
   bool SaveS3O(const char* filename, IProgressCtl& progctl = defprogctl);
@@ -304,22 +304,22 @@ struct Model {
   static bool Save(Model* mdl, const std::string& fn, IProgressCtl& progctl = defprogctl);
 
   // exports merged version of the model
-  bool ExportUVMesh(const char* fn);
+  bool ExportUVMesh(const char* fn) const;
 
   // copies the UV coords of the single piece exported by ExportUVMesh back to the model
   bool ImportUVMesh(const char* fn, IProgressCtl& progctl = defprogctl);
   bool ImportUVCoords(Model* other, IProgressCtl& progctl = defprogctl);
 
   void InsertModel(MdlObject* obj, Model* sub);
-  std::vector<MdlObject*> GetSelectedObjects();
-  std::vector<MdlObject*> GetObjectList();  // returns all objects
+  std::vector<MdlObject*> GetSelectedObjects() const;
+  std::vector<MdlObject*> GetObjectList() const;  // returns all objects
   std::vector<PolyMesh*> GetPolyMeshList();
   void DeleteObject(MdlObject* obj);
   void ReplaceObject(MdlObject* oldObj, MdlObject* newObj);
   void EstimateMidPosition();
   void CalculateRadius();
   void SwapObjects(MdlObject* a, MdlObject* b);
-  Model* Clone();
+  Model* Clone() const;
 
   unsigned long ObjectSelectionHash();
 
@@ -329,7 +329,7 @@ struct Model {
   bool ConvertToS3O(std::string texName, int texw, int texh);
 
   void Remove3DOBase();
-  void Cleanup();
+  void Cleanup() const;
   void FlipUVs();
   void MirrorUVs();
   void AllLowerCaseNames();
@@ -361,10 +361,10 @@ struct Model {
   std::shared_ptr<TextureHandler> texture_handler_;
 };
 
-MdlObject* Load3DSObject(const char* filename, IProgressCtl& progctl);
-bool Save3DSObject(const char* filename, MdlObject* obj, IProgressCtl& progctl);
+MdlObject* Load3DSObject(const char* fn, IProgressCtl& progctl);
+bool Save3DSObject(const char* fn, MdlObject* obj, IProgressCtl& progctl);
 MdlObject* LoadWavefrontObject(const char* fn, IProgressCtl& progctl);
-bool SaveWavefrontObject(const char* fn, MdlObject* obj);
+bool SaveWavefrontObject(const char* fn, MdlObject* src);
 
 void GenerateUniqueVectors(const std::vector<Vertex>& verts, std::vector<Vector3>& vertPos,
                            std::vector<int>& old2new);

@@ -35,12 +35,14 @@
 // CopyBuffer - implements cut/copy/paste actions
 // ------------------------------------------------------------------------------------------------
 
-CopyBuffer::CopyBuffer() {}
+CopyBuffer::CopyBuffer() = default;
 
 CopyBuffer::~CopyBuffer() { Clear(); }
 
 void CopyBuffer::Clear() {
-  for (std::uint32_t a = 0; a < buffer.size(); a++) delete buffer[a];
+  for (auto& a : buffer) {
+    delete a;
+  }
   buffer.clear();
 }
 
@@ -48,10 +50,12 @@ void CopyBuffer::Copy(Model* mdl) {
   Clear();
 
   std::vector<MdlObject*> sel = mdl->GetSelectedObjects();
-  for (std::uint32_t a = 0; a < sel.size(); a++) {
-    if (sel[a]->HasSelectedParent()) continue;  // the parent will be copied anyway
+  for (auto& a : sel) {
+    if (a->HasSelectedParent()) {
+      continue;  // the parent will be copied anyway
+    }
 
-    buffer.push_back(sel[a]->Clone());
+    buffer.push_back(a->Clone());
   }
 }
 
@@ -60,16 +64,18 @@ void CopyBuffer::Cut(Model* mdl) {
 
   for (;;) {
     std::vector<MdlObject*> sel = mdl->GetSelectedObjects();
-    if (sel.empty()) break;
+    if (sel.empty()) {
+      break;
+    }
 
     MdlObject* obj = sel.front();
-    if (obj->parent) {
+    if (obj->parent != nullptr) {
       MdlObject* p = obj->parent;
       p->childs.erase(find(p->childs.begin(), p->childs.end(), obj));
-      obj->parent = 0;
+      obj->parent = nullptr;
     } else {
       assert(mdl->root == obj);
-      mdl->root = 0;
+      mdl->root = nullptr;
     }
 
     obj->isSelected = false;
@@ -78,19 +84,19 @@ void CopyBuffer::Cut(Model* mdl) {
 }
 
 void CopyBuffer::Paste(Model* mdl, MdlObject* where) {
-  for (std::uint32_t a = 0; a < buffer.size(); a++) {
-    if (where) {
-      MdlObject* obj = buffer[a]->Clone();
+  for (auto& a : buffer) {
+    if (where != nullptr) {
+      MdlObject* obj = a->Clone();
       where->childs.push_back(obj);
       obj->parent = where;
       obj->isOpen = true;
     } else {
-      if (mdl->root) {
+      if (mdl->root != nullptr) {
         fltk::message("There can only be one root object.");
         return;
       }
-      mdl->root = buffer[a]->Clone();
-      mdl->root->parent = 0;
+      mdl->root = a->Clone();
+      mdl->root->parent = nullptr;
     }
   }
 }
@@ -101,63 +107,71 @@ void CopyBuffer::Paste(Model* mdl, MdlObject* where) {
 
 void ModifyObjects(MdlObject* obj, Vector3 d, void (*fn)(MdlObject* obj, Vector3 d)) {
   fn(obj, d);
-  for (std::uint32_t a = 0; a < obj->childs.size(); a++) ModifyObjects(obj->childs[a], d, fn);
+  for (auto& child : obj->childs) {
+    ModifyObjects(child, d, fn);
+  }
 }
 
-static const float SpeedMod = 0.05f;
-static const float AngleMod = 1.0f;
+static const float SpeedMod = 0.05F;
+static const float AngleMod = 1.0F;
 
 struct ECameraTool : Tool {
+  virtual ~ECameraTool() = default;
   ECameraTool() {
     isToggle = true;
     imageFile = "camera.gif";
   }
 
-  bool toggle(bool enable) { return true; }
+  bool toggle(bool /*enable*/) override { return true; }
 
-  void mouse(EditorViewWindow* view, int msg, Point move);
+  void mouse(EditorViewWindow* view, int msg, Point move) override;
 } static CameraTool;
 
 // ------------------------- move -----------------------------
 
 struct EMoveTool : Tool {
+  virtual ~EMoveTool() = default;
   EMoveTool() {
     isToggle = true;
     imageFile = "move.gif";
   }
 
-  bool toggle(bool enable) { return true; }
+  bool toggle(bool /*enable*/) override { return true; }
 
   static void apply(MdlObject* obj, Vector3 d) {
-    if (obj->isSelected) obj->position += d;
+    if (obj->isSelected) {
+      obj->position += d;
+    }
   }
 
   static void ApplyMoveOp(Model* mdl, void* ud) {
-    Vector3* d = (Vector3*)ud;
-    if (mdl->root) ModifyObjects(mdl->root, *d, apply);
+    auto* d = static_cast<Vector3*>(ud);
+    if (mdl->root != nullptr) {
+      ModifyObjects(mdl->root, *d, apply);
+    }
   }
 
-  void mouse(EditorViewWindow* view, int msg, Point move) {
-    Point m = move;
+  void mouse(EditorViewWindow* view, int msg, Point move) override {
+    Point const m = move;
 
-    if ((fltk::event_state() & fltk::ALT) && !(fltk::event_state() & fltk::CTRL)) {
+    if (((fltk::event_state() & fltk::ALT) != 0U) && ((fltk::event_state() & fltk::CTRL) == 0U)) {
       CameraTool.mouse(view, msg, move);
       return;
     }
 
-    if ((msg == fltk::MOVE || msg == fltk::DRAG) && (fltk::event_state() & fltk::BUTTON1)) {
+    if ((msg == fltk::MOVE || msg == fltk::DRAG) && ((fltk::event_state() & fltk::BUTTON1) != 0U)) {
       Vector3 d;
       switch (view->GetMode()) {
         case MAP_3D:
           return;
         case MAP_XY:
-          d = Vector3(m.x, -m.y, 0.0f);
+          d = Vector3(m.x, -m.y, 0.0F);
           break;
         case MAP_XZ:
-          d = Vector3(m.x, 0.0f, -m.y);
+          d = Vector3(m.x, 0.0F, -m.y);
           break;
         case MAP_YZ:
-          d = Vector3(0.0f, -m.y, m.x);
+          d = Vector3(0.0F, -m.y, m.x);
           break;
       }
       d /= view->cam.zoom;
@@ -165,14 +179,16 @@ struct EMoveTool : Tool {
 
       editor->RedrawViews();
     }
-    if (fltk::event_state() & fltk::BUTTON2) view->cam.MouseEvent(view, msg, move);
+    if ((fltk::event_state() & fltk::BUTTON2) != 0U) {
+      view->cam.MouseEvent(view, msg, move);
+    }
   }
 } static MoveTool;
 
 void ECameraTool::mouse(EditorViewWindow* view, int msg, Point move) {
-  int s = fltk::event_state();
+  int const s = fltk::event_state();
 
-  if ((fltk::event_state() & fltk::CTRL) && !(fltk::event_state() & fltk::ALT)) {
+  if (((fltk::event_state() & fltk::CTRL) != 0U) && ((fltk::event_state() & fltk::ALT) == 0U)) {
     MoveTool.mouse(view, msg, move);
     return;
   }
@@ -183,12 +199,13 @@ void ECameraTool::mouse(EditorViewWindow* view, int msg, Point move) {
 // ------------------------------ rotate ------------------------------
 
 struct ERotateTool : public Tool {
+  virtual ~ERotateTool() = default;
   ERotateTool() {
     imageFile = "rotate.gif";
     isToggle = true;
   }
 
-  bool toggle(bool enabletool) { return true; }
+  bool toggle(bool /*enabletool*/) override { return true; }
 
   static void apply(MdlObject* n, Vector3 rot) {
     if (n->isSelected) {
@@ -201,20 +218,22 @@ struct ERotateTool : public Tool {
   }
 
   static void ApplyRotateOp(Model* mdl, void* d) {
-    Vector3* rot = (Vector3*)d;
+    auto* rot = static_cast<Vector3*>(d);
 
-    if (mdl->root) ModifyObjects(mdl->root, *rot, apply);
+    if (mdl->root != nullptr) {
+      ModifyObjects(mdl->root, *rot, apply);
+    }
   }
 
-  void mouse(EditorViewWindow* view, int msg, Point move) {
-    if ((fltk::event_state() & fltk::ALT) && !(fltk::event_state() & fltk::CTRL)) {
+  void mouse(EditorViewWindow* view, int msg, Point move) override {
+    if (((fltk::event_state() & fltk::ALT) != 0U) && ((fltk::event_state() & fltk::CTRL) == 0U)) {
       CameraTool.mouse(view, msg, move);
       return;
     }
 
-    if ((msg == fltk::DRAG || msg == fltk::MOVE) && (fltk::event_state() & fltk::BUTTON1)) {
+    if ((msg == fltk::DRAG || msg == fltk::MOVE) && ((fltk::event_state() & fltk::BUTTON1) != 0U)) {
       Vector3 rot;
-      float r = AngleMod * move.x / 180.0f * M_PI;
+      float const r = AngleMod * move.x / 180.0F * M_PI;
       switch (view->GetMode()) {
         case MAP_3D:
           return;
@@ -230,25 +249,33 @@ struct ERotateTool : public Tool {
       }
 
       editor->RedrawViews();
-    } else if (fltk::event_state() & fltk::BUTTON2)
+    } else if ((fltk::event_state() & fltk::BUTTON2) != 0U) {
       view->cam.MouseEvent(view, msg, move);
+    }
   }
 } static RotateTool;
 
 // --------------------------------- scale --------------------------------------
 
 struct EScaleTool : public Tool {
+  virtual ~EScaleTool() = default;
   EScaleTool() {
     imageFile = "scale.gif";
     isToggle = true;
   }
 
-  bool toggle(bool enabletool) { return true; }
+  bool toggle(bool /*enabletool*/) override { return true; }
 
   static void limitscale(Vector3* s) {
-    if (fabs(s->x) < EPSILON) s->x = (s->x >= 0) ? EPSILON : -EPSILON;
-    if (fabs(s->y) < EPSILON) s->y = (s->y >= 0) ? EPSILON : -EPSILON;
-    if (fabs(s->z) < EPSILON) s->z = (s->z >= 0) ? EPSILON : -EPSILON;
+    if (fabs(s->x) < EPSILON) {
+      s->x = (s->x >= 0) ? EPSILON : -EPSILON;
+    }
+    if (fabs(s->y) < EPSILON) {
+      s->y = (s->y >= 0) ? EPSILON : -EPSILON;
+    }
+    if (fabs(s->z) < EPSILON) {
+      s->z = (s->z >= 0) ? EPSILON : -EPSILON;
+    }
   }
 
   static void apply(MdlObject* obj, Vector3 scale) {
@@ -259,39 +286,42 @@ struct EScaleTool : public Tool {
   }
 
   static void ApplyScaleOp(Model* mdl, void* d) {
-    Vector3* s = (Vector3*)d;
+    auto* s = static_cast<Vector3*>(d);
 
-    if (mdl->root) ModifyObjects(mdl->root, *s, apply);
+    if (mdl->root != nullptr) {
+      ModifyObjects(mdl->root, *s, apply);
+    }
   }
 
-  void mouse(EditorViewWindow* view, int msg, Point move) {
-    if ((fltk::event_state() & fltk::ALT) && !(fltk::event_state() & fltk::CTRL)) {
+  void mouse(EditorViewWindow* view, int msg, Point move) override {
+    if (((fltk::event_state() & fltk::ALT) != 0U) && ((fltk::event_state() & fltk::CTRL) == 0U)) {
       CameraTool.mouse(view, msg, move);
       return;
     }
 
-    if ((msg == fltk::DRAG || msg == fltk::MOVE) && (fltk::event_state() & fltk::BUTTON1)) {
+    if ((msg == fltk::DRAG || msg == fltk::MOVE) && ((fltk::event_state() & fltk::BUTTON1) != 0U)) {
       Vector3 s;
-      float sx = 1.0f + move.x * 0.01f;
-      float sy = 1.0f - move.y * 0.01f;
+      float const sx = 1.0F + move.x * 0.01F;
+      float const sy = 1.0F - move.y * 0.01F;
 
       switch (view->GetMode()) {
         case MAP_3D:
           return;
         case MAP_XY:
-          s = Vector3(sx, sy, 1.0f);
+          s = Vector3(sx, sy, 1.0F);
           break;
         case MAP_XZ:
-          s = Vector3(sx, 1.0f, sy);
+          s = Vector3(sx, 1.0F, sy);
           break;
         case MAP_YZ:
-          s = Vector3(1.0f, sy, sx);
+          s = Vector3(1.0F, sy, sx);
           break;
       }
 
       editor->RedrawViews();
-    } else if (fltk::event_state() & fltk::BUTTON2)
+    } else if ((fltk::event_state() & fltk::BUTTON2) != 0U) {
       view->cam.MouseEvent(view, msg, move);
+    }
   }
 
 } static ScaleTool;
@@ -300,41 +330,46 @@ struct EScaleTool : public Tool {
 //  move the objects while moving the vertices in the opposite direction
 
 struct EOriginMoveTool : public Tool {
+  virtual ~EOriginMoveTool() = default;
   EOriginMoveTool() {
     imageFile = "originmove.png";
     isToggle = true;
   }
 
-  bool toggle(bool enabletool) { return true; }
+  bool toggle(bool /*enabletool*/) override { return true; }
 
   static void apply(MdlObject* o, Vector3 move) {
-    if (!o->isSelected) return;
+    if (!o->isSelected) {
+      return;
+    }
 
     o->MoveOrigin(move);
   }
 
   static void ApplyOriginMoveOp(Model* mdl, void* ud) {
-    Vector3* d = (Vector3*)ud;
+    auto* d = static_cast<Vector3*>(ud);
 
-    if (mdl->root) ModifyObjects(mdl->root, *d, apply);
+    if (mdl->root != nullptr) {
+      ModifyObjects(mdl->root, *d, apply);
+    }
   }
 
-  void mouse(EditorViewWindow* view, int msg, Point move) {
-    Point m = move;
+  void mouse(EditorViewWindow* view, int msg, Point move) override {
+    Point const m = move;
 
-    if ((msg == fltk::MOVE || msg == fltk::DRAG) && (fltk::event_state() & fltk::BUTTON1)) {
+    if ((msg == fltk::MOVE || msg == fltk::DRAG) && ((fltk::event_state() & fltk::BUTTON1) != 0U)) {
       Vector3 d;
       switch (view->GetMode()) {
         case MAP_3D:
           return;
         case MAP_XY:
-          d = Vector3(m.x, -m.y, 0.0f);
+          d = Vector3(m.x, -m.y, 0.0F);
           break;
         case MAP_XZ:
-          d = Vector3(m.x, 0.0f, -m.y);
+          d = Vector3(m.x, 0.0F, -m.y);
           break;
         case MAP_YZ:
-          d = Vector3(0.0f, -m.y, m.x);
+          d = Vector3(0.0F, -m.y, m.x);
           break;
       }
       d /= view->cam.zoom;
@@ -349,56 +384,68 @@ struct EOriginMoveTool : public Tool {
 // --------------------------------- apply texture tool --------------------------------------
 
 struct ETextureTool : Tool {
-  bool enabled;
+  virtual ~ETextureTool() = default;
+  bool enabled{false};
   ETextureTool() {
     imageFile = "texture.gif";
     isToggle = true;
-    enabled = false;
   }
 
   static void applyTexture(MdlObject* o, std::shared_ptr<Texture> par_tex) {
     PolyMesh* pm = o->GetPolyMesh();
-    if (pm) {
-      for (int a = 0; a < pm->poly.size(); a++) {
-        if (pm->poly[a]->isSelected) {
-          pm->poly[a]->texture = par_tex;
-          pm->poly[a]->texname = par_tex->name;
+    if (pm != nullptr) {
+      for (auto& a : pm->poly) {
+        if (a->isSelected) {
+          a->texture = par_tex;
+          a->texname = par_tex->name;
         }
       }
     }
-    for (std::uint32_t a = 0; a < o->childs.size(); a++) applyTexture(o->childs[a], par_tex);
+    for (auto& child : o->childs) {
+      applyTexture(child, par_tex);
+    }
   }
 
   static void callback(std::shared_ptr<Texture> tex, void* data) {
-    ETextureTool* tool = (ETextureTool*)data;
+    auto* tool = static_cast<ETextureTool*>(data);
     Model* model = tool->editor->GetMdl();
-    if (model->root) applyTexture(model->root, tex);
+    if (model->root != nullptr) {
+      applyTexture(model->root, tex);
+    }
     tool->editor->RedrawViews();
   }
 
   static void deselect(MdlObject* o) {
-    for (PolyIterator pi(o); !pi.End(); pi.Next()) pi->isSelected = false;
+    for (PolyIterator pi(o); !pi.End(); pi.Next()) {
+      pi->isSelected = false;
+    }
   }
 
-  bool toggle(bool enable) {
+  bool toggle(bool enable) override {
     if (enable) {
       editor->SetTextureSelectCallback(callback, this);
       MdlObject* r = editor->GetMdl()->root;
-      if (r) IterateObjects(r, deselect);
-    } else
-      editor->SetTextureSelectCallback(0, 0);
+      if (r != nullptr) {
+        IterateObjects(r, deselect);
+      }
+    } else {
+      editor->SetTextureSelectCallback(nullptr, nullptr);
+    }
     enabled = enable;
     return true;
   }
 
-  bool needsPolySelect() { return enabled; }
+  bool needsPolySelect() override { return enabled; }
 
-  void mouse(EditorViewWindow* view, int msg, Point move) { CameraTool.mouse(view, msg, move); }
+  void mouse(EditorViewWindow* view, int msg, Point move) override {
+    CameraTool.mouse(view, msg, move);
+  }
 } static TextureMapTool;
 
 // --------------------------------- Tools collection --------------------------------------
 
 struct EPolyColorTool : Tool {
+  virtual ~EPolyColorTool() = default;
   Vector3 color;
 
   EPolyColorTool() : Tool() {
@@ -407,86 +454,107 @@ struct EPolyColorTool : Tool {
   }
 
   static void applyColor(MdlObject* o, Vector3 color) {
-    for (PolyIterator pi(o); !pi.End(); pi.Next())
+    for (PolyIterator pi(o); !pi.End(); pi.Next()) {
       if (pi->isSelected) {
         pi->color = color;
         pi->texname.clear();
-        pi->texture = 0;
+        pi->texture = nullptr;
       }
-    for (std::uint32_t a = 0; a < o->childs.size(); a++) applyColor(o->childs[a], color);
+    }
+    for (auto& child : o->childs) {
+      applyColor(child, color);
+    }
   }
 
-  bool toggle(bool enable) { return true; }
-  void click() {
-    if (!fltk::color_chooser("Color for selected polygons", color.x, color.y, color.z)) return;
+  bool toggle(bool /*enable*/) override { return true; }
+  void click() override {
+    if (!fltk::color_chooser("Color for selected polygons", color.x, color.y, color.z)) {
+      return;
+    }
 
     Model* m = editor->GetMdl();
-    if (m->root) applyColor(m->root, color);
+    if (m->root != nullptr) {
+      applyColor(m->root, color);
+    }
 
     editor->RedrawViews();
   }
 } static PolygonColorTool;
 
 struct EPolyFlipTool : Tool {
+  virtual ~EPolyFlipTool() = default;
   EPolyFlipTool() : Tool() {
     imageFile = "polyflip.png";
     isToggle = false;
   }
 
   static void flip(MdlObject* o) {
-    for (PolyIterator pi(o); !pi.End(); pi.Next())
-      if (pi->isSelected) pi->Flip();
+    for (PolyIterator pi(o); !pi.End(); pi.Next()) {
+      if (pi->isSelected) {
+        pi->Flip();
+      }
+    }
   }
 
-  bool toggle(bool enable) { return true; }
-  void click() {
+  bool toggle(bool /*enable*/) override { return true; }
+  void click() override {
     Model* m = editor->GetMdl();
-    if (m->root) IterateObjects(m->root, flip);
+    if (m->root != nullptr) {
+      IterateObjects(m->root, flip);
+    }
     editor->RedrawViews();
   }
 } static PolygonFlipTool;
 
 struct ERotateTexTool : Tool {
+  virtual ~ERotateTexTool() = default;
   ERotateTexTool() {
     isToggle = false;
     imageFile = "rotatetex.png";
   }
 
   static void rotatetex(MdlObject* o) {
-    for (PolyIterator p(o); !p.End(); p.Next())
-      if (p->isSelected) p->RotateVerts();
+    for (PolyIterator p(o); !p.End(); p.Next()) {
+      if (p->isSelected) {
+        p->RotateVerts();
+      }
+    }
   }
 
-  bool toggle(bool enable) { return true; }
-  void click() {
+  bool toggle(bool /*enable*/) override { return true; }
+  void click() override {
     Model* m = editor->GetMdl();
-    if (m->root) IterateObjects(m->root, rotatetex);
+    if (m->root != nullptr) {
+      IterateObjects(m->root, rotatetex);
+    }
     editor->RedrawViews();
   }
 } static RotateTexTool;
 
 struct ECurvedPolyTool : Tool {
+  virtual ~ECurvedPolyTool() = default;
   ECurvedPolyTool() { isToggle = false, imageFile = "curvedpoly.png"; }
 
   static void togglecurved(MdlObject* o) {
-    for (PolyIterator p(o); !p.End(); p.Next())
-      if (p->isSelected) p->isCurved = !p->isCurved;
+    for (PolyIterator p(o); !p.End(); p.Next()) {
+      if (p->isSelected) {
+        p->isCurved = !p->isCurved;
+      }
+    }
   }
 
-  bool toggle(bool enable) { return true; }
-  void click() {
+  bool toggle(bool /*enable*/) override { return true; }
+  void click() override {
     Model* m = editor->GetMdl();
-    if (m->root) IterateObjects(m->root, togglecurved);
+    if (m->root != nullptr) {
+      IterateObjects(m->root, togglecurved);
+    }
     editor->RedrawViews();
   }
 } static ToggleCurvedPolyTool;
 
 // --------------------------------- Tools collection --------------------------------------
-Tools::Tools() {
-  camera = &CameraTool;
-  move = &MoveTool;
-  rotate = &RotateTool;
-  scale = &ScaleTool;
+Tools::Tools() : camera(&CameraTool), move(&MoveTool), rotate(&RotateTool), scale(&ScaleTool) {
   texmap = &TextureMapTool;
   color = &PolygonColorTool;
   flip = &PolygonFlipTool;
@@ -494,20 +562,27 @@ Tools::Tools() {
   rotateTex = &RotateTexTool;
   toggleCurvedPoly = &ToggleCurvedPolyTool;
 
-  Tool* _tools[] = {camera,     move,      rotate,           scale, texmap, color, flip,
-                    originMove, rotateTex, toggleCurvedPoly, 0};
-  for (std::uint32_t a = 0; _tools[a]; a++) tools.push_back(_tools[a]);
+  Tool* _tools[] = {camera,     move,      rotate,           scale,  texmap, color, flip,
+                    originMove, rotateTex, toggleCurvedPoly, nullptr};
+  for (std::uint32_t a = 0; _tools[a] != nullptr; a++) {
+    tools.push_back(_tools[a]);
+  }
 }
 
-Tool* Tools::GetDefaultTool() { return camera; }
+Tool* Tools::GetDefaultTool() const { return camera; }
 
 void Tools::Disable() {
-  for (std::uint32_t a = 0; a < tools.size(); a++)
-    if (tools[a]->isToggle) tools[a]->toggle(false);
+  for (auto& tool : tools) {
+    if (tool->isToggle) {
+      tool->toggle(false);
+    }
+  }
 }
 
 void Tools::SetEditor(IEditor* editor) {
-  for (std::uint32_t a = 0; a < tools.size(); a++) tools[a]->editor = editor;
+  for (auto& tool : tools) {
+    tool->editor = editor;
+  }
 }
 
 void Tools::LoadImages() {
@@ -532,7 +607,7 @@ void Tools::LoadImages() {
       continue;
     }
 
-    fltk::Image* img = new fltk::Image(image.data(), fltk::RGBA, image.width(), image.height());
+    auto* img = new fltk::Image(image.data(), fltk::RGBA, image.width(), image.height());
     tool->button->image(img);
     tool->button->label("");
   }

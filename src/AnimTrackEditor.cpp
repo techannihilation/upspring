@@ -16,10 +16,8 @@
 
 #include <fltk/draw.h>
 
-AnimTrackEditorUI::AnimTrackEditorUI(IEditor* editor, TimelineUI* tl) {
-  callback = editor;
-  timeline = tl;
-
+AnimTrackEditorUI::AnimTrackEditorUI(IEditor* editor, TimelineUI* tl)
+    : callback(editor), timeline(tl) {
   CreateUI();
 
   trackView->trackUI = this;
@@ -29,36 +27,44 @@ AnimTrackEditorUI::AnimTrackEditorUI(IEditor* editor, TimelineUI* tl) {
 
 AnimTrackEditorUI::~AnimTrackEditorUI() { delete window; }
 
-void AnimTrackEditorUI::Show() {
+void AnimTrackEditorUI::Show() const {
   window->set_non_modal();
   window->show();
 }
 
-void AnimTrackEditorUI::Hide() { window->hide(); }
+void AnimTrackEditorUI::Hide() const { window->hide(); }
 
 void AnimTrackEditorUI::toggleMoveView() {}
 
 void AnimTrackEditorUI::cmdAutoFitView() {
-  float maxY = -100000.0f;
+  float maxY = -100000.0F;
   float minY = -maxY;
 
-  for (std::list<AnimTrackEditorUI::AnimObject>::iterator oi = objects.begin(); oi != objects.end();
-       ++oi) {
-    for (unsigned int p = 0; p < oi->props.size(); p++) {
-      if (!oi->props[p].display) continue;
+  for (auto& object : objects) {
+    for (auto& prop : object.props) {
+      if (!prop.display) {
+        continue;
+      }
 
-      float step = (trackView->maxTime - trackView->minTime) / trackView->w();
-      int x = 0, lastkey = -1;
+      float const step = (trackView->maxTime - trackView->minTime) / trackView->w();
+      int x = 0;
+      int lastkey = -1;
       for (float time = trackView->minTime; x < trackView->w(); time += step, x++) {
-        float y = oi->props[p].EvaluateY(time, lastkey);
-        if (minY > y) minY = y;
-        if (maxY < y) maxY = y;
+        float const y = prop.EvaluateY(time, lastkey);
+        if (minY > y) {
+          minY = y;
+        }
+        if (maxY < y) {
+          maxY = y;
+        }
       }
     }
   }
   float d = maxY - minY;
-  if (!d) d = 1.0f;
-  d *= 0.1f;
+  if (d == 0.0F) {
+    d = 1.0F;
+  }
+  d *= 0.1F;
   trackView->minY = minY - d;
   trackView->maxY = maxY + d;
   trackView->redraw();
@@ -68,24 +74,31 @@ void AnimTrackEditorUI::cmdAutoFitTime() {
   float minTime = 10000;
   float maxTime = -10000;
   bool keys = false;
-  for (std::list<AnimTrackEditorUI::AnimObject>::iterator oi = objects.begin(); oi != objects.end();
-       ++oi) {
-    for (unsigned int p = 0; p < oi->props.size(); p++) {
-      if (!oi->props[p].display) continue;
+  for (auto& object : objects) {
+    for (auto& p : object.props) {
+      if (!p.display) {
+        continue;
+      }
 
-      AnimProperty* prop = oi->props[p].prop;
-      int nk = prop->NumKeys();
+      AnimProperty* prop = p.prop;
+      int const nk = prop->NumKeys();
       if (nk > 0) {
         keys = true;
-        if (minTime > prop->GetKeyTime(0)) minTime = prop->GetKeyTime(0);
-        if (maxTime < prop->GetKeyTime(nk - 1)) maxTime = prop->GetKeyTime(nk - 1);
+        if (minTime > prop->GetKeyTime(0)) {
+          minTime = prop->GetKeyTime(0);
+        }
+        if (maxTime < prop->GetKeyTime(nk - 1)) {
+          maxTime = prop->GetKeyTime(nk - 1);
+        }
       }
     }
   }
   if (keys) {
     float d = maxTime - minTime;
-    if (!d) d = 1.0f;
-    d *= 0.1f;
+    if (d == 0.0F) {
+      d = 1.0F;
+    }
+    d *= 0.1F;
     trackView->minTime = minTime - d;
     trackView->maxTime = maxTime + d;
     trackView->redraw();
@@ -95,7 +108,9 @@ void AnimTrackEditorUI::cmdAutoFitTime() {
 void AnimTrackEditorUI::cmdDeleteKeys() {}
 
 void AnimTrackEditorUI::Update() {
-  if (!window->visible()) return;
+  if (!window->visible()) {
+    return;
+  }
 
   UpdateBrowser();
   UpdateKeySel();
@@ -109,52 +124,60 @@ void AnimTrackEditorUI::UpdateBrowser() {
   if (chkLockObjects->value()) {
     std::vector<MdlObject*> obj = mdl->GetObjectList();
     // look for non-existant objects that are still in the browser
-    std::list<AnimObject>::iterator ai = objects.begin();
+    auto ai = objects.begin();
     while (ai != objects.end()) {
-      std::list<AnimObject>::iterator i = ai++;
-      if (find(obj.begin(), obj.end(), i->obj) == obj.end()) objects.erase(i);
+      auto const i = ai++;
+      if (find(obj.begin(), obj.end(), i->obj) == obj.end()) {
+        objects.erase(i);
+      }
     }
   } else {
     std::vector<MdlObject*> selObj = mdl->GetSelectedObjects();
 
     // look for objects in the view that shouldn't be there because of the new selection
-    std::list<AnimObject>::iterator ai = objects.begin();
+    auto ai = objects.begin();
     while (ai != objects.end()) {
-      std::list<AnimObject>::iterator i = ai++;
-      if (find(selObj.begin(), selObj.end(), i->obj) == selObj.end()) objects.erase(i);
+      auto const i = ai++;
+      if (find(selObj.begin(), selObj.end(), i->obj) == selObj.end()) {
+        objects.erase(i);
+      }
     }
 
     // look for objects that aren't currently in the view and add them
-    for (std::vector<MdlObject*>::iterator i = selObj.begin(); i != selObj.end(); ++i) {
-      std::list<AnimObject>::iterator co = objects.begin();
-      for (; co != objects.end(); ++co)
-        if (co->obj == *i) break;
-      if (co == objects.end()) AddObject(*i);
+    for (auto& i : selObj) {
+      auto co = objects.begin();
+      for (; co != objects.end(); ++co) {
+        if (co->obj == i) {
+          break;
+        }
+      }
+      if (co == objects.end()) {
+        AddObject(i);
+      }
     }
   }
   propBrowser->layout();
 }
 
 void AnimTrackEditorUI::AddObject(MdlObject* o) {
-  objects.push_back(AnimObject());
+  objects.emplace_back();
   objects.back().obj = o;
 
   // add properties from the object
-  AnimationInfo& ai = o->animInfo;
-  for (std::vector<AnimProperty*>::iterator ap = ai.properties.begin(); ap != ai.properties.end();
-       ++ap) {
+  AnimationInfo const& ai = o->animInfo;
+  for (const auto& propertie : ai.properties) {
     std::vector<Property>& props = objects.back().props;
 
-    if ((*ap)->controller->GetNumMembers() > 0) {
-      for (int a = 0; a < (*ap)->controller->GetNumMembers(); a++) {
-        props.push_back(Property());
-        props.back().prop = *ap;
+    if (propertie->controller->GetNumMembers() > 0) {
+      for (int a = 0; a < propertie->controller->GetNumMembers(); a++) {
+        props.emplace_back();
+        props.back().prop = propertie;
         props.back().display = false;
         props.back().member = a;
       }
     } else {
-      props.push_back(Property());
-      props.back().prop = *ap;
+      props.emplace_back();
+      props.back().prop = propertie;
       props.back().display = false;
       props.back().member = -1;
     }
@@ -162,13 +185,14 @@ void AnimTrackEditorUI::AddObject(MdlObject* o) {
 }
 
 void AnimTrackEditorUI::UpdateKeySel() {
-  for (std::list<AnimTrackEditorUI::AnimObject>::iterator oi = objects.begin(); oi != objects.end();
-       ++oi) {
-    for (unsigned int i = 0; i < oi->props.size(); i++) {
-      Property* p = &oi->props[i];
-      if (!p->display) continue;
+  for (auto& object : objects) {
+    for (auto& prop : object.props) {
+      Property* p = &prop;
+      if (!p->display) {
+        continue;
+      }
 
-      size_t nk = (size_t)p->prop->NumKeys();
+      auto const nk = static_cast<size_t>(p->prop->NumKeys());
       if (nk != p->keySel.size()) {
         p->keySel.resize(nk);
         fill(p->keySel.begin(), p->keySel.end(), false);
@@ -181,11 +205,13 @@ void AnimTrackEditorUI::UpdateKeySel() {
 // AnimObject::Property evaluation
 // ------------------------------------------------------------------------------------------------
 
-float AnimTrackEditorUI::Property::EvaluateY(float time, int& lastkey) {
+float AnimTrackEditorUI::Property::EvaluateY(float time, int& lastkey) const {
   static std::vector<char> valbuf;
 
-  unsigned int neededBufSize = prop->controller->GetSize();
-  if (neededBufSize > valbuf.size()) valbuf.resize(neededBufSize);
+  unsigned int const neededBufSize = prop->controller->GetSize();
+  if (neededBufSize > valbuf.size()) {
+    valbuf.resize(neededBufSize);
+  }
 
   // get the right member out of the value
   std::pair<AnimController*, void*> memctl =
@@ -197,28 +223,30 @@ float AnimTrackEditorUI::Property::EvaluateY(float time, int& lastkey) {
     return memctl.first->ToFloat(memctl.second);
   }
 
-  return 0.0f;
+  return 0.0F;
 }
 
 // ------------------------------------------------------------------------------------------------
 // List
 // ------------------------------------------------------------------------------------------------
 
-AnimTrackEditorUI::List::List() {}
+AnimTrackEditorUI::List::List() = default;
 
-int AnimTrackEditorUI::List::children(const fltk::Menu*, const int* indexes, int level) {
+int AnimTrackEditorUI::List::children(const fltk::Menu* /*unused*/, const int* indexes, int level) {
   if (level == 0) {
     // object level
-    return (int)ui->objects.size();
-  } else if (level == 1) {
+    return static_cast<int>(ui->objects.size());
+  }
+  if (level == 1) {
     // property level
-    AnimObject& obj = *element_at(ui->objects.begin(), ui->objects.end(), *indexes);
-    return (int)obj.props.size();
-  } else
-    return -1;
+    AnimObject const& obj = *element_at(ui->objects.begin(), ui->objects.end(), *indexes);
+    return static_cast<int>(obj.props.size());
+  }
+  return -1;
 }
 
-fltk::Widget* AnimTrackEditorUI::List::child(const fltk::Menu*, const int* indexes, int level) {
+fltk::Widget* AnimTrackEditorUI::List::child(const fltk::Menu* /*unused*/, const int* indexes,
+                                             int level) {
   AnimObject& o = *element_at(ui->objects.begin(), ui->objects.end(), indexes[0]);
   item.textfont(fltk::HELVETICA);
   item.ui = ui;
@@ -227,7 +255,7 @@ fltk::Widget* AnimTrackEditorUI::List::child(const fltk::Menu*, const int* index
     item.label(o.obj->name.c_str());
 
     // set open/closed state
-    item.set_flag(fltk::OPENED, o.open && o.props.size());
+    item.set_flag(fltk::OPENED, o.open && !o.props.empty());
 
     // set selection
     item.set_flag(fltk::SELECTED, o.selected);
@@ -241,13 +269,16 @@ fltk::Widget* AnimTrackEditorUI::List::child(const fltk::Menu*, const int* index
       itemLabel += p.prop->controller->GetMemberName(p.member);
     }
     item.label(itemLabel.c_str());
-    if (p.display) item.textfont(fltk::HELVETICA_BOLD);
+    if (p.display) {
+      item.textfont(fltk::HELVETICA_BOLD);
+    }
 
     // set selection
-    if (p.selected)
+    if (p.selected) {
       item.set_flag(fltk::SELECTED);
-    else
+    } else {
       item.clear_flag(fltk::SELECTED);
+    }
 
     item.callback(item_callback);
   }
@@ -255,20 +286,20 @@ fltk::Widget* AnimTrackEditorUI::List::child(const fltk::Menu*, const int* index
   return &item;
 }
 
-void AnimTrackEditorUI::List::flags_changed(const fltk::Menu*, fltk::Widget* w) {
-  BrowserItem* bi = (BrowserItem*)w->user_data();
-  bi->open = w->flags() & fltk::OPENED;
-  bi->selected = w->flags() & fltk::SELECTED;
+void AnimTrackEditorUI::List::flags_changed(const fltk::Menu* /*unused*/, fltk::Widget* w) {
+  auto* bi = static_cast<BrowserItem*>(w->user_data());
+  bi->open = ((w->flags() & fltk::OPENED) != 0);
+  bi->selected = ((w->flags() & fltk::SELECTED) != 0);
 }
 
 void AnimTrackEditorUI::List::item_callback(fltk::Widget* w, void* user_data) {
-  BrowserItem* bi = (BrowserItem*)user_data;
+  auto* bi = static_cast<BrowserItem*>(user_data);
   if (bi->IsProperty() && fltk::event_clicks() == 1) {
-    Property* p = (Property*)user_data;
+    auto* p = static_cast<Property*>(user_data);
 
     p->display = !p->display;
-    ((Item*)w)->ui->UpdateKeySel();
-    ((Item*)w)->ui->window->redraw();
+    (dynamic_cast<Item*>(w))->ui->UpdateKeySel();
+    (dynamic_cast<Item*>(w))->ui->window->redraw();
   }
 }
 
@@ -277,20 +308,21 @@ void AnimTrackEditorUI::List::item_callback(fltk::Widget* w, void* user_data) {
 // -----------------------------------------------------------------------------
 
 AnimKeyTrackView::AnimKeyTrackView(int X, int Y, int W, int H, const char* label)
-    : Group(X, Y, W, H, label) {
-  minY = 0.0f;
-  maxY = 360.0f;
-  minTime = 0.0f;
-  maxTime = 5.0f;
-  curTime = 0.0f;
+    : Group(X, Y, W, H, label),
+      minTime(0.0F),
+      maxTime(5.0F),
+      minY(0.0F),
+      maxY(360.0F),
+      curTime(0.0F),
+      trackUI(nullptr) {
   movingView = movingKeys = zooming = false;
-
-  trackUI = 0;
 }
 
 void AnimKeyTrackView::draw() {
   fltk::Group::draw();
-  if (w() < 1) return;
+  if (w() < 1) {
+    return;
+  }
 
   assert(trackUI);
 
@@ -302,26 +334,29 @@ void AnimKeyTrackView::draw() {
   char buffer[128];
   sprintf(buffer, "Time=[%3.2f,%3.2f], Y=[%4.4f,%4.4f]", minTime, maxTime, minY, maxY);
   fltk::setcolor(fltk::GRAY80);
-  fltk::drawtext(buffer, 0.0f, 15.0f);
+  fltk::drawtext(buffer, 0.0F, 15.0F);
 
   curTime = trackUI->callback->GetTime();
 
   fltk::setcolor(fltk::WHITE);
 
-  float step = (maxTime - minTime) / w();
-  for (std::list<AnimTrackEditorUI::AnimObject>::iterator oi = trackUI->objects.begin();
-       oi != trackUI->objects.end(); ++oi) {
-    for (unsigned int i = 0; i < oi->props.size(); i++) {
-      AnimTrackEditorUI::Property* p = &oi->props[i];
-      if (!p->display) continue;
+  float const step = (maxTime - minTime) / w();
+  for (auto& object : trackUI->objects) {
+    for (auto& prop : object.props) {
+      AnimTrackEditorUI::Property* p = &prop;
+      if (!p->display) {
+        continue;
+      }
 
-      int x = 1, lastkey = -1, key = -1;
-      float firstY = p->EvaluateY(minTime, lastkey);
-      int prevY = h() * (1.0f - (firstY - minY) / (maxY - minY));
+      int x = 1;
+      int lastkey = -1;
+      int key = -1;
+      float const firstY = p->EvaluateY(minTime, lastkey);
+      int prevY = h() * (1.0F - (firstY - minY) / (maxY - minY));
 
       for (float time = minTime + step; x < w(); time += step, x++) {
-        float y = p->EvaluateY(time, lastkey);
-        int cury = h() * (1.0f - (y - minY) / (maxY - minY));
+        float const y = p->EvaluateY(time, lastkey);
+        int const cury = h() * (1.0F - (y - minY) / (maxY - minY));
         fltk::drawline(x, prevY, x + 1, cury);
         if (key != lastkey) {
           fltk::setcolor(p->keySel[lastkey] ? fltk::GREEN : fltk::BLUE);
@@ -335,32 +370,33 @@ void AnimKeyTrackView::draw() {
   }
 
   fltk::setcolor(fltk::YELLOW);
-  int x = (curTime - minTime) / step;
+  int const x = (curTime - minTime) / step;
   fltk::drawline(x, 0, x, h());
 
   fltk::pop_clip();
 }
 
 void AnimKeyTrackView::SelectKeys(int mx, int my) {
-  float time = mx * (maxTime - minTime) / w() + minTime;  // time at selection pos
-  float y = my * (maxY - minY) / h() + minY;
+  float const time = mx * (maxTime - minTime) / w() + minTime;  // time at selection pos
+  float const y = my * (maxY - minY) / h() + minY;
 
   // Make sure key selection arrays have the correct size
   trackUI->UpdateKeySel();
 
-  float epsilon = 0.5f;
+  float const epsilon = 0.5F;
 
-  for (std::list<AnimTrackEditorUI::AnimObject>::iterator oi = trackUI->objects.begin();
-       oi != trackUI->objects.end(); ++oi) {
-    for (unsigned int i = 0; i < oi->props.size(); i++) {
-      AnimTrackEditorUI::Property* p = &oi->props[i];
-      if (!p->display) continue;
+  for (auto& object : trackUI->objects) {
+    for (auto& prop : object.props) {
+      AnimTrackEditorUI::Property* p = &prop;
+      if (!p->display) {
+        continue;
+      }
 
       for (int a = 0; a < p->prop->NumKeys(); a++) {
-        float kt = p->prop->GetKeyTime(a);
+        float const kt = p->prop->GetKeyTime(a);
         if (kt < time + epsilon && kt > time - epsilon) {
           int lastkey = -1;
-          float ky = p->EvaluateY(kt, lastkey);
+          float const ky = p->EvaluateY(kt, lastkey);
           if (ky < y + epsilon && ky > y - epsilon) {
             p->keySel[a] = true;
             redraw();
@@ -376,30 +412,37 @@ int AnimKeyTrackView::handle(int event) {
     clickx = xpos = fltk::event_x();
     clicky = ypos = fltk::event_y();
 
-    if (fltk::event_button() == 2) movingView = true;
-    if (fltk::event_button() == 1) movingKeys = true;
-    if (fltk::event_button() == 3) zooming = true;
+    if (fltk::event_button() == 2) {
+      movingView = true;
+    }
+    if (fltk::event_button() == 1) {
+      movingKeys = true;
+    }
+    if (fltk::event_button() == 3) {
+      zooming = true;
+    }
     return 1;
-  } else if (event == fltk::LEAVE)
+  }
+  if (event == fltk::LEAVE) {
     movingView = movingKeys = zooming = false;
-  else if (event == fltk::RELEASE) {
+  } else if (event == fltk::RELEASE) {
     if (fltk::event_x() == clickx && fltk::event_y() == clicky) {
       SelectKeys(clickx, clicky);
     }
     movingView = movingKeys = zooming = false;
-  } else if (event == fltk::ENTER)
+  } else if (event == fltk::ENTER) {
     return 1;
-  else if (event == fltk::DRAG) {
-    int dx = fltk::event_x() - xpos;
-    int dy = fltk::event_y() - ypos;
+  } else if (event == fltk::DRAG) {
+    int const dx = fltk::event_x() - xpos;
+    int const dy = fltk::event_y() - ypos;
     xpos = fltk::event_x();
     ypos = fltk::event_y();
 
     if (movingView) {
-      float ts = dx * (maxTime - minTime) / w();
+      float const ts = dx * (maxTime - minTime) / w();
       minTime -= ts;
       maxTime -= ts;
-      float ys = dy * (maxY - minY) / h();
+      float const ys = dy * (maxY - minY) / h();
       minY += ys;
       maxY += ys;
       redraw();
@@ -407,14 +450,14 @@ int AnimKeyTrackView::handle(int event) {
     if (movingKeys) {
     }
     if (zooming) {
-      float xs = 1.0f + dx * 0.01f;
-      float ys = 1.0f - dy * 0.01f;
+      float const xs = 1.0F + dx * 0.01F;
+      float const ys = 1.0F - dy * 0.01F;
 
-      float midTime = (minTime + maxTime) * 0.5f;
+      float const midTime = (minTime + maxTime) * 0.5F;
       minTime = midTime + (minTime - midTime) * xs;
       maxTime = midTime + (maxTime - midTime) * xs;
 
-      float midY = (minY + maxY) * 0.5f;
+      float const midY = (minY + maxY) * 0.5F;
       minY = midY + (minY - midY) * ys;
       maxY = midY + (maxY - midY) * ys;
       redraw();

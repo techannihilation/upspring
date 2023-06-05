@@ -12,7 +12,7 @@ typedef void (*TextureSelectCallback)(std::shared_ptr<Texture> tex, void* data);
 
 class TextureBrowser : public fltk::ScrollGroup {
  public:
-  TextureBrowser(int X, int Y, int W, int H, const char* label = 0);
+  TextureBrowser(int X, int Y, int W, int H, const char* lbl = 0);
 
   // void resize(int x,int y,int w,int h);
   void layout();

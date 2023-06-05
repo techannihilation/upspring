@@ -22,12 +22,18 @@
 
 static std::string ConvertPattern(const char* p) {
   std::string r;
-  while (*p) {
-    while (*p) r += *(p++);
+  while (*p != 0) {
+    while (*p != 0) {
+      r += *(p++);
+    }
     r += "\t*.{";
     p++;
-    while (*p == ' ') p++;
-    while (*p) r += *(p++);
+    while (*p == ' ') {
+      p++;
+    }
+    while (*p != 0) {
+      r += *(p++);
+    }
     r += "}\n";
     p++;
   }
@@ -53,7 +59,7 @@ bool SelectDirectory(const char* msg, std::string& dir) {
   fc.type(Fl_Native_File_Chooser::BROWSE_SAVE_DIRECTORY);
 #else
   const char* newDir = fltk::dir_chooser(msg, "");
-  if (newDir != NULL) {
+  if (newDir != nullptr) {
     dir = newDir;
     return true;
   }
@@ -63,11 +69,11 @@ bool SelectDirectory(const char* msg, std::string& dir) {
 }
 
 bool FileOpenDlg(const char* msg, const char* pattern, std::string& fn) {
-  std::string convp = ConvertPattern(pattern);
+  std::string const convp = ConvertPattern(pattern);
   // fltk::use_system_file_chooser(true);
 
   const char* newfile = fltk::file_chooser(msg, "*", fn.c_str());
-  if (newfile != NULL) {
+  if (newfile != nullptr) {
     fn = newfile;
     return true;
   }
@@ -75,7 +81,7 @@ bool FileOpenDlg(const char* msg, const char* pattern, std::string& fn) {
 }
 
 bool FileSaveDlg(const char* msg, const char* ext, std::string& fn) {
-  std::string convp = ConvertPattern(ext);
+  std::string const convp = ConvertPattern(ext);
 
 #ifdef USE_FLTK2_DEFAULT_FILECHOOSER
   fltk::FileChooser fc(".", convp.c_str(), fltk::FileChooser::SINGLE, msg);
@@ -91,7 +97,7 @@ bool FileSaveDlg(const char* msg, const char* ext, std::string& fn) {
   fc.type(Fl_Native_File_Chooser::BROWSE_SAVE_FILE);
 #else
   const char* newfile = fltk::file_chooser(msg, "*", fn.c_str());
-  if (newfile != NULL) {
+  if (newfile != nullptr) {
     fn = newfile;
     return true;
   }

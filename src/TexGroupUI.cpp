@@ -11,16 +11,16 @@
 #include "CfgParser.h"
 
 TexGroupUI::TexGroupUI(TextureGroupHandler* tgh, std::shared_ptr<TextureHandler> th)
-    : texGroupHandler(tgh), textureHandler(th) {
+    : current(nullptr), texGroupHandler(tgh), textureHandler(th) {
   CreateUI();
 
   auto textures = th->textures();
-  for (auto ti = textures.begin(); ti != textures.end(); ++ti) {
-    texBrowser->AddTexture(ti->second);
+  for (auto& texture : textures) {
+    texBrowser->AddTexture(texture.second);
   }
 
   texBrowser->UpdatePositions();
-  current = 0;
+
   UpdateGroupList();
 
   window->exec();
@@ -29,25 +29,29 @@ TexGroupUI::TexGroupUI(TextureGroupHandler* tgh, std::shared_ptr<TextureHandler>
 TexGroupUI::~TexGroupUI() { delete window; }
 
 void TexGroupUI::SelectGroup() {
-  int index = groups->value();
-  if (!groups->children()) return;
+  int const index = groups->value();
+  if (groups->children() == 0) {
+    return;
+  }
 
   fltk::Widget* w = groups->child(index);
-  current = (TextureGroup*)w->user_data();
+  current = static_cast<TextureGroup*>(w->user_data());
   InitGroupTexBrowser();
 }
 
-void TexGroupUI::InitGroupTexBrowser() {
+void TexGroupUI::InitGroupTexBrowser() const {
   groupTexBrowser->clear();
-  if (!current) return;
-  for (auto i = current->textures.begin(); i != current->textures.end(); ++i) {
-    groupTexBrowser->AddTexture(*i);
+  if (current == nullptr) {
+    return;
+  }
+  for (const auto& texture : current->textures) {
+    groupTexBrowser->AddTexture(texture);
   }
   groupTexBrowser->UpdatePositions();
   groupTexBrowser->redraw();
 }
 
-void TexGroupUI::RemoveFromGroup() {
+void TexGroupUI::RemoveFromGroup() const {
   auto sel = groupTexBrowser->GetSelection();
 
   for (auto& a : sel) {
@@ -58,28 +62,30 @@ void TexGroupUI::RemoveFromGroup() {
 }
 
 void TexGroupUI::SetGroupName() {
-  if (!current) return;
+  if (current == nullptr) {
+    return;
+  }
 
-  const char* str = fltk::input("Give name for new texture group:", 0);
-  if (str) {
+  const char* str = fltk::input("Give name for new texture group:", nullptr);
+  if (str != nullptr) {
     current->name = str;
     UpdateGroupList();
   }
 }
 
 void TexGroupUI::RemoveGroup() {
-  if (current && groups->children()) {
+  if ((current != nullptr) && (groups->children() != 0)) {
     texGroupHandler->groups.erase(
         find(texGroupHandler->groups.begin(), texGroupHandler->groups.end(), current));
-    current = 0;
+    current = nullptr;
     UpdateGroupList();
   }
 }
 
 void TexGroupUI::AddGroup() {
-  const char* str = fltk::input("Give name for new texture group:", 0);
-  if (str) {
-    TextureGroup* tg = new TextureGroup;
+  const char* str = fltk::input("Give name for new texture group:", nullptr);
+  if (str != nullptr) {
+    auto* tg = new TextureGroup;
     tg->name = str;
 
     texGroupHandler->groups.push_back(tg);
@@ -87,45 +93,57 @@ void TexGroupUI::AddGroup() {
   }
 }
 
-void TexGroupUI::AddToGroup() {
-  if (!current) return;
+void TexGroupUI::AddToGroup() const {
+  if (current == nullptr) {
+    return;
+  }
 
   auto sel = texBrowser->GetSelection();
-  for (std::uint32_t a = 0; a < sel.size(); a++) {
-    if (current->textures.find(sel[a]) == current->textures.end()) {
-      current->textures.insert(sel[a]);
-      groupTexBrowser->AddTexture(sel[a]);
+  for (auto& a : sel) {
+    if (current->textures.find(a) == current->textures.end()) {
+      current->textures.insert(a);
+      groupTexBrowser->AddTexture(a);
     }
   }
 
-  if (!sel.empty()) groupTexBrowser->UpdatePositions();
+  if (!sel.empty()) {
+    groupTexBrowser->UpdatePositions();
+  }
 }
 
 void TexGroupUI::UpdateGroupList() {
   groups->clear();
   int curval = -1;
 
-  if (!current && !texGroupHandler->groups.empty()) current = texGroupHandler->groups.front();
+  if ((current == nullptr) && !texGroupHandler->groups.empty()) {
+    current = texGroupHandler->groups.front();
+  }
 
   for (std::uint32_t a = 0; a < texGroupHandler->groups.size(); a++) {
     TextureGroup* gr = texGroupHandler->groups[a];
-    groups->add(gr->name.c_str(), 0, 0, gr);
-    if (current == gr) curval = a;
+    groups->add(gr->name.c_str(), 0, nullptr, gr);
+    if (current == gr) {
+      curval = a;
+    }
   }
 
-  if (curval >= 0) groups->value(curval);
+  if (curval >= 0) {
+    groups->value(curval);
+  }
   InitGroupTexBrowser();
   groups->redraw();
 }
 
 const char* GroupConfigPattern = "Group config file(*.gcf)\0gcf\0";
 
-void TexGroupUI::SaveGroup() {
+void TexGroupUI::SaveGroup() const {
   static std::string fn;
-  if (!current) return;
+  if (current == nullptr) {
+    return;
+  }
 
   if (FileSaveDlg("Save file:", GroupConfigPattern, fn)) {
-    CfgList* cfg = texGroupHandler->MakeConfig(current);
+    CfgList* cfg = TextureGroupHandler::MakeConfig(current);
     CfgWriter writer(fn.c_str());
     if (writer.IsFailed()) {
       fltk::message("Failed to write %s\n", fn.c_str());
@@ -138,16 +156,18 @@ void TexGroupUI::SaveGroup() {
 
 void TexGroupUI::LoadGroup() {
   static std::string fn;
-  if (!current) return;
+  if (current == nullptr) {
+    return;
+  }
 
   if (FileOpenDlg("Load file:", GroupConfigPattern, fn)) {
     CfgList* cfg = CfgValue::LoadFile(fn.c_str());
-    if (!cfg) {
+    if (cfg == nullptr) {
       fltk::message("Failed to read %s\n", fn.c_str());
       return;
     }
     TextureGroup* tg = texGroupHandler->LoadGroup(cfg);
-    if (tg) {
+    if (tg != nullptr) {
       tg->name = fltk::filename_name(fn.c_str());
       UpdateGroupList();
     }

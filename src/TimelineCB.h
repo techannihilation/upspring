@@ -8,7 +8,7 @@ IEditor* callback;
 Timer* timer;
 
 float time;
-unsigned int prevTicks;
+unsigned int prevTicks{};
 bool isPlaying;
 
 void SliderCallback();
@@ -26,7 +26,7 @@ TimelineUI(IEditor* editor);
 ~TimelineUI();
 
 float GetTime() { return time; }
-void Show();
+void Show() const;
 void Hide();
 void Update();
 void InsertKeys(bool autoInsert = false);

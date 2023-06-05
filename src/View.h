@@ -42,21 +42,21 @@ class ViewWindow : public fltk::GlWindow {
   void Serialize(CfgList& cfg, bool store);
 
   Vector3 backgroundColor;
-  IEditor* editor;
+  IEditor* editor{};
 
  protected:
-  Vector3 FindSelCoords(int sx, int sy);
+  static Vector3 FindSelCoords(int px, int py);
   void resize(int x, int y, int w, int h);
   void InitGL();
   void Select(float sx, float sy, int w, int h, bool box);
   void DeSelect();
   void PushSelector(ViewSelector* s);
-  void PopSelector();
-  void Ortho();  // an ortho compatible with GL_SELECT mode
+  void PopSelector() const;
+  static void Ortho();  // an ortho compatible with GL_SELECT mode
 
   int selector_count;
   bool bSelecting, bUnSelecting;
-  ViewSelector** selector_list;
+  ViewSelector** selector_list{};
 
   Point last;
   Point click;
@@ -83,15 +83,15 @@ struct Camera {
   void GetMatrix(Matrix& vm);
   Vector3 GetOrigin();
 
-  enum CtlMode { Rotating, FPS } ctlmode;
+  enum CtlMode { Rotating, FPS } ctlmode{Rotating};
 
   void SetCtlMode(CtlMode m) { ctlmode = m; }
 
   // FPS state
-  float yaw, pitch;
+  float yaw{}, pitch{};
   Vector3 pos, strafe;
   Matrix mat;
-  float zoom;
+  float zoom{};
 };
 
 class EditorViewWindow : public ViewWindow, public IView {
@@ -108,7 +108,7 @@ class EditorViewWindow : public ViewWindow, public IView {
   int GetMode();
   bool IsSelecting() { return bSelecting || bUnSelecting; }
 
-  int handle(int event);
+  int handle(int msg);
 
   void ClickBorder(int x, int y);
 
@@ -118,19 +118,19 @@ class EditorViewWindow : public ViewWindow, public IView {
   void SetupProjectionMatrix();
   void DrawScene();
   void Draw2D();
-  void DrawLight();
-  void GetViewMatrix(Matrix& m);
+  void DrawLight() const;
+  void GetViewMatrix(Matrix& tv);
   void DrawGrid();
 
   void SetMode(int m);
-  void Serialize(CfgList& config, bool store);
+  void Serialize(CfgList& cfg, bool store);
 
   int mode;
   int rendermode;
   Camera cam;
   bool bCullFaces;
   bool bLighting;
-  bool bPolySelect;
+  bool bPolySelect{};
   bool bHideGrid;
   bool bDrawRadius;
   bool bDrawCenters;
@@ -151,7 +151,7 @@ class UVViewWindow : public ViewWindow {
   void ShowPopupMenu();
   int handle(int);
   bool SetupChannelMask();
-  void DisableChannelMask();
+  void DisableChannelMask() const;
 
   int textureIndex;
   int channel;

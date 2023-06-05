@@ -7,13 +7,13 @@ protected:
 IEditor* callback;
 fltk::Widget* multipleTypes;
 
-void JointType(IKJointType jc);
+void JointType(IKJointType jt);
 
 public:
-IK_UI(IEditor* editor);
+IK_UI(IEditor* callback);
 ~IK_UI();
 
-void Show();
+void Show() const;
 void Hide() { window->hide(); }
 void AnimateToPos();
 void Update();

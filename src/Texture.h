@@ -93,14 +93,14 @@ class TextureGroup {
 
 class TextureGroupHandler {
  public:
-  TextureGroupHandler(std::shared_ptr<TextureHandler> th);
+  TextureGroupHandler(std::shared_ptr<TextureHandler> par_handler);
   ~TextureGroupHandler();
 
   bool Load(const std::string& par_filename);
   bool Save(const std::string& par_filename);
 
   static CfgList* MakeConfig(TextureGroup* tg);
-  TextureGroup* LoadGroup(CfgList* cfg);
+  TextureGroup* LoadGroup(CfgList* gc);
 
   std::vector<TextureGroup*> groups;
   std::shared_ptr<TextureHandler> textureHandler;
@@ -119,7 +119,7 @@ class TextureBinTree {
 
     int x, y, w, h;
     int img_w, img_h;
-    Node* child[2];
+    Node* child[2]{};
   };
 
   TextureBinTree() : render_id(), tree(), image_(std::make_shared<Image>()){};
@@ -143,7 +143,7 @@ class TextureBinTree {
   std::shared_ptr<Image> GetResult() { return image_; }
 
  protected:
-  void StoreNode(Node* pm, const std::shared_ptr<Image> par_tex);
+  void StoreNode(Node* n, const std::shared_ptr<Image> par_tex);
   Node* InsertNode(Node* n, int w, int h);
 
   Node* tree;

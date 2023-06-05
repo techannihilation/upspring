@@ -9,7 +9,7 @@
 
 atlas::atlas() : packer_(std::make_shared<txpk::BlackspawnPacker>()) {}
 
-atlas atlas::make_from_archive(const std::string& par_archive, const std::string& par_savepath,
+atlas atlas::make_from_archive(const std::string& par_archive, const std::string& /*par_savepath*/,
                                bool par_power_of_two) {
   TextureHandler texture_handler = TextureHandler();
 

@@ -5,8 +5,10 @@
 //-----------------------------------------------------------------------
 #include "Mathlib.h"
 
-#include <assert.h>
-#include <stdlib.h>
+#include <cmath>
+
+#include <cassert>
+#include <cstdlib>
 
 #include "Util.h"
 
@@ -20,21 +22,18 @@
 #define msin(_x) sin(pi_div180*(_x))
 #endif
 
-const float pi_div180 = 0.01745329252f;
+const float pi_div180 = 0.01745329252F;
 
 void Vector3::normalize() {
-  float m = (float)1.0f / sqrt(x * x + y * y + z * z);
+  float const m = 1.0F / sqrt(x * x + y * y + z * z);
   x *= m;
   y *= m;
   z *= m;
 }
 
 bool Vector3::operator==(const Vector3& v) const {
-  if (x < v.x + EPSILON && x > v.x - EPSILON && y < v.y + EPSILON && y > v.y - EPSILON &&
-      z < v.z + EPSILON && z > v.z - EPSILON) {
-    return true;
-  }
-  return false;
+  return x < v.x + EPSILON && x > v.x - EPSILON && y < v.y + EPSILON && y > v.y - EPSILON &&
+         z < v.z + EPSILON && z > v.z - EPSILON;
 }
 
 Vector3 Vector3::crossproduct(const Vector3& v) const {
@@ -46,7 +45,8 @@ Vector3 Vector3::crossproduct(const Vector3& v) const {
 }
 
 float Vector3::distance(const Vector3* c1, const Vector3* c2) const {
-  Vector3 m, diff;
+  Vector3 m;
+  Vector3 diff;
   diff.set(x - c1->x, y - c1->y, z - c1->z);
   m.set(c2->x - c1->x, c2->y - c1->y, c2->z - c1->z);
   float t = m.x * diff.x + m.y * diff.y + m.z * diff.z;
@@ -56,8 +56,12 @@ float Vector3::distance(const Vector3* c1, const Vector3* c2) const {
 }
 
 void Vector3::get_normal(const Vector3* v1, const Vector3* v2, const Vector3* v3) {
-  float rx1 = v2->x - v1->x, ry1 = v2->y - v1->y, rz1 = v2->z - v1->z;
-  float rx2 = v3->x - v1->x, ry2 = v3->y - v1->y, rz2 = v3->z - v1->z;
+  float const rx1 = v2->x - v1->x;
+  float const ry1 = v2->y - v1->y;
+  float const rz1 = v2->z - v1->z;
+  float const rx2 = v3->x - v1->x;
+  float const ry2 = v3->y - v1->y;
+  float const rz2 = v3->z - v1->z;
   x = ry1 * rz2 - ry2 * rz1;
   y = rz1 * rx2 - rz2 * rx1;
   z = rx1 * ry2 - rx2 * ry1;
@@ -65,58 +69,74 @@ void Vector3::get_normal(const Vector3* v1, const Vector3* v2, const Vector3* v3
 }
 
 void Vector3::incboundingmax(const Vector3* check) {
-  if (check->x > x) x = check->x;
-  if (check->y > y) y = check->y;
-  if (check->z > z) z = check->z;
+  if (check->x > x) {
+    x = check->x;
+  }
+  if (check->y > y) {
+    y = check->y;
+  }
+  if (check->z > z) {
+    z = check->z;
+  }
 }
 
 void Vector3::incboundingmin(const Vector3* check) {
-  if (check->x < x) x = check->x;
-  if (check->y < y) y = check->y;
-  if (check->z < z) z = check->z;
+  if (check->x < x) {
+    x = check->x;
+  }
+  if (check->y < y) {
+    y = check->y;
+  }
+  if (check->z < z) {
+    z = check->z;
+  }
 }
 
 bool Vector3::epsilon_compare(const Vector3* v, float epsilon) const {
   float d = fabs(v->x - x);
-  if (d > epsilon) return false;
+  if (d > epsilon) {
+    return false;
+  }
   d = fabs(v->y - y);
-  if (d > epsilon) return false;
+  if (d > epsilon) {
+    return false;
+  }
   d = fabs(v->z - z);
-  if (d > epsilon) return false;
-  return true;
+  return d <= epsilon;
 }
 
 //--------------------------------------------------------- Plane
 
 void Plane::MakePlane(const Vector3& v1, const Vector3& v2, const Vector3& v3) {
-  float rx1 = v2.x - v1.x, ry1 = v2.y - v1.y, rz1 = v2.z - v1.z;
-  float rx2 = v3.x - v1.x, ry2 = v3.y - v1.y, rz2 = v3.z - v1.z;
+  float const rx1 = v2.x - v1.x;
+  float const ry1 = v2.y - v1.y;
+  float const rz1 = v2.z - v1.z;
+  float const rx2 = v3.x - v1.x;
+  float const ry2 = v3.y - v1.y;
+  float const rz2 = v3.z - v1.z;
   a = ry1 * rz2 - ry2 * rz1;
   b = rz1 * rx2 - rz2 * rx1;
   c = rx1 * ry2 - rx2 * ry1;
-  float len = (float)sqrt(a * a + b * b + c * c);
+  auto const len = sqrt(a * a + b * b + c * c);
   a /= len;
   b /= len;
   c /= len;
   d = a * v2.x + b * v2.y + c * v2.z;
 }
 
-bool Plane::operator==(const Plane& pln) {
-  if ((pln.a < a + EPSILON) && (pln.a > a - EPSILON) && (pln.b < b + EPSILON) &&
-      (pln.b > b - EPSILON) && (pln.c < c + EPSILON) && (pln.c > c - EPSILON) &&
-      (pln.d < d + EPSILON) && (pln.d > d - EPSILON))
-    return true;
-  return false;
+bool Plane::operator==(const Plane& pln) const {
+  return (pln.a < a + EPSILON) && (pln.a > a - EPSILON) && (pln.b < b + EPSILON) &&
+         (pln.b > b - EPSILON) && (pln.c < c + EPSILON) && (pln.c > c - EPSILON) &&
+         (pln.d < d + EPSILON) && (pln.d > d - EPSILON);
 }
 
-bool Plane::EpsilonCompare(const Plane& pln, float epsilon) {
+bool Plane::EpsilonCompare(const Plane& pln, float epsilon) const {
   Plane t;
   t.a = fabs(a - pln.a);
   t.b = fabs(b - pln.b);
   t.c = fabs(c - pln.c);
   t.d = fabs(d - pln.d);
-  if (t.a > epsilon || t.b > epsilon || t.c > epsilon || t.d > epsilon) return false;
-  return true;
+  return t.a <= epsilon && t.b <= epsilon && t.c <= epsilon && t.d <= epsilon;
 }
 
 //--------------------- Matrix class -----------------------
@@ -132,26 +152,31 @@ w   12  13  14  15
 */
 
 void Matrix::clear() {
-  for (int a = 0; a < 16; a++) m[a] = 0.0f;
+  for (float& a : m) {
+    a = 0.0F;
+  }
 }
 
 void Matrix::identity() {
-  for (int a = 0; a < 16; a++) m[a] = 0.0f;
-  m[0] = 1.0f;
-  m[5] = 1.0f;
-  m[10] = 1.0f;
-  m[15] = 1.0f;
+  for (float& a : m) {
+    a = 0.0F;
+  }
+  m[0] = 1.0F;
+  m[5] = 1.0F;
+  m[10] = 1.0F;
+  m[15] = 1.0F;
 }
 
 void Matrix::zrotate(float t) {
-  float st = msin(t), ct = mcos(t);
+  float const st = msin(t);
+  float const ct = mcos(t);
   clear();
   /*
            | cos t -sin t  0 |
   Mr = | sin t  cos t  0 |
            | 0      0      0 |
   */
-  m[10] = m[15] = 1.0f;
+  m[10] = m[15] = 1.0F;
   m[0] = ct;
   m[1] = -st;
   m[4] = st;
@@ -159,7 +184,8 @@ void Matrix::zrotate(float t) {
 }
 
 void Matrix::yrotate(float t) {
-  float st = msin(t), ct = mcos(t);
+  float const st = msin(t);
+  float const ct = mcos(t);
   clear();
   /*
            | cos t  0   -sin t |
@@ -168,33 +194,37 @@ void Matrix::yrotate(float t) {
   */
   m[0] = ct;
   m[2] = -st;
-  m[5] = 1.0f;
+  m[5] = 1.0F;
   m[8] = st;
   m[10] = ct;
-  m[15] = 1.0f;
+  m[15] = 1.0F;
 }
 
 void Matrix::xrotate(float t) {
-  float st = msin(t), ct = mcos(t);
+  float const st = msin(t);
+  float const ct = mcos(t);
   clear();
   /*
            | 1     0      0   |
   Mr = | 0   cos t -sin t |
            | 0   sin t  cos t |
   */
-  m[0] = 1.0f;
+  m[0] = 1.0F;
   m[5] = ct;
   m[6] = -st;
   m[9] = st;
   m[10] = ct;
-  m[15] = 1.0f;
+  m[15] = 1.0F;
 }
 
 // Calculate a rotation matrix from euler angles. Rotation is applied in ZXY order
 void Matrix::eulerZXY(const Vector3& rot) {
-  float cy = cosf(rot.y), sy = sinf(rot.y);
-  float cx = cosf(rot.x), sx = sinf(rot.x);
-  float cz = cosf(rot.z), sz = sinf(rot.z);
+  float const cy = cosf(rot.y);
+  float const sy = sinf(rot.y);
+  float const cx = cosf(rot.x);
+  float const sx = sinf(rot.x);
+  float const cz = cosf(rot.z);
+  float const sz = sinf(rot.z);
 
   /*	[cz cy+sz sx sy,    -sz cx,     -cz sy+sz sx cy]
           [sz cy-cz sx sy,     cz cx,     -sz sy-cz sx cy]
@@ -209,14 +239,17 @@ void Matrix::eulerZXY(const Vector3& rot) {
   m[8] = sy * cx;
   m[9] = sx;
   m[10] = cx * cy;
-  m[15] = 1.0f;
+  m[15] = 1.0F;
 }
 
 // Calculate a rotation matrix from euler angles. Rotation is applied in YXZ order
 void Matrix::eulerYXZ(const Vector3& rot) {
-  float cy = cosf(rot.y), sy = sinf(rot.y);
-  float cx = cosf(rot.x), sx = sinf(rot.x);
-  float cz = cosf(rot.z), sz = sinf(rot.z);
+  float const cy = cosf(rot.y);
+  float const sy = sinf(rot.y);
+  float const cx = cosf(rot.x);
+  float const sx = sinf(rot.x);
+  float const cz = cosf(rot.z);
+  float const sz = sinf(rot.z);
 
   /*
   [cz cy-sz sx sy,   -sz cy-cz sx sy,    -cx sy]
@@ -234,7 +267,7 @@ void Matrix::eulerYXZ(const Vector3& rot) {
   m[8] = cz * sy + sz * sx * cy;
   m[9] = -sz * sy + cz * sx * cy;
   m[10] = cx * cy;
-  m[15] = 1.0f;
+  m[15] = 1.0F;
 }
 
 // Assuming m is a pure rotation matrix
@@ -242,7 +275,7 @@ Vector3 Matrix::calcEulerZXY() const {
   Vector3 r;
 
   // If fabs(sx) = 1, then cx is zero and the Y and Z angle (heading and bank) can't be calculated
-  if (m[9] > 0.998f) {
+  if (m[9] > 0.998F) {
     /*
     | cy*cz+sy*sz   0   -(sy*cz-cy*sz) |     | cos(Y-Z)   0  -cos(Y-Z) |
     |-(sy*cz-cy*sz) 0   -(cy*cz+sy*sz) |  =  | -sin(Y-Z)  0  cos(Y-Z)  |
@@ -256,17 +289,17 @@ Vector3 Matrix::calcEulerZXY() const {
     */
     r.y = atan2f(
         -m[4], m[0]);  // it can be represented with both Y rotation and Z rotation. Y is used here
-    r.z = 0.0f;
-    r.x = M_PI * 0.5f;
-  } else if (m[9] < -0.998f) {
+    r.z = 0.0F;
+    r.x = M_PI * 0.5F;
+  } else if (m[9] < -0.998F) {
     /*
     | cy*cz-sy*sz      0      -sy*cz-sz*cy  |     | cos(Y+Z)  ...
     | sy*cz+cy*sz      0      -sy*sz+cz*cy  |  =  | sin(Y+Z) ..
     |        0         -1            0      |     |
     */
     r.y = atan2f(m[4], m[0]);
-    r.z = 0.0f;
-    r.x = -M_PI * 0.5f;
+    r.z = 0.0F;
+    r.x = -M_PI * 0.5F;
   } else {
     r.x = asinf(m[9]);
     r.y = atan2f(m[8], m[10]);
@@ -285,7 +318,7 @@ Vector3 Matrix::calcEulerYXZ() const {
   [cz sy+sz sx cy,   -sz sy+cz sx cy,    cx cy]]  8 9 10
   */
 
-  if (m[6] > 0.998f) {
+  if (m[6] > 0.998F) {
     // sx = -1, cx=0
     /*
     [cy*cz+sy*sz,   -cy*sz+sy*cz,   0]  0 1 2
@@ -305,9 +338,9 @@ Vector3 Matrix::calcEulerYXZ() const {
     */
     r.y = atan2f(
         m[1], m[0]);  // it can be represented with both Y rotation and Z rotation. Y is used here
-    r.z = 0.0f;
-    r.x = -M_PI * 0.5f;
-  } else if (m[9] < -0.998f) {
+    r.z = 0.0F;
+    r.x = -M_PI * 0.5F;
+  } else if (m[9] < -0.998F) {
     // sx = 1, cx = 0
     /*
     [cz cy-sz sy,   -sz cy-cz sy,    0]  0 1 2
@@ -319,8 +352,8 @@ Vector3 Matrix::calcEulerYXZ() const {
     [sin(y+z),      cos(y+z),    0]  8 9 10
     */
     r.y = atan2f(m[8], m[0]);
-    r.z = 0.0f;
-    r.x = M_PI * 0.5f;
+    r.z = 0.0F;
+    r.x = M_PI * 0.5F;
   } else {
     r.y = atan2f(-m[2], m[10]);
     r.z = atan2f(m[4], m[5]);
@@ -332,7 +365,8 @@ Vector3 Matrix::calcEulerYXZ() const {
 
 void Matrix::multiply(const Matrix& t, Matrix& dst) const {
   Matrix temp;
-  const Matrix *a = &t, *b = this;
+  const Matrix* a = &t;
+  const Matrix* b = this;
 
   if (a == &dst) {
     temp = *a;
@@ -343,11 +377,12 @@ void Matrix::multiply(const Matrix& t, Matrix& dst) const {
     b = &temp;
   }
 
-  for (int row = 0; row < 4; row++)
+  for (int row = 0; row < 4; row++) {
     for (int col = 0; col < 4; col++) {
       dst.v(row, col) = a->v(row, 0) * b->v(0, col) + a->v(row, 1) * b->v(1, col) +
                         a->v(row, 2) * b->v(2, col) + a->v(row, 3) * b->v(3, col);
     }
+  }
 }
 /*
 static inline float Calc3x3Determinant (float m[9])
@@ -457,11 +492,13 @@ float Matrix::determinant() const {
 }
 
 bool Matrix::inverse(Matrix& out) const {
-  float det = determinant();
-  if (fabsf(det) < EPSILON) return false;
+  float const det = determinant();
+  if (fabsf(det) < EPSILON) {
+    return false;
+  }
 
   out = adjoint();
-  out *= 1.0f / det;
+  out *= 1.0F / det;
   return true;
 }
 /*
@@ -496,7 +533,9 @@ bool Matrix::affine_inverse (Matrix *out) const
 }
 */
 void Matrix::multiply(float a) {
-  for (int i = 0; i < 16; i++) m[i] *= a;
+  for (float& i : m) {
+    i *= a;
+  }
 }
 
 /*
@@ -529,26 +568,26 @@ float Matrix::determinant ()
 */
 
 void Matrix::perspective_lh(float fovY, float Aspect, float zn, float zf) {
-  float h = 1.0f / tan(fovY / 2.0f);
-  float w = h / Aspect;
+  float const h = 1.0F / tan(fovY / 2.0F);
+  float const w = h / Aspect;
 
   clear();
 
   v(0, 0) = w;
   v(1, 1) = h;
   v(2, 2) = zf / (zf - zn);
-  v(3, 2) = 1.0f;
+  v(3, 2) = 1.0F;
   v(2, 3) = -zn * zf / (zf - zn);
 }
 
-Vector3 Matrix::camera_pos() const {
+Vector3 Matrix::camera_pos() {
   /*
 [tx]     [-rx   -ry   -rz]    [px]
   [ty]  =  [-ux   -uy   -uz]  * [py]
   [tz]     [-fx   -fy   -fz]    [pz]
   */
 
-  Matrix inv;
+  Matrix const inv;
   return Vector3();
 }
 
@@ -560,8 +599,8 @@ void Matrix::camera(Vector3* p, Vector3* right, Vector3* up, Vector3* front) {
   t(0) = -right->dot(p);
   t(1) = -up->dot(p);
   t(2) = -front->dot(p);
-  m[12] = m[13] = m[14] = 0.0f;
-  m[15] = 1.0f;
+  m[12] = m[13] = m[14] = 0.0F;
+  m[15] = 1.0F;
 }
 
 void Matrix::scale(const Vector3& s) {
@@ -569,7 +608,7 @@ void Matrix::scale(const Vector3& s) {
   m[0] = s.x;
   m[5] = s.y;
   m[10] = s.z;
-  m[15] = 1.0f;
+  m[15] = 1.0F;
 }
 
 void Matrix::scale(float sx, float sy, float sz) {
@@ -577,7 +616,7 @@ void Matrix::scale(float sx, float sy, float sz) {
   m[0] = sx;
   m[5] = sy;
   m[10] = sz;
-  m[15] = 1.0f;
+  m[15] = 1.0F;
 }
 
 void Matrix::addscale(float x, float y, float z) {
@@ -607,9 +646,13 @@ void Matrix::addtranslation(const Vector3& t) {
 }
 
 void Matrix::transpose(Matrix* dest) const {
-  int x, y;
-  for (y = 0; y < 4; y++)
-    for (x = 0; x < 4; x++) dest->m[x * 4 + y] = m[y * 4 + x];
+  int x = 0;
+  int y = 0;
+  for (y = 0; y < 4; y++) {
+    for (x = 0; x < 4; x++) {
+      dest->m[x * 4 + y] = m[y * 4 + x];
+    }
+  }
 }
 
 void Matrix::apply(const Vector3* v, Vector3* o) const {
@@ -631,13 +674,13 @@ void Matrix::align(Vector3* front, Vector3* up, Vector3* right) {
   front->copy(&m[0]);
   up->copy(&m[4]);
   right->copy(&m[8]);
-  m[15] = 1.0f;
+  m[15] = 1.0F;
 }
 
 void Matrix::vector_rotation(const Vector3& cv, float angle) {
-  float c = mcos(angle);
-  float s = msin(angle);
-  float cc = 1 - c;
+  float const c = mcos(angle);
+  float const s = msin(angle);
+  float const cc = 1 - c;
 
   clear();
 
@@ -664,54 +707,68 @@ namespace Math {
 bool SamePoint(const Vector3* v1, const Vector3* v2, float e) {
   Vector3 v = *v1;
   v.sub(v2);
-  if (ABS(v.x) > e) return false;
-  if (ABS(v.y) > e) return false;
-  if (ABS(v.z) > e) return false;
+  if (ABS(v.x) > e) {
+    return false;
+  }
+  if (ABS(v.y) > e) {
+    return false;
+  }
+  if (ABS(v.z) > e) {
+    return false;
+  }
   return true;
 }
 
 void NearestBoxVertex(const Vector3* min, const Vector3* max, const Vector3* pos, Vector3* out) {
-  Vector3 mid = (*max + *min) * 0.5f;
-  if (pos->x < mid.x)
+  Vector3 const mid = (*max + *min) * 0.5F;
+  if (pos->x < mid.x) {
     out->x = min->x;
-  else
+  } else {
     out->x = max->x;
-  if (pos->y < mid.y)
+  }
+  if (pos->y < mid.y) {
     out->y = min->y;
-  else
+  } else {
     out->y = max->y;
-  if (pos->z < mid.z)
+  }
+  if (pos->z < mid.z) {
     out->z = min->z;
-  else
+  } else {
     out->z = max->z;
+  }
 }
 
 // Calculates the exact nearest point, not just one of the box'es vertices
 void NearestBoxPoint(const Vector3* min, const Vector3* max, const Vector3* pos, Vector3* out) {
   /*Vector3 mid = (*max + *min) * 0.5f;*/
-  if (pos->x < min->x)
+  if (pos->x < min->x) {
     out->x = min->x;
-  else if (pos->x > max->x)
+  } else if (pos->x > max->x) {
     out->x = max->x;
-  else
+  } else {
     out->x = pos->x;
-  if (pos->y < min->y)
+  }
+  if (pos->y < min->y) {
     out->y = min->y;
-  else if (pos->y > max->y)
+  } else if (pos->y > max->y) {
     out->y = max->y;
-  else
+  } else {
     out->y = pos->y;
-  if (pos->z < min->z)
+  }
+  if (pos->z < min->z) {
     out->z = min->z;
-  else if (pos->z > max->z)
+  } else if (pos->z > max->z) {
     out->z = max->z;
-  else
+  } else {
     out->z = pos->z;
+  }
 }
 
 void ComputeOrientation(float yaw, float pitch, float roll, Vector3* right, Vector3* up,
                         Vector3* front) {
-  Matrix cur, temp, result;
+  Matrix cur;
+  Matrix temp;
+  Matrix result;
 
   // get x rotation matrix:
   cur.xrotate(pitch);
@@ -727,13 +784,20 @@ void ComputeOrientation(float yaw, float pitch, float roll, Vector3* right, Vect
   result.copy(&temp);
   cur.multiply(temp, result);
 
-  if (right) *right = *result.getx();
-  if (up) *up = *result.gety();
-  if (front) *front = *result.getz();
+  if (right != nullptr) {
+    *right = *result.getx();
+  }
+  if (up != nullptr) {
+    *up = *result.gety();
+  }
+  if (front != nullptr) {
+    *front = *result.getz();
+  }
 }
 
 void GetNormal(Vector3* v1, Vector3* v2, Vector3* v3, Vector3* out) {
-  Vector3 t1, t2;
+  Vector3 t1;
+  Vector3 t2;
   t1.x = v2->x - v1->x;
   t1.y = v2->y - v1->y;
   t1.z = v2->z - v1->z;
@@ -750,22 +814,24 @@ Matrix CreateNormalTransform(const Matrix& transform) {
   *normalTransform.getx() = *transform.getx();
   *normalTransform.gety() = *transform.gety();
   *normalTransform.getz() = *transform.getz();
-  normalTransform.m[15] = 1.0f;
-  float d = normalTransform.determinant();
-  float s = 1.0f / d;
+  normalTransform.m[15] = 1.0F;
+  float const d = normalTransform.determinant();
+  float const s = 1.0F / d;
   normalTransform.addscale(s, s, s);
   return normalTransform;
 }
 
 Matrix GetTransform(const Vector3& offset, const Vector3& rotation, const Vector3& scale) {
-  Vector3 r, u, f;
+  Vector3 const r;
+  Vector3 const u;
+  Vector3 const f;
   Matrix rotationMatrix;
   rotationMatrix.eulerZXY(rotation);
   Matrix scalingMatrix;
   scalingMatrix.scale(scale.x, scale.y, scale.z);
 
   Matrix final = rotationMatrix * scalingMatrix;
-  final.v(3, 3) = 1.0f;
+  final.v(3, 3) = 1.0F;
 
   final.t(0) = offset.x;
   final.t(1) = offset.y;
@@ -852,9 +918,14 @@ void Quaternion::zrotate(float r) {
  *  the specified amounts (given in binary, 256 degrees to a circle format).
  */
 void Quaternion::rotation(float x, float y, float z) {
-  float sx, sy, sz;
-  float cx, cy, cz;
-  float cycz, sysz;
+  float sx = NAN;
+  float sy = NAN;
+  float sz = NAN;
+  float cx = NAN;
+  float cy = NAN;
+  float cz = NAN;
+  float cycz = NAN;
+  float sysz = NAN;
 
   sx = msin(x / 2);
   sy = msin(y / 2);
@@ -878,7 +949,7 @@ void Quaternion::rotation(float x, float y, float z) {
  *  circle format).
  */
 void Quaternion::vector_rot(Vector3* ax, float r) {
-  float s;
+  float s = NAN;
 
   ax->normalize();
 
@@ -893,16 +964,16 @@ void Quaternion::vector_rot(Vector3* ax, float r) {
  * Constructs a rotation matrix from a quaternion.
  */
 void Quaternion::makematrix(Matrix* m) const {
-  float ww;
-  float xx;
-  float yy;
-  float zz;
-  float wx;
-  float wy;
-  float wz;
-  float xy;
-  float xz;
-  float yz;
+  float ww = NAN;
+  float xx = NAN;
+  float yy = NAN;
+  float zz = NAN;
+  float wx = NAN;
+  float wy = NAN;
+  float wz = NAN;
+  float xy = NAN;
+  float xz = NAN;
+  float yz = NAN;
 
   /* This is the layout for converting the values in a quaternion to a
    * matrix.
@@ -938,7 +1009,7 @@ void Quaternion::makematrix(Matrix* m) const {
   m->t(0) = 0.0;
   m->t(1) = 0.0;
   m->t(2) = 0.0;
-  m->v(3, 3) = 1.0f;
+  m->v(3, 3) = 1.0F;
 }
 
 /* from_matrix:
@@ -947,27 +1018,34 @@ void Quaternion::makematrix(Matrix* m) const {
  *  orthonormalized, because strange things may happen otherwise.
  */
 void Matrix::makequat(Quaternion* q) const {
-  float diag, s;
-  int i, j, k;
+  float diag = NAN;
+  float s = NAN;
+  int i = 0;
+  int j = 0;
+  int k = 0;
   float out[4];
 
-  static int next[3] = {1, 2, 0};
+  static int const next[3] = {1, 2, 0};
 
   diag = v(0, 0) + v(1, 1) + v(2, 2);
 
-  if (diag > 0.0f) {
-    s = (float)(sqrt(diag + 1.0));
-    q->w = s / 2.0f;
-    s = 0.5f / s;
+  if (diag > 0.0F) {
+    s = static_cast<float>(sqrt(diag + 1.0));
+    q->w = s / 2.0F;
+    s = 0.5F / s;
     q->x = (v(1, 2) - v(2, 1)) * s;
     q->y = (v(2, 0) - v(0, 2)) * s;
     q->z = (v(0, 1) - v(1, 0)) * s;
   } else {
     i = 0;
 
-    if (v(1, 1) > v(0, 0)) i = 1;
+    if (v(1, 1) > v(0, 0)) {
+      i = 1;
+    }
 
-    if (v(2, 2) > v(i, i)) i = 2;
+    if (v(2, 2) > v(i, i)) {
+      i = 2;
+    }
 
     j = next[i];
     k = next[j];
@@ -984,10 +1062,10 @@ void Matrix::makequat(Quaternion* q) const {
      */
     assert(s > 0.0);
 
-    s = (float)(sqrt(s) + 1.0);
+    s = static_cast<float>(sqrt(s) + 1.0);
 
-    out[i] = s / 2.0f;
-    s = 0.5f / s;
+    out[i] = s / 2.0F;
+    s = 0.5F / s;
     out[j] = (v(i, j) + v(j, i)) * s;
     out[k] = (v(i, k) + v(k, i)) * s;
     out[3] = (v(j, k) - v(k, j)) * s;
@@ -1004,7 +1082,7 @@ void Matrix::makequat(Quaternion* q) const {
  */
 void Quaternion::inverse(Quaternion* out) const {
   Quaternion con;
-  float norm;
+  float norm = NAN;
 
   /* q^-1 = q^* / N(q) */
 
@@ -1102,11 +1180,11 @@ void Quaternion::apply(Vector3* /*in*/, Vector3* out) const {
 void Quaternion::slerp(const Quaternion* to, float t, Quaternion* out, SlerpType how) const {
   const Quaternion* from = this;
   Quaternion to2;
-  double angle;
-  double cos_angle;
-  double scale_from;
-  double scale_to;
-  double sin_angle;
+  double angle = NAN;
+  double cos_angle = NAN;
+  double scale_from = NAN;
+  double scale_to = NAN;
+  double sin_angle = NAN;
 
   cos_angle = (from->x * to->x) + (from->y * to->y) + (from->z * to->z) + (from->w * to->w);
 
@@ -1117,8 +1195,9 @@ void Quaternion::slerp(const Quaternion* to, float t, Quaternion* out, SlerpType
     to2.x = -to->x;
     to2.y = -to->y;
     to2.z = -to->z;
-  } else
+  } else {
     to->copy(&to2);
+  }
 
   if ((1.0 - ABS(cos_angle)) > EPSILON) {
     /* spherical linear interpolation (SLERP) */
@@ -1132,18 +1211,18 @@ void Quaternion::slerp(const Quaternion* to, float t, Quaternion* out, SlerpType
     scale_to = t;
   }
 
-  out->w = (float)((scale_from * from->w) + (scale_to * to2.w));
-  out->x = (float)((scale_from * from->x) + (scale_to * to2.x));
-  out->y = (float)((scale_from * from->y) + (scale_to * to2.y));
-  out->z = (float)((scale_from * from->z) + (scale_to * to2.z));
+  out->w = static_cast<float>((scale_from * from->w) + (scale_to * to2.w));
+  out->x = static_cast<float>((scale_from * from->x) + (scale_to * to2.x));
+  out->y = static_cast<float>((scale_from * from->y) + (scale_to * to2.y));
+  out->z = static_cast<float>((scale_from * from->z) + (scale_to * to2.z));
 }
 
 void Quaternion::normalize() {
-  float dot = (x * x) + (y * y) + (z * z) + (w * w);
+  float const dot = (x * x) + (y * y) + (z * z) + (w * w);
 
-  assert(dot != 0.0f);
+  assert(dot != 0.0F);
 
-  float scale = 1.0f / (float)sqrt(dot);
+  float const scale = 1.0F / sqrt(dot);
 
   x *= scale;
   y *= scale;
@@ -1154,7 +1233,8 @@ void Quaternion::normalize() {
 void PrintMatrix(Matrix& m);
 
 Matrix get_YXZRotationMatrix(Vector3& rot) {
-  Matrix r, a;
+  Matrix r;
+  Matrix a;
 
   // TA Style means Y-X-Z rotation:
   // logger.Print ("YRotate (%f):\n", rot.y);

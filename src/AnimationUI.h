@@ -13,8 +13,8 @@
 class IK_UI {
  public:
   fltk::Window* CreateUI();
-  fltk::Window* window;
-  fltk::Choice* selJointType;
+  fltk::Window* window{};
+  fltk::Choice* selJointType{};
 
  private:
   inline void cb_Fixed_i(fltk::Item*, void*);
@@ -32,8 +32,8 @@ class IK_UI {
 class TimelineUI {
  public:
   fltk::Window* CreateUI();
-  fltk::Window* window;
-  fltk::ValueSlider* timeSlider;
+  fltk::Window* window{};
+  fltk::ValueSlider* timeSlider{};
 
  private:
   inline void cb_timeSlider_i(fltk::ValueSlider*, void*);
@@ -42,7 +42,7 @@ class TimelineUI {
   static void cb_Set(fltk::Button*, void*);
 
  public:
-  fltk::Button* playstopButton;
+  fltk::Button* playstopButton{};
 
  private:
   inline void cb_playstopButton_i(fltk::Button*, void*);
@@ -51,7 +51,7 @@ class TimelineUI {
   static void cb_Pause(fltk::Button*, void*);
 
  public:
-  fltk::CheckButton* autoKeying;
+  fltk::CheckButton* autoKeying{};
 
  private:
   inline void cb_Insert_i(fltk::Button*, void*);
@@ -68,9 +68,9 @@ class TimelineUI {
 class AnimTrackEditorUI {
  public:
   fltk::Window* CreateUI();
-  fltk::Window* window;
-  AnimKeyTrackView* trackView;
-  fltk::MultiBrowser* propBrowser;
+  fltk::Window* window{};
+  AnimKeyTrackView* trackView{};
+  fltk::MultiBrowser* propBrowser{};
 
  private:
   inline void cb_Auto_i(fltk::Button*, void*);
@@ -83,7 +83,7 @@ class AnimTrackEditorUI {
   static void cb_Auto1(fltk::Button*, void*);
 
  public:
-  fltk::CheckButton* chkLockObjects;
+  fltk::CheckButton* chkLockObjects{};
 #include "AnimTrackEditorCB.h"
 };
 #endif

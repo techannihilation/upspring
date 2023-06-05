@@ -9,9 +9,6 @@
 #include "Util.h"
 #include "Model.h"
 
-IKinfo::IKinfo() {
-  jointType = IKJT_Fixed;
-  joint = 0;
-}
+IKinfo::IKinfo() = default;
 
 IKinfo::~IKinfo() { SAFE_DELETE(joint); }

@@ -32,7 +32,7 @@ struct InputBuffer {
   }
   bool SkipWhitespace();
   std::string Location() const;
-  void SkipKeyword(const char* s);
+  void SkipKeyword(const char* kw);
   void Expecting(const char* s) const;  // show an error message saying that 's' was expected
   std::string ParseIdent();
 

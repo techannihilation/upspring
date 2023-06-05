@@ -15,8 +15,8 @@ class AnimKeyTrackView : public fltk::Group {
   float curTime;
 
   bool movingView, movingKeys, zooming;
-  int xpos, ypos;
-  int clickx, clicky;
+  int xpos{}, ypos{};
+  int clickx{}, clicky{};
 
   AnimTrackEditorUI* trackUI;
 };

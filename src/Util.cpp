@@ -24,13 +24,15 @@ std::string SPrintf(const char* fmt, ...) {
 
 std::string ReadZStr(FILE* f) {
   std::string s;
-  int c;
-  while ((c = fgetc(f)) != EOF && c) s += c;
+  int c = 0;
+  while ((c = fgetc(f)) != EOF && (c != 0)) {
+    s += std::to_string(c);
+  }
   return s;
 }
 
 void WriteZStr(FILE* f, const std::string& s) {
-  std::size_t c = s.length();
+  std::size_t const c = s.length();
   fwrite(s.data(), c + 1, 1, f);
 }
 

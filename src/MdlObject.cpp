@@ -10,9 +10,9 @@
 // Rotator
 // ------------------------------------------------------------------------------------------------
 
-Rotator::Rotator() { eulerInterp = false; }
+Rotator::Rotator() = default;
 
-Vector3 Rotator::GetEuler() { /*
+Vector3 Rotator::GetEuler() const { /*
                                      Matrix m;
                                      q.makematrix(&m);
                                      return m.calcEulerYXZ();*/
@@ -33,7 +33,7 @@ void Rotator::SetQuat(Quaternion q) {
   euler = m.calcEulerYXZ();
 }
 
-Quaternion Rotator::GetQuat() {
+Quaternion Rotator::GetQuat() const {
   Matrix m;
   m.eulerYXZ(euler);
   Quaternion q;
@@ -68,7 +68,7 @@ void Rotator::AddEulerRelative(const Vector3& rot) {
   euler += rot;
 }
 
-void Rotator::ToMatrix(Matrix& o) {
+void Rotator::ToMatrix(Matrix& o) const {
   //	q.makematrix(&o);
   o.eulerYXZ(euler);
 }
@@ -86,33 +86,28 @@ void Rotator::FromMatrix(const Matrix& r) {
 // Is pos contained by this object?
 float MdlObject::Selector::Score(Vector3& pos, float camdis) {
   // it it close to the center?
-  Vector3 tmp;
+  Vector3 const tmp;
   Vector3 center;
   Matrix transform;
   obj->GetFullTransform(transform);
-  Vector3 empty = Vector3();
+  Vector3 const empty = Vector3();
   transform.apply(&empty, &center);
   float best = (pos - center).length();
   // it it close to a polygon?
   for (PolyIterator pi(obj); !pi.End(); pi.Next()) {
     pi->selector->mesh = pi.Mesh();
-    float polyscore = pi->selector->Score(pos, camdis);
-    if (polyscore < best) best = polyscore;
+    float const polyscore = pi->selector->Score(pos, camdis);
+    if (polyscore < best) {
+      best = polyscore;
+    }
   }
   return best;
 }
 void MdlObject::Selector::Toggle(Vector3& /*pos*/, bool bSel) { obj->isSelected = bSel; }
 bool MdlObject::Selector::IsSelected() { return obj->isSelected; }
 
-MdlObject::MdlObject() {
-  selector = new Selector(this);
-  isSelected = false;
-  isOpen = true;
-  parent = 0;
+MdlObject::MdlObject() : selector(new Selector(this)) {
   scale.set(1, 1, 1);
-  bTexturesLoaded = false;
-  csurfobj = 0;
-  geometry = 0;
 
   InitAnimationInfo();
 }
@@ -120,49 +115,57 @@ MdlObject::MdlObject() {
 MdlObject::~MdlObject() {
   delete geometry;
 
-  for (std::uint32_t a = 0; a < childs.size(); a++)
-    if (childs[a]) delete childs[a];
+  for (auto& child : childs) {
+    delete child;
+  }
   childs.clear();
 
   delete selector;
   delete csurfobj;
 }
 
-PolyMesh* MdlObject::GetPolyMesh() { return dynamic_cast<PolyMesh*>(geometry); }
+PolyMesh* MdlObject::GetPolyMesh() const { return dynamic_cast<PolyMesh*>(geometry); }
 
 PolyMesh* MdlObject::GetOrCreatePolyMesh() {
-  if (!dynamic_cast<PolyMesh*>(geometry)) {
+  if (dynamic_cast<PolyMesh*>(geometry) == nullptr) {
     delete geometry;
     geometry = new PolyMesh;
   }
-  return (PolyMesh*)geometry;
+  return dynamic_cast<PolyMesh*>(geometry);
 }
 
-void MdlObject::InvalidateRenderData() {
-  if (geometry) geometry->InvalidateRenderData();
+void MdlObject::InvalidateRenderData() const {
+  if (geometry != nullptr) {
+    geometry->InvalidateRenderData();
+  }
 }
 
 void MdlObject::RemoveChild(MdlObject* o) {
   childs.erase(find(childs.begin(), childs.end(), o));
-  o->parent = 0;
+  o->parent = nullptr;
 }
 
 void MdlObject::AddChild(MdlObject* o) {
-  if (o->parent) o->parent->RemoveChild(o);
+  if (o->parent != nullptr) {
+    o->parent->RemoveChild(o);
+  }
 
   childs.push_back(o);
   o->parent = this;
 }
 
 bool MdlObject::IsEmpty() {
-  for (std::uint32_t a = 0; a < childs.size(); a++)
-    if (!childs[a]->IsEmpty()) return false;
+  for (auto& child : childs) {
+    if (!child->IsEmpty()) {
+      return false;
+    }
+  }
 
   PolyMesh* pm = GetPolyMesh();
-  return pm ? pm->poly.empty() : true;
+  return pm != nullptr ? pm->poly.empty() : true;
 }
 
-void MdlObject::GetTransform(Matrix& mat) {
+void MdlObject::GetTransform(Matrix& mat) const {
   Matrix scaling;
   scaling.scale(scale);
 
@@ -175,10 +178,10 @@ void MdlObject::GetTransform(Matrix& mat) {
   mat.t(2) = position.z;
 }
 
-void MdlObject::GetFullTransform(Matrix& tr) {
+void MdlObject::GetFullTransform(Matrix& tr) const {
   GetTransform(tr);
 
-  if (parent) {
+  if (parent != nullptr) {
     Matrix parentTransform;
     parent->GetFullTransform(parentTransform);
 
@@ -192,7 +195,9 @@ void MdlObject::SetPropertiesFromMatrix(Matrix& transform) {
   position.z = transform.t(2);
 
   // extract scale and create a rotation matrix
-  Vector3 cx, cy, cz;  // columns
+  Vector3 cx;
+  Vector3 cy;
+  Vector3 cz;  // columns
   transform.getcx(cx);
   transform.getcy(cy);
   transform.getcz(cz);
@@ -219,7 +224,9 @@ void MdlObject::load_3do_textures(std::shared_ptr<TextureHandler> par_texhandler
     bTexturesLoaded = true;
   }
 
-  for (std::uint32_t a = 0; a < childs.size(); a++) childs[a]->load_3do_textures(par_texhandler);
+  for (auto& child : childs) {
+    child->load_3do_textures(par_texhandler);
+  }
 }
 
 void MdlObject::FlipPolygons() { ApplyPolyMeshOperationR(&PolyMesh::FlipPolygons); }
@@ -239,7 +246,8 @@ void MdlObject::ApplyParentSpaceTransform(const Matrix& psTransform) {
   p' = (A^-1)SAp
   */
 
-  Matrix transform, inv;
+  Matrix transform;
+  Matrix inv;
 
   GetTransform(transform);
   transform.inverse(inv);
@@ -250,7 +258,9 @@ void MdlObject::ApplyParentSpaceTransform(const Matrix& psTransform) {
   TransformVertices(result);
 
   // transform childs objects
-  for (std::uint32_t a = 0; a < childs.size(); a++) childs[a]->ApplyParentSpaceTransform(result);
+  for (auto& child : childs) {
+    child->ApplyParentSpaceTransform(result);
+  }
 }
 
 void MdlObject::ApplyTransform(bool removeRotation, bool removeScaling, bool removePosition) {
@@ -258,25 +268,29 @@ void MdlObject::ApplyTransform(bool removeRotation, bool removeScaling, bool rem
   mat.identity();
   if (removeScaling) {
     // child vertices have to be transformed to do mirroring properly
-    if (scale.x < 0.0f || scale.y < 0.0f || scale.z < 0.0f) {
+    if (scale.x < 0.0F || scale.y < 0.0F || scale.z < 0.0F) {
       Vector3 mirror;
       bool flip = false;
       for (int a = 0; a < 3; a++) {
-        if (scale[a] < 0.0f) {
-          mirror[a] = -1.0f;
+        if (scale[a] < 0.0F) {
+          mirror[a] = -1.0F;
           scale[a] = -scale[a];
           flip = !flip;
-        } else
-          mirror[a] = 1.0f;
+        } else {
+          mirror[a] = 1.0F;
+        }
       }
       Matrix mirrorMatrix;
       mirrorMatrix.scale(mirror);
 
       TransformVertices(mirrorMatrix);
-      for (std::uint32_t a = 0; a < childs.size(); a++)
-        childs[a]->ApplyParentSpaceTransform(mirrorMatrix);
+      for (auto& child : childs) {
+        child->ApplyParentSpaceTransform(mirrorMatrix);
+      }
 
-      if (flip) FlipPolygons();
+      if (flip) {
+        FlipPolygons();
+      }
     }
 
     Matrix scaling;
@@ -301,36 +315,44 @@ void MdlObject::ApplyTransform(bool removeRotation, bool removeScaling, bool rem
 }
 
 void MdlObject::NormalizeNormals() {
-  for (VertexIterator v(this); !v.End(); v.Next()) v->normal.normalize();
+  for (VertexIterator v(this); !v.End(); v.Next()) {
+    v->normal.normalize();
+  }
 
-  for (std::uint32_t a = 0; a < childs.size(); a++) childs[a]->NormalizeNormals();
+  for (auto& child : childs) {
+    child->NormalizeNormals();
+  }
 
   InvalidateRenderData();
 }
 
-void MdlObject::TransformVertices(const Matrix& transform) {
-  if (geometry) geometry->Transform(transform);
+void MdlObject::TransformVertices(const Matrix& transform) const {
+  if (geometry != nullptr) {
+    geometry->Transform(transform);
+  }
   InvalidateRenderData();
 }
 
 void MdlObject::Transform(const Matrix& transform) {
   TransformVertices(transform);
 
-  for (std::vector<MdlObject*>::iterator i = childs.begin(); i != childs.end(); ++i) {
+  for (auto& child : childs) {
     Matrix subObjTr;
-    (*i)->GetTransform(subObjTr);
+    child->GetTransform(subObjTr);
     subObjTr *= transform;
-    (*i)->SetPropertiesFromMatrix(subObjTr);
+    child->SetPropertiesFromMatrix(subObjTr);
   }
 }
 
 MdlObject* MdlObject::Clone() {
-  MdlObject* cp = new MdlObject;
+  auto* cp = new MdlObject;
 
-  if (geometry) cp->geometry = geometry->Clone();
+  if (geometry != nullptr) {
+    cp->geometry = geometry->Clone();
+  }
 
-  for (std::uint32_t a = 0; a < childs.size(); a++) {
-    MdlObject* ch = childs[a]->Clone();
+  for (auto& child : childs) {
+    MdlObject* ch = child->Clone();
     cp->childs.push_back(ch);
     ch->parent = cp;
   }
@@ -347,10 +369,12 @@ MdlObject* MdlObject::Clone() {
   return cp;
 }
 
-bool MdlObject::HasSelectedParent() {
+bool MdlObject::HasSelectedParent() const {
   MdlObject* c = parent;
-  while (c) {
-    if (c->isSelected) return true;
+  while (c != nullptr) {
+    if (c->isSelected) {
+      return true;
+    }
     c = c->parent;
   }
   return false;
@@ -363,21 +387,27 @@ void MdlObject::ApproximateOffset() {
     mid += v->pos;
     c++;
   }
-  if (c) mid /= (float)c;
+  if (c != 0) {
+    mid /= static_cast<float>(c);
+  }
 
   position += mid;
-  for (VertexIterator v(this); !v.End(); v.Next()) v->pos -= mid;
+  for (VertexIterator v(this); !v.End(); v.Next()) {
+    v->pos -= mid;
+  }
 }
 
 void MdlObject::UnlinkFromParent() {
-  if (parent) {
+  if (parent != nullptr) {
     parent->childs.erase(find(parent->childs.begin(), parent->childs.end(), this));
-    parent = 0;
+    parent = nullptr;
   }
 }
 
 void MdlObject::LinkToParent(MdlObject* p) {
-  if (parent) UnlinkFromParent();
+  if (parent != nullptr) {
+    UnlinkFromParent();
+  }
   p->childs.push_back(this);
   parent = p;
 }
@@ -385,12 +415,12 @@ void MdlObject::LinkToParent(MdlObject* p) {
 std::vector<MdlObject*> MdlObject::GetChildObjects() {
   std::vector<MdlObject*> objects;
 
-  for (std::uint32_t a = 0; a < childs.size(); a++) {
-    if (!childs[a]->childs.empty()) {
-      std::vector<MdlObject*> sub = childs[a]->GetChildObjects();
+  for (auto& child : childs) {
+    if (!child->childs.empty()) {
+      std::vector<MdlObject*> sub = child->GetChildObjects();
       objects.insert(objects.end(), sub.begin(), sub.end());
     }
-    objects.push_back(childs[a]);
+    objects.push_back(child);
   }
 
   return objects;
@@ -398,19 +428,23 @@ std::vector<MdlObject*> MdlObject::GetChildObjects() {
 
 void MdlObject::FullMerge() {
   std::vector<MdlObject*> ch = childs;
-  for (std::uint32_t a = 0; a < ch.size(); a++) {
-    ch[a]->FullMerge();
-    MergeChild(ch[a]);
+  for (auto& a : ch) {
+    a->FullMerge();
+    MergeChild(a);
   }
 }
 
 void MdlObject::MergeChild(MdlObject* ch) {
   ch->ApplyTransform(true, true, true);
   PolyMesh* pm = ch->GetPolyMesh();
-  if (pm) pm->MoveGeometry(GetOrCreatePolyMesh());
+  if (pm != nullptr) {
+    pm->MoveGeometry(GetOrCreatePolyMesh());
+  }
 
   // move the childs
-  for (std::uint32_t a = 0; a < ch->childs.size(); a++) ch->childs[a]->parent = this;
+  for (auto& child : ch->childs) {
+    child->parent = this;
+  }
   childs.insert(childs.end(), ch->childs.begin(), ch->childs.end());
   ch->childs.clear();
 
@@ -443,7 +477,9 @@ void MdlObject::MoveOrigin(Vector3 move) {
 void MdlObject::UpdateAnimation(float time) {
   animInfo.Evaluate(this, time);
 
-  for (std::uint32_t a = 0; a < childs.size(); a++) childs[a]->UpdateAnimation(time);
+  for (auto& child : childs) {
+    child->UpdateAnimation(time);
+  }
 }
 
 void MdlObject::InitAnimationInfo() {

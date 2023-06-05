@@ -14,31 +14,37 @@ RotatorUI::~RotatorUI() { delete window; }
 void RotatorUI::ApplyRotation(bool absolute, int axis, fltk::Input* o) {
   std::vector<MdlObject*> selection = editorCallback->GetMdl()->GetSelectedObjects();
 
-  if (selection.size() != 1) return;
+  if (selection.size() != 1) {
+    return;
+  }
 
   MdlObject* obj = selection.front();
 
   Vector3 rot;
   rot.v[axis] = atof(o->value()) * DegreesToRadians;
 
-  if (absolute)
+  if (absolute) {
     obj->rotation.AddEulerAbsolute(rot);
-  else
+  } else {
     obj->rotation.AddEulerRelative(rot);
+  }
 
   o->value("0");
   editorCallback->Update();
 }
 
 void RotatorUI::Update() {
-  std::vector<MdlObject*> selection = editorCallback->GetMdl()->GetSelectedObjects();
+  std::vector<MdlObject*> const selection = editorCallback->GetMdl()->GetSelectedObjects();
 
-  fltk::Input* inputs[] = {inputAbsX, inputAbsY, inputAbsZ, inputRelX, inputRelY, inputRelZ, 0};
+  fltk::Input* inputs[] = {inputAbsX, inputAbsY, inputAbsZ, inputRelX,
+                           inputRelY, inputRelZ, nullptr};
   if (selection.size() != 1) {
     // disable all inputs
-    for (int a = 0; inputs[a]; a++) inputs[a]->deactivate();
+    for (int a = 0; inputs[a] != nullptr; a++) {
+      inputs[a]->deactivate();
+    }
   } else {
-    for (int a = 0; inputs[a]; a++) {
+    for (int a = 0; inputs[a] != nullptr; a++) {
       inputs[a]->value("0");
       inputs[a]->activate();
     }
@@ -52,12 +58,14 @@ void RotatorUI::Show() {
   window->show();
 }
 
-void RotatorUI::Hide() { window->hide(); }
+void RotatorUI::Hide() const { window->hide(); }
 
 void RotatorUI::ResetRotation() {
   std::vector<MdlObject*> selection = editorCallback->GetMdl()->GetSelectedObjects();
 
-  if (selection.size() != 1) return;
+  if (selection.size() != 1) {
+    return;
+  }
 
   MdlObject* obj = selection.front();
   obj->rotation = Rotator();
@@ -67,7 +75,9 @@ void RotatorUI::ResetRotation() {
 void RotatorUI::ApplyRotationToGeom() {
   std::vector<MdlObject*> selection = editorCallback->GetMdl()->GetSelectedObjects();
 
-  if (selection.size() != 1) return;
+  if (selection.size() != 1) {
+    return;
+  }
   MdlObject* obj = selection.front();
   obj->ApplyTransform(true, false, false);
   editorCallback->Update();

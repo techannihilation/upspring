@@ -34,12 +34,12 @@ void d_puts(const char* buf) {
 #ifdef WIN32
   OutputDebugString(buf);
 #else
-  fprintf(stderr, buf);
+  fprintf(stderr, "%s", buf);
 #endif
 
-  if (g_logfile[0]) {
+  if (g_logfile[0] != 0) {
     FILE* p = fopen(g_logfile, "a");
-    if (p) {
+    if (p != nullptr) {
       fputs(buf, p);
       fclose(p);
     }

@@ -143,7 +143,7 @@ class BackupViewerUI;
 
 struct ArchiveList {
   bool Load();
-  bool Save();
+  bool Save() const;
 
   std::set<std::string> archives;
 };
@@ -157,7 +157,7 @@ class content_error : public std::exception {
   std::string errMsg;
 };
 
-bool FileSaveDlg(const char* msg, const char* pattern, std::string& fn);
+bool FileSaveDlg(const char* msg, const char* ext, std::string& fn);
 bool FileOpenDlg(const char* msg, const char* pattern, std::string& fn);
 bool SelectDirectory(const char* msg, std::string& dir);
 

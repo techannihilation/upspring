@@ -36,10 +36,10 @@ class AnimController {
 class AnimProperty {
  public:
   AnimProperty();
-  AnimProperty(AnimController* ctl, const std::string& name, int offset);
+  AnimProperty(AnimController* ctl, std::string name, int offset);
   ~AnimProperty();
 
-  int GetKeyIndex(float time, int* lastkey = 0);
+  int GetKeyIndex(float time, const int* lastkey = 0);
   void Evaluate(float time, void* value, int* lastkey = 0);
   void InsertKey(void* data, float time);
   void ChopAnimation(float endTime);  // chop off all animation past endTime
@@ -50,13 +50,14 @@ class AnimProperty {
   void SetKeyTime(int index, float t) { GetKeyTime(index) = t; }
   const char* GetName() { return name.c_str(); }
   void Clear() { keyData.clear(); }
-  AnimProperty* Clone();
+  AnimProperty* Clone() const;
 
 #ifndef SWIG
-  AnimController* controller;
+  AnimController* controller{0};
 #endif
   std::string name;
-  int offset, elemSize;
+  int offset{};
+  int elemSize{0};
   std::vector<char> keyData;
 };
 
@@ -65,7 +66,7 @@ class AnimationInfo {
  public:
   ~AnimationInfo();
 
-  void AddProperty(AnimController* controller, const char* name, int offset);
+  void AddProperty(AnimController* ctl, const char* name, int offset);
 
   // Calculate a state of the properties at a specific time
   void Evaluate(void* obj, float time);
@@ -74,7 +75,7 @@ class AnimationInfo {
   void InsertKeyFrames(void* obj, float time);
 
   void ClearAnimData();
-  void CopyTo(AnimationInfo& dst);
+  void CopyTo(AnimationInfo& animInfo);
 
   /**
    * every object with AnimationInfo can have a number of AnimProperty's

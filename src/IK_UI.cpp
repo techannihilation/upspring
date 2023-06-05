@@ -17,15 +17,11 @@
 // IK_UI
 // ------------------------------------------------------------------------------------------------
 
-IK_UI::IK_UI(IEditor* callback) : callback(callback) {
-  multipleTypes = 0;
-
-  CreateUI();
-}
+IK_UI::IK_UI(IEditor* callback) : callback(callback), multipleTypes(nullptr) { CreateUI(); }
 
 IK_UI::~IK_UI() { delete window; }
 
-void IK_UI::Show() {
+void IK_UI::Show() const {
   window->set_non_modal();
   window->show();
 }
@@ -34,25 +30,30 @@ void IK_UI::AnimateToPos() {}
 
 void IK_UI::JointType(IKJointType jt) {
   Model* mdl = callback->GetMdl();
-  std::vector<MdlObject*> sel = mdl->GetSelectedObjects();
+  std::vector<MdlObject*> const sel = mdl->GetSelectedObjects();
 
-  for (std::uint32_t a = 0; a < sel.size(); a++) {
-    IKinfo& ik = sel[a]->ikInfo;
+  for (const auto& a : sel) {
+    IKinfo& ik = a->ikInfo;
 
-    if (ik.jointType == jt) continue;
+    if (ik.jointType == jt) {
+      continue;
+    }
 
     SAFE_DELETE(ik.joint);
-    if (jt == IKJT_Hinge)
+    if (jt == IKJT_Hinge) {
       ik.joint = new HingeJoint;
-    else if (jt == IKJT_Universal)
+    } else if (jt == IKJT_Universal) {
       ik.joint = new UniversalJoint;
+    }
 
     ik.jointType = jt;
   }
 }
 
 void IK_UI::Update() {
-  if (!window->visible()) return;
+  if (!window->visible()) {
+    return;
+  }
 
   Model* mdl = callback->GetMdl();
   std::vector<MdlObject*> sel = mdl->GetSelectedObjects();
@@ -73,11 +74,13 @@ void IK_UI::Update() {
 
     if (jt < 0) {
       multipleTypes = selJointType->add(mt);
-      int index = ((fltk::Group*)selJointType)->find(multipleTypes);
+      int const index = ((fltk::Group*)selJointType)->find(multipleTypes);
       selJointType->value(index);
-    } else
+    } else {
       selJointType->value(jt);
-  } else
+    }
+  } else {
     selJointType->deactivate();
+  }
   window->redraw();
 }

@@ -183,7 +183,7 @@ bool TextureHandler::LoadFiltered(
     std::vector<std::uint8_t> buff;
     archive->GetFileByName("unittextures/tatex/teamtex.txt", buff);
 
-    std::stringstream stringstream(std::string((char*)buff.data(), buff.size()));
+    std::stringstream stringstream(std::string(reinterpret_cast<char*>(buff.data()), buff.size()));
 
     // teamcolors_.reserve(32);
     std::string line;
@@ -201,7 +201,8 @@ bool TextureHandler::LoadFiltered(
 
     archive->FileInfo(i, name, size, mode);
 
-    if (size < 1) {
+    if (size < 1 || name.empty()) {
+      spdlog::warn("Empty name or size=0?");
       continue;
     }
 
@@ -254,7 +255,7 @@ bool TextureHandler::LoadFiltered(
 // ------------------------------------------------------------------------------------------------
 
 TextureGroupHandler::TextureGroupHandler(std::shared_ptr<TextureHandler> par_handler)
-    : textureHandler(par_handler) {}
+    : textureHandler(std::move(par_handler)) {}
 
 TextureGroupHandler::~TextureGroupHandler() {
   for (auto& group : groups) {
@@ -336,7 +337,7 @@ CfgList* TextureGroupHandler::MakeConfig(TextureGroup* tg) {
 
   auto* texlist = new CfgList;
   int index = 0;
-  for (auto texture : tg->textures) {
+  for (const auto& texture : tg->textures) {
     sprintf(n, "tex%d", index++);
     texlist->AddLiteral(n, texture->name.c_str());
   }
@@ -352,16 +353,12 @@ CfgList* TextureGroupHandler::MakeConfig(TextureGroup* tg) {
 TextureBinTree::Node::Node() {
   x = y = w = h = 0;
   img_w = img_h = 0;
-  child[0] = child[1] = 0;
+  child[0] = child[1] = nullptr;
 }
 
-TextureBinTree::Node::Node(int X, int Y, int W, int H) {
-  x = X;
-  y = Y;
-  w = W;
-  h = H;
+TextureBinTree::Node::Node(int X, int Y, int W, int H) : x(X), y(Y), w(W), h(H) {
   img_w = img_h = 0;
-  child[0] = child[1] = 0;
+  child[0] = child[1] = nullptr;
 }
 
 TextureBinTree::Node::~Node() {
@@ -389,37 +386,58 @@ void TextureBinTree::StoreNode(Node* n, const std::shared_ptr<Image> par_tex) {
 }
 
 TextureBinTree::Node* TextureBinTree::InsertNode(Node* n, int w, int h) {
-  if (n->child[0] || n->child[1])  // not a leaf node ?
+  if ((n->child[0] != nullptr) || (n->child[1] != nullptr))  // not a leaf node ?
   {
-    Node* r = 0;
-    if (n->child[0]) r = InsertNode(n->child[0], w, h);
-    if (r) return r;
-    if (n->child[1]) r = InsertNode(n->child[1], w, h);
+    Node* r = nullptr;
+    if (n->child[0] != nullptr) {
+      r = InsertNode(n->child[0], w, h);
+    }
+    if (r != nullptr) {
+      return r;
+    }
+    if (n->child[1] != nullptr) {
+      r = InsertNode(n->child[1], w, h);
+    }
     return r;
   } else {
     // Occupied
-    if (n->img_w) return 0;
+    if (n->img_w != 0) {
+      return nullptr;
+    }
 
     // Does it fit ?
-    if (n->w < w || n->h < h) return 0;
+    if (n->w < w || n->h < h) {
+      return nullptr;
+    }
 
-    if (n->w == w && n->h == h) return n;
+    if (n->w == w && n->h == h) {
+      return n;
+    }
 
-    int ow = n->w - w, oh = n->h - h;
+    int const ow = n->w - w;
+    int const oh = n->h - h;
     if (ow > oh) {
       // Split vertically
-      if (ow) n->child[0] = new Node(n->x + w, n->y, ow, n->h);
-      if (oh) n->child[1] = new Node(n->x, n->y + h, w, oh);
+      if (ow != 0) {
+        n->child[0] = new Node(n->x + w, n->y, ow, n->h);
+      }
+      if (oh != 0) {
+        n->child[1] = new Node(n->x, n->y + h, w, oh);
+      }
     } else {
       // Split horizontally
-      if (ow) n->child[0] = new Node(n->x + w, n->y, ow, h);
-      if (oh) n->child[1] = new Node(n->x, n->y + h, n->w, oh);
+      if (ow != 0) {
+        n->child[0] = new Node(n->x + w, n->y, ow, h);
+      }
+      if (oh != 0) {
+        n->child[1] = new Node(n->x, n->y + h, n->w, oh);
+      }
     }
 
     return n;
   }
 
-  return 0;
+  return nullptr;
 }
 
 TextureBinTree::Node* TextureBinTree::AddNode(const std::shared_ptr<Image> par_subtex) {

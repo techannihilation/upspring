@@ -93,7 +93,7 @@ bool ArchiveList::Load() {
   return true;
 }
 
-bool ArchiveList::Save() {
+bool ArchiveList::Save() const {
   std::string const fn = (ups::config::get().app_path() / ArchiveListFile).string();
   CfgWriter writer(fn.c_str());
   if (writer.IsFailed()) {
@@ -288,7 +288,7 @@ fltk::Color EditorUI::SetTeamColor() {
   return teamColor;
 }
 
-void EditorUI::uiSetRenderMethod(RenderMethod rm) {
+void EditorUI::uiSetRenderMethod(RenderMethod rm) const {
   modelDrawer->SetRenderMethod(rm);
   viewsGroup->redraw();
 }
@@ -308,7 +308,7 @@ static void CollectTextures(MdlObject* par_object,
   }
 }
 
-void EditorUI::uiAddUnitTextures() {
+void EditorUI::uiAddUnitTextures() const {
   // go through all the textures used by the unit
   TextureGroup* cur = GetCurrentTexGroup();
   if ((cur != nullptr) && (model->root != nullptr)) {
@@ -539,7 +539,7 @@ void EditorUI::menuObjectApproxOffset() {
   Update();
 }
 
-void EditorUI::browserSetObjectName(MdlObject* obj) {
+void EditorUI::browserSetObjectName(MdlObject* obj) const {
   if (obj == nullptr) {
     return;
   }
@@ -624,7 +624,7 @@ void EditorUI::Update() {
   inputCenterZ->value(model->mid.z);
 }
 
-void EditorUI::RenderScene(IView* view) {
+void EditorUI::RenderScene(IView* view) const {
   if (model != nullptr) {
     const float m = 1 / 255.0F;
     Vector3 const teamc((teamColor & 0xff000000) >> 24, (teamColor & 0xff0000) >> 16,
@@ -634,7 +634,7 @@ void EditorUI::RenderScene(IView* view) {
 }
 
 // get a single selected object and abort when multiple are selected
-MdlObject* EditorUI::GetSingleSel() {
+MdlObject* EditorUI::GetSingleSel() const {
   std::vector<MdlObject*> sel = model->GetSelectedObjects();
 
   if (sel.size() != 1) {
@@ -644,7 +644,7 @@ MdlObject* EditorUI::GetSingleSel() {
   return sel.front();
 }
 
-void EditorUI::SetMapping(int mapping) {
+void EditorUI::SetMapping(int mapping) const {
   model->mapping = mapping;
   viewsGroup->redraw();
 
@@ -764,7 +764,7 @@ void EditorUI::UpdateTitle() {
   window->label(windowTitle.c_str());
 }
 
-void EditorUI::UpdateTextureGroups() {
+void EditorUI::UpdateTextureGroups() const {
   textureGroupMenu->clear();
 
   for (auto* tg : textureGroupHandler->groups) {
@@ -773,9 +773,9 @@ void EditorUI::UpdateTextureGroups() {
   textureGroupMenu->redraw();
 }
 
-void EditorUI::SelectTextureGroup(fltk::Widget* /*w*/, void* /*d*/) { InitTexBrowser(); }
+void EditorUI::SelectTextureGroup(fltk::Widget* /*w*/, void* /*d*/) const { InitTexBrowser(); }
 
-TextureGroup* EditorUI::GetCurrentTexGroup() {
+TextureGroup* EditorUI::GetCurrentTexGroup() const {
   assert(textureGroupHandler->groups.size() == (uint)textureGroupMenu->children());
   if (textureGroupHandler->groups.empty()) {
     return nullptr;
@@ -789,14 +789,14 @@ TextureGroup* EditorUI::GetCurrentTexGroup() {
   return nullptr;
 }
 
-void EditorUI::InitTexBrowser() {
+void EditorUI::InitTexBrowser() const {
   texBrowser->clear();
 
   TextureGroup* tg = GetCurrentTexGroup();
   if (tg == nullptr) {
     return;
   }
-  for (auto texture : tg->textures) {
+  for (const auto& texture : tg->textures) {
     texBrowser->AddTexture(texture);
   }
   texBrowser->UpdatePositions();
@@ -836,7 +836,7 @@ void EditorUI::menuObjectLoad() {
   }
 }
 
-void EditorUI::menuObjectSave() {
+void EditorUI::menuObjectSave() const {
   MdlObject* sel = GetSingleSel();
   if (sel == nullptr) {
     return;
@@ -944,12 +944,12 @@ void EditorUI::menuObjectResetPos() {
   Update();
 }
 
-void EditorUI::menuObjectShowAnimWindows() {
+void EditorUI::menuObjectShowAnimWindows() const {
   uiIK->Show();
   uiTimeline->Show();
 }
 
-void EditorUI::menuObjectGenCSurf() {
+void EditorUI::menuObjectGenCSurf() const {
   std::vector<MdlObject*> const sel = model->GetSelectedObjects();
   for (const auto& a : sel) {
     delete a->csurfobj;
@@ -959,7 +959,7 @@ void EditorUI::menuObjectGenCSurf() {
   }
 }
 
-void EditorUI::menuEditOptimizeAll() {
+void EditorUI::menuEditOptimizeAll() const {
   std::vector<MdlObject*> const objects = model->GetObjectList();
   for (const auto& object : objects) {
     if (object->GetPolyMesh() != nullptr) {
@@ -968,7 +968,7 @@ void EditorUI::menuEditOptimizeAll() {
   }
 }
 
-void EditorUI::menuEditOptimizeSelected() {
+void EditorUI::menuEditOptimizeSelected() const {
   std::vector<MdlObject*> const objects = model->GetObjectList();
   for (const auto& object : objects) {
     if (object->isSelected && (object->GetPolyMesh() != nullptr)) {
@@ -989,7 +989,7 @@ void EditorUI::menuFileSaveAs() {
 void EditorUI::menuFileNew() { SetModel(new Model); }
 
 // this will also be called by the main window callback (on exit)
-void EditorUI::menuFileExit() {
+void EditorUI::menuFileExit() const {
   uiIK->Hide();
   uiMapping->Hide();
   uiTimeline->Hide();
@@ -1030,7 +1030,7 @@ void EditorUI::menuSettingsShowArchiveList() {
 }
 
 // Show texture group window
-void EditorUI::menuSettingsTextureGroups() {
+void EditorUI::menuSettingsTextureGroups() const {
   TexGroupUI const texGroupUI(textureGroupHandler, textureHandler);
   textureGroupHandler->Save((ups::config::get().app_path() / TextureGroupConfig).string());
 
@@ -1038,7 +1038,7 @@ void EditorUI::menuSettingsTextureGroups() {
   InitTexBrowser();
 }
 
-void EditorUI::menuSettingsSetBgColor() {
+void EditorUI::menuSettingsSetBgColor() const {
   Vector3 col;
   if (fltk::color_chooser("Select view background color:", col.x, col.y, col.z)) {
     for (int a = 0; a < viewsGroup->children(); ++a) {
@@ -1078,7 +1078,7 @@ void EditorUI::LoadSettings() {
   }
 }
 
-void EditorUI::LoadToolWindowSettings() {
+void EditorUI::LoadToolWindowSettings() const {
   std::string const path = (ups::config::get().app_path() / ViewSettingsFile).string();
   CfgList* cfg = CfgValue::LoadFile(path.c_str());
   if (cfg != nullptr) {
@@ -1189,18 +1189,18 @@ void EditorUI::menuMappingImportUV() {
   }
 }
 
-void EditorUI::menuMappingExportUV() {
+void EditorUI::menuMappingExportUV() const {
   static std::string fn;
   if (FileSaveDlg("Save merged model for UV mapping:", FileChooserPattern, fn)) {
     model->ExportUVMesh(fn.c_str());
   }
 }
 
-void EditorUI::menuMappingShow() { uiMapping->Show(); }
+void EditorUI::menuMappingShow() const { uiMapping->Show(); }
 
-void EditorUI::menuMappingShowTexBuilder() { uiTexBuilder->Show(); }
+void EditorUI::menuMappingShowTexBuilder() const { uiTexBuilder->Show(); }
 
-void EditorUI::menuScriptLoad() {
+void EditorUI::menuScriptLoad() const {
   const char* pattern = "Lua script (LUA)\0*.lua\0";
 
   static std::string lastLuaScript;

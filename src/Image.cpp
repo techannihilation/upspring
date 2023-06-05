@@ -12,12 +12,12 @@
 
 #include "spdlog/spdlog.h"
 
-struct _imagelib {
-  _imagelib() {
+struct Imagelib {
+  Imagelib() {
     ilInit();
     iluInit();
   }
-  ~_imagelib() { ilShutDown(); }
+  ~Imagelib() { ilShutDown(); }
 } static imagelib;
 
 // https://stackoverflow.com/a/108360/3368468
@@ -78,14 +78,14 @@ bool Image::load(const std::vector<std::uint8_t>& par_buffer) {
 
 bool Image::load(const std::string& par_file) {
   FILE* fp = fopen(par_file.c_str(), "rb");
-  if (!fp) {
+  if (fp == nullptr) {
     has_error_ = true;
     error_ = "Failed to open file '" + par_file + "'";
     return false;
   }
 
   fseek(fp, 0, SEEK_END);
-  int len = ftell(fp);
+  int const len = ftell(fp);
   fseek(fp, 0, SEEK_SET);
   auto buf = std::vector<std::uint8_t>(len);
   fread(buf.data(), len, 1, fp);

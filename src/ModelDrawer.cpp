@@ -24,15 +24,15 @@
 #include "Spline.h"
 #include "MeshIterators.h"
 
-static const float ObjCenterSize = 4.0f;
+static const float ObjCenterSize = 4.0F;
 
 uint LoadVertexProgram(std::string fn);
 uint LoadFragmentProgram(std::string fn);
 
 void TestGLError() {
-  GLenum err = glGetError();
+  GLenum const err = glGetError();
   if (err != GL_NO_ERROR) {
-    spdlog::error("GL Error: {}", (const char*)gluErrorString(err));
+    spdlog::error("GL Error: {}", reinterpret_cast<const char*>(gluErrorString(err)));
   }
 }
 
@@ -46,40 +46,43 @@ void RenderData::Invalidate() {
 RenderData::~RenderData() { Invalidate(); }
 
 ModelDrawer::ModelDrawer() {
-  glewInitialized = false;
-  canRenderS3O = false;
-  model = 0;
-  sphereList = 0;
-
-  buffer = 0;
-  bufferSize = 0;
-
   s3oFP = s3oVP = 0;
-  skyboxTexture = 0;
-  s3oFPunlit = s3oVPunlit = 0;
 
-  renderMethod = RM_S3OFULL;
+  s3oFPunlit = s3oVPunlit = 0;
 }
 
 ModelDrawer::~ModelDrawer() {
-  if (s3oFP) glDeleteProgramsARB(1, &s3oFP);
-  if (s3oVP) glDeleteProgramsARB(1, &s3oVP);
-  if (s3oFPunlit) glDeleteProgramsARB(1, &s3oFPunlit);
-  if (s3oVPunlit) glDeleteProgramsARB(1, &s3oVPunlit);
+  if (s3oFP != 0U) {
+    glDeleteProgramsARB(1, &s3oFP);
+  }
+  if (s3oVP != 0U) {
+    glDeleteProgramsARB(1, &s3oVP);
+  }
+  if (s3oFPunlit != 0U) {
+    glDeleteProgramsARB(1, &s3oFPunlit);
+  }
+  if (s3oVPunlit != 0U) {
+    glDeleteProgramsARB(1, &s3oVPunlit);
+  }
 
-  if (skyboxTexture) glDeleteTextures(1, &skyboxTexture);
+  if (skyboxTexture != 0U) {
+    glDeleteTextures(1, &skyboxTexture);
+  }
 
   delete[] buffer;
 
-  if (sphereList) glDeleteLists(sphereList, 1);
+  if (sphereList != 0U) {
+    glDeleteLists(sphereList, 1);
+  }
 }
 
 void ModelDrawer::SetupGL() {
   glewInitialized = true;
 
-  GLenum err;
+  GLenum err = 0;
   if ((err = glewInit()) != GLEW_OK) {
-    spdlog::error("Failed to initialize GLEW: {}", (const char*)glewGetErrorString(err));
+    spdlog::error("Failed to initialize GLEW: {}",
+                  reinterpret_cast<const char*>(glewGetErrorString(err)));
   } else {
     canRenderS3O = 0;
     // see if S3O's can be rendered properly
@@ -99,7 +102,7 @@ void ModelDrawer::SetupGL() {
       s3oVPunlit = LoadVertexProgram(
           (ups::config::get().app_path() / "data" / "shaders" / "s3o_unlit.vp").string());
 
-      if (s3oFP && s3oVP && s3oFPunlit && s3oVPunlit) {
+      if ((s3oFP != 0U) && (s3oVP != 0U) && (s3oFPunlit != 0U) && (s3oVPunlit != 0U)) {
         canRenderS3O = 2;
 
         nv_dds::CDDSImage image;
@@ -163,46 +166,50 @@ void ModelDrawer::RenderPolygon(MdlObject* o, Poly* pl, IView* v, int mapping, b
     }
 
     if (!pl->texname.empty()) {
-      if (texture) {
+      if (texture != 0) {
         glEnable(GL_TEXTURE_2D);
         glBindTexture(GL_TEXTURE_2D, texture);
       }
     } else {
-      if (v->GetRenderMode() >= M3D_SOLID) glColor3fv((float*)&pl->color);
+      if (v->GetRenderMode() >= M3D_SOLID) {
+        glColor3fv(reinterpret_cast<float*>(&pl->color));
+      }
     }
 
     glBegin(GL_POLYGON);
     if (pl->verts.size() == 4 || pl->verts.size() == 3) {
-      const float tc[] = {0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f};
+      const float tc[] = {0.0F, 1.0F, 1.0F, 1.0F, 1.0F, 0.0F, 0.0F, 0.0F};
       for (std::uint32_t a = 0; a < pl->verts.size(); a++) {
         glTexCoord2f(tc[a * 2], tc[a * 2 + 1]);
-        glNormal3fv((float*)&pm->verts[pl->verts[a]].normal);
-        glVertex3fv((float*)&pm->verts[pl->verts[a]].pos);
+        glNormal3fv(reinterpret_cast<float*>(&pm->verts[pl->verts[a]].normal));
+        glVertex3fv(reinterpret_cast<float*>(&pm->verts[pl->verts[a]].pos));
       }
     } else {
-      for (std::uint32_t a = 0; a < pl->verts.size(); a++) {
-        int i = pl->verts[a];
-        glNormal3fv((float*)&pm->verts[i].normal);
-        glVertex3fv((float*)&pm->verts[i].pos);
+      for (int const i : pl->verts) {
+        glNormal3fv(reinterpret_cast<float*>(&pm->verts[i].normal));
+        glVertex3fv(reinterpret_cast<float*>(&pm->verts[i].pos));
       }
     }
     glEnd();
 
-    if (texture) glDisable(GL_TEXTURE_2D);
+    if (texture != 0) {
+      glDisable(GL_TEXTURE_2D);
+    }
 
     glColor3ub(255, 255, 255);
   } else {
     glBegin(GL_POLYGON);
-    for (std::uint32_t a = 0; a < pl->verts.size(); a++) {
-      int i = pl->verts[a];
-      glTexCoord2fv((float*)&pm->verts[i].tc[0]);
-      glNormal3fv((float*)&pm->verts[i].normal);
-      glVertex3fv((float*)&pm->verts[i].pos);
+    for (int const i : pl->verts) {
+      glTexCoord2fv(reinterpret_cast<float*>(&pm->verts[i].tc[0]));
+      glNormal3fv(reinterpret_cast<float*>(&pm->verts[i].normal));
+      glVertex3fv(reinterpret_cast<float*>(&pm->verts[i].pos));
     }
     glEnd();
   }
 
-  if (allowSelect) v->PopSelector();
+  if (allowSelect) {
+    v->PopSelector();
+  }
 }
 
 void ModelDrawer::RenderObject(MdlObject* o, IView* v, int mapping) {
@@ -210,19 +217,21 @@ void ModelDrawer::RenderObject(MdlObject* o, IView* v, int mapping) {
   v->PushSelector(o->selector);
 
   // setup object transformation
-  Matrix tmp, mat;
+  Matrix tmp;
+  Matrix mat;
   o->GetTransform(mat);
   mat.transpose(&tmp);
   glPushMatrix();
-  glMultMatrixf((float*)&tmp);
+  glMultMatrixf(reinterpret_cast<float*>(&tmp));
 
   // render object origin
-  if (v->GetConfig(CFG_OBJCENTERS) != 0.0f) {
+  if (v->GetConfig(CFG_OBJCENTERS) != 0.0F) {
     glPointSize(ObjCenterSize);
-    if (o->isSelected)
+    if (o->isSelected) {
       glColor3ub(255, 0, 0);
-    else
+    } else {
       glColor3ub(255, 255, 255);
+    }
     glBegin(GL_POINTS);
     glVertex3i(0, 0, 0);
     glEnd();
@@ -230,16 +239,18 @@ void ModelDrawer::RenderObject(MdlObject* o, IView* v, int mapping) {
     glColor3ub(255, 255, 255);
   }
 
-  bool polySelect = v->GetConfig(CFG_POLYSELECT) != 0;
+  bool const polySelect = v->GetConfig(CFG_POLYSELECT) != 0;
 
   //	if(polySelect) {
   // render polygons
   PolyMesh* pm = o->GetPolyMesh();
-  if (pm) {
-    for (std::uint32_t a = 0; a < pm->poly.size(); a++)
-      RenderPolygon(o, pm->poly[a], v, mapping, polySelect);
-  } else if (o->geometry)
+  if (pm != nullptr) {
+    for (auto& a : pm->poly) {
+      RenderPolygon(o, a, v, mapping, polySelect);
+    }
+  } else if (o->geometry != nullptr) {
     o->geometry->Draw(this, model, o);
+  }
 
   /*	}
           else
@@ -264,7 +275,9 @@ void ModelDrawer::RenderObject(MdlObject* o, IView* v, int mapping) {
                   }
           }*/
 
-  for (std::uint32_t a = 0; a < o->childs.size(); a++) RenderObject(o->childs[a], v, mapping);
+  for (auto& child : o->childs) {
+    RenderObject(child, v, mapping);
+  }
 
   glPopMatrix();
   v->PopSelector();
@@ -283,7 +296,7 @@ int ModelDrawer::SetupS3OTextureMapping(IView* v, const Vector3& teamColor) {
         S3ORendering = 1;
         SetupS3OBasicDrawing(teamColor);
       } else if (model->HasTex(0)) {
-        uint texture = model->texBindings[0].texture->glIdent;
+        uint const texture = model->texBindings[0].texture->glIdent;
         glEnable(GL_TEXTURE_2D);
         glBindTexture(GL_TEXTURE_2D, texture);
       }
@@ -319,7 +332,9 @@ int ModelDrawer::SetupTextureMapping(IView* v, const Vector3& teamColor) {
 }
 
 void ModelDrawer::Render(Model* mdl, IView* v, const Vector3& teamColor) {
-  if (!glewInitialized) SetupGL();
+  if (!glewInitialized) {
+    SetupGL();
+  }
 
   model = mdl;
   if (model->root == nullptr) {
@@ -329,10 +344,11 @@ void ModelDrawer::Render(Model* mdl, IView* v, const Vector3& teamColor) {
   int S3ORendering = 0;
   MdlObject* root = model->root;
 
-  if (v->IsSelecting())
+  if (v->IsSelecting()) {
     glDisable(GL_TEXTURE_2D);
-  else if (v->GetRenderMode() == M3D_TEX)
+  } else if (v->GetRenderMode() == M3D_TEX) {
     S3ORendering = SetupTextureMapping(v, teamColor);
+  }
 
   glEnable(GL_NORMALIZE);
 
@@ -341,20 +357,23 @@ void ModelDrawer::Render(Model* mdl, IView* v, const Vector3& teamColor) {
   RenderObject(root, v, model->mapping);
 
   if (S3ORendering > 0) {
-    if (S3ORendering == 2)
+    if (S3ORendering == 2) {
       CleanupS3OAdvDrawing();
-    else if (S3ORendering == 1)
+    } else if (S3ORendering == 1) {
       CleanupS3OBasicDrawing();
+    }
     glDisable(GL_TEXTURE_2D);
   }
 
   glDisable(GL_LIGHTING);
   RenderHelperGeom(root, v);
 
-  if (!v->IsSelecting()) RenderSelection(v);
+  if (!v->IsSelecting()) {
+    RenderSelection(v);
+  }
 
   // draw radius
-  if (v->GetConfig(CFG_DRAWRADIUS) != 0.0f) {
+  if (v->GetConfig(CFG_DRAWRADIUS) != 0.0F) {
     glPushMatrix();
     glTranslatef(model->mid.x, model->mid.y, model->mid.z);
     glScalef(model->radius, model->radius, model->radius);
@@ -367,16 +386,16 @@ void ModelDrawer::Render(Model* mdl, IView* v, const Vector3& teamColor) {
   }
 
   // draw height
-  if (v->GetConfig(CFG_DRAWHEIGHT) != 0.0f) {
-    glLineWidth(5.0f);
+  if (v->GetConfig(CFG_DRAWHEIGHT) != 0.0F) {
+    glLineWidth(5.0F);
 
     glColor3ub(255, 255, 0);
     glBegin(GL_LINES);
     glVertex3i(0, 0, 0);
-    glVertex3f(0.0f, model->height, 0.0f);
+    glVertex3f(0.0F, model->height, 0.0F);
     glEnd();
 
-    glLineWidth(1.0f);
+    glLineWidth(1.0F);
   }
 }
 
@@ -384,8 +403,8 @@ void ModelDrawer::RenderPolygonVertexNormals(PolyMesh* o, Poly* pl) {
   glColor3ub(255, 0, 0);
   glDisable(GL_TEXTURE_2D);
   glBegin(GL_LINES);
-  for (std::uint32_t a = 0; a < pl->verts.size(); a++) {
-    Vertex& v = o->verts[pl->verts[a]];
+  for (int const vert : pl->verts) {
+    Vertex& v = o->verts[vert];
     glVertex3fv(v.pos.getf());
     glVertex3fv((v.pos + v.normal).getf());
   }
@@ -394,14 +413,15 @@ void ModelDrawer::RenderPolygonVertexNormals(PolyMesh* o, Poly* pl) {
 }
 
 static Vector3 ProjectVector(const Vector3& planeNorm, const Vector3& v) {
-  float d = planeNorm | v;
+  float const d = planeNorm | v;
 
   return v - planeNorm * d;
 }
 
 static Vector3 CalcTangentOnEdge(const Vector3& edgeDir, const Vector3& surfNormal,
                                  const Vector3& vertNormal) {
-  Vector3 binormal, projVN;
+  Vector3 binormal;
+  Vector3 projVN;
 
   binormal = surfNormal ^ edgeDir;
 
@@ -416,14 +436,19 @@ static Vector3 CalcTangentOnEdge(const Vector3& edgeDir, const Vector3& surfNorm
 
 void ModelDrawer::RenderSmoothPolygon(PolyMesh* pm, Poly* pl) {
   const int steps = 5;
-  const float step = 1.0f / steps;
+  const float step = 1.0F / steps;
 
-  Vector3 surfNormal = pl->CalcPlane(pm->verts).GetVector() * 0.01f;
+  Vector3 const surfNormal = pl->CalcPlane(pm->verts).GetVector() * 0.01F;
 
   if (pl->verts.size() == 4) {
-    Vector3 rowStart, rowEnd, leftEdge, rightEdge;
+    Vector3 rowStart;
+    Vector3 rowEnd;
+    Vector3 leftEdge;
+    Vector3 rightEdge;
     Vertex* verts[4];
-    for (int a = 0; a < 4; a++) verts[a] = &pm->verts[pl->verts[a]];
+    for (int a = 0; a < 4; a++) {
+      verts[a] = &pm->verts[pl->verts[a]];
+    }
 
     leftEdge = verts[3]->pos - verts[0]->pos;
     rightEdge = verts[2]->pos - verts[1]->pos;
@@ -434,29 +459,35 @@ void ModelDrawer::RenderSmoothPolygon(PolyMesh* pm, Poly* pl) {
     }
     Vector3* p = buffer;
 
-    for (float y = 0.0f; y < 1.0f; y += step) {
+    for (float y = 0.0F; y < 1.0F; y += step) {
       rowStart = verts[0]->pos + leftEdge * y;
       rowEnd = verts[1]->pos + rightEdge * y;
 
-      Vector3 rowVec = rowEnd - rowStart;
+      Vector3 const rowVec = rowEnd - rowStart;
 
-      for (float x = 0.0f; x < 1.0f; x += step) *(p++) = rowStart + rowVec * x;
+      for (float x = 0.0F; x < 1.0F; x += step) {
+        *(p++) = rowStart + rowVec * x;
+      }
     }
 
     glBegin(GL_POINTS);
-    for (int y = 0; y < steps; y++)
+    for (int y = 0; y < steps; y++) {
       for (int x = 0; x < steps; x++) {
         glVertex3fv(buffer[y * steps + x].getf());
       }
+    }
     glEnd();
   } else if (pl->verts.size() == 3) {
-    Vector3 rowStart, rowEnd;
+    Vector3 rowStart;
+    Vector3 const rowEnd;
 
     Vertex* verts[3];
-    for (int a = 0; a < 3; a++) verts[a] = &pm->verts[pl->verts[a]];
+    for (int a = 0; a < 3; a++) {
+      verts[a] = &pm->verts[pl->verts[a]];
+    }
 
-    Vector3 Xdir = verts[1]->pos - verts[2]->pos;
-    Vector3 Ydir = verts[2]->pos - verts[0]->pos;
+    Vector3 const Xdir = verts[1]->pos - verts[2]->pos;
+    Vector3 const Ydir = verts[2]->pos - verts[0]->pos;
 
     if (bufferSize < steps * steps / 2) {
       bufferSize = steps * steps / 2;
@@ -465,9 +496,9 @@ void ModelDrawer::RenderSmoothPolygon(PolyMesh* pm, Poly* pl) {
     Vector3* p = buffer;
 
     glBegin(GL_POINTS);
-    for (float y = 0.0f; y < 1.0f; y += step) {
+    for (float y = 0.0F; y < 1.0F; y += step) {
       rowStart = verts[0]->pos + Ydir * y;
-      for (float x = 0.0f; x < y; x += step) {
+      for (float x = 0.0F; x < y; x += step) {
         Vector3 v;
         v = rowStart + Xdir * x;
         v += surfNormal;
@@ -491,8 +522,8 @@ void ModelDrawer::RenderSmoothPolygon(PolyMesh* pm, Poly* pl) {
     glBegin(GL_LINES);
     glColor3ub(255, 0, 0);
 
-    Vector3 edge = v2.pos - v1.pos;
-    float edgeLen = edge.length();
+    Vector3 const edge = v2.pos - v1.pos;
+    float const edgeLen = edge.length();
 
     // Calculate for v1
     Vector3 tgStart = CalcTangentOnEdge(edge, surfNormal, v1.normal);
@@ -517,13 +548,13 @@ void ModelDrawer::RenderSmoothPolygon(PolyMesh* pm, Poly* pl) {
     Vector3 prev;
     glBegin(GL_LINE_STRIP);
     for (int b = 0; b < steps; b++) {
-      float t = (float)b / steps;
+      float const t = static_cast<float>(b) / steps;
       float w[4];  // weights
       CubicHermiteSplineWeights(t, w);
 
       Vector3 pos = v1.pos * w[0] + tgStart * w[1] + v2.pos * w[2] + tgEnd * w[3];
       glVertex3fv(pos.getf());
-      glColor3f(1.0f - t, 0.0f, t);
+      glColor3f(1.0F - t, 0.0F, t);
       prev = pos;
     }
     glEnd();
@@ -533,85 +564,103 @@ void ModelDrawer::RenderSmoothPolygon(PolyMesh* pm, Poly* pl) {
 
 void ModelDrawer::RenderHelperGeom(MdlObject* o, IView* v) {
   // setup object transformation
-  Matrix tmp, mat;
+  Matrix tmp;
+  Matrix mat;
   o->GetTransform(mat);
   mat.transpose(&tmp);
   glPushMatrix();
-  glMultMatrixf((float*)&tmp);
+  glMultMatrixf(reinterpret_cast<float*>(&tmp));
 
-  if (o->csurfobj) o->csurfobj->Draw();
+  if (o->csurfobj != nullptr) {
+    o->csurfobj->Draw();
+  }
 
   PolyMesh* pm = o->GetPolyMesh();
-  if (v->GetConfig(CFG_VRTNORMALS) != 0.0f) {
-    if (o->isSelected && pm) {
-      for (std::uint32_t a = 0; a < pm->poly.size(); a++)
+  if (v->GetConfig(CFG_VRTNORMALS) != 0.0F) {
+    if (o->isSelected && (pm != nullptr)) {
+      for (std::uint32_t a = 0; a < pm->poly.size(); a++) {
         //	if (o->poly[a]->isSelected)
         RenderPolygonVertexNormals(pm, pm->poly[a]);
+      }
     }
   }
 
-  if (v->GetConfig(CFG_MESHSMOOTH) != 0.0f) {
-    for (std::uint32_t a = 0; a < pm->poly.size(); a++)
-      if (pm->poly[a]->isSelected) RenderSmoothPolygon(pm, pm->poly[a]);
+  if (v->GetConfig(CFG_MESHSMOOTH) != 0.0F) {
+    for (std::uint32_t a = 0; a < pm->poly.size(); a++) {
+      if (pm->poly[a]->isSelected) {
+        RenderSmoothPolygon(pm, pm->poly[a]);
+      }
+    }
   }
 
-  for (std::uint32_t a = 0; a < o->childs.size(); a++) RenderHelperGeom(o->childs[a], v);
+  for (auto& child : o->childs) {
+    RenderHelperGeom(child, v);
+  }
 
   glPopMatrix();
 }
 
 void ModelDrawer::RenderSelection_(MdlObject* o, IView* view) {
   // setup object transformation
-  Matrix tmp, mat;
+  Matrix tmp;
+  Matrix mat;
   o->GetTransform(mat);
   mat.transpose(&tmp);
   glPushMatrix();
-  glMultMatrixf((float*)&tmp);
+  glMultMatrixf(reinterpret_cast<float*>(&tmp));
 
   glColor3ub(0, 0, 255);
 
-  bool psel = view->GetConfig(CFG_POLYSELECT) != 0.0f;
+  bool const psel = view->GetConfig(CFG_POLYSELECT) != 0.0F;
   for (PolyIterator pi(o); !pi.End(); pi.Next()) {
     Poly* pl = *pi;
 
     if ((o->isSelected && !psel) || (pl->isSelected && psel)) {
-      if (!pi.verts()) continue;
+      if (pi.verts() == nullptr) {
+        continue;
+      }
 
       glBegin(GL_POLYGON);
-      for (unsigned int b = 0; b < pl->verts.size(); b++)
-        glVertex3fv((float*)&(*pi.verts())[pl->verts[b]].pos);
+      for (int const vert : pl->verts) {
+        glVertex3fv(reinterpret_cast<float*>(&(*pi.verts())[vert].pos));
+      }
       glEnd();
     }
   }
-  for (std::uint32_t a = 0; a < o->childs.size(); a++) RenderSelection_(o->childs[a], view);
+  for (auto& child : o->childs) {
+    RenderSelection_(child, view);
+  }
 
   glPopMatrix();
 }
 
 void ModelDrawer::RenderSelection(IView* view) {
   glEnable(GL_POLYGON_OFFSET_FILL);
-  glPolygonOffset(0.0f, -10.0f);
+  glPolygonOffset(0.0F, -10.0F);
   glDepthMask(GL_FALSE);
 
-  unsigned long pattern[32], *i = pattern;
+  unsigned long pattern[32];
+  unsigned long* i = pattern;
   unsigned long val = 0xCCCCCCCC;
   for (; i < pattern + 32;) {
     *(i++) = val;
     *(i++) = val;
     val = ~val;
   }
-  glPolygonStipple((GLubyte*)&pattern[0]);
+  glPolygonStipple(reinterpret_cast<GLubyte*>(&pattern[0]));
   glEnable(GL_POLYGON_STIPPLE);
   glDisable(GL_LIGHTING);
   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
   glDisable(GL_CULL_FACE);
 
-  if (model->root) RenderSelection_(model->root, view);
+  if (model->root != nullptr) {
+    RenderSelection_(model->root, view);
+  }
 
   glDisable(GL_POLYGON_STIPPLE);
   glDisable(GL_POLYGON_OFFSET_FILL);
   glDepthMask(GL_TRUE);
-  glPolygonOffset(0.0f, 0.0f);
+  glPolygonOffset(0.0F, 0.0F);
 }
 
 void ModelDrawer::SetupS3OBasicDrawing(const Vector3& teamcol) {
@@ -628,7 +677,7 @@ void ModelDrawer::SetupS3OBasicDrawing(const Vector3& teamcol) {
   glEnable(GL_TEXTURE_2D);
 
   // set team color
-  float tc[4] = {teamcol.x, teamcol.y, teamcol.z, 1.0f};
+  float tc[4] = {teamcol.x, teamcol.y, teamcol.z, 1.0F};
   glTexEnvfv(GL_TEXTURE_ENV, GL_TEXTURE_ENV_COLOR, tc);
 
   // bind texture 0
@@ -665,7 +714,7 @@ void ModelDrawer::CleanupS3OBasicDrawing() {
 void ModelDrawer::SetupS3OAdvDrawing(const Vector3& teamcol, IView* /*v*/) {
   glEnable(GL_VERTEX_PROGRAM_ARB);
   glEnable(GL_FRAGMENT_PROGRAM_ARB);
-  if (glIsEnabled(GL_LIGHTING)) {
+  if (glIsEnabled(GL_LIGHTING) != 0U) {
     glBindProgramARB(GL_VERTEX_PROGRAM_ARB, s3oVP);
     glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, s3oFP);
   } else {
@@ -673,7 +722,7 @@ void ModelDrawer::SetupS3OAdvDrawing(const Vector3& teamcol, IView* /*v*/) {
     glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, s3oFPunlit);
   }
 
-  glProgramLocalParameter4fARB(GL_FRAGMENT_PROGRAM_ARB, 0, teamcol.x, teamcol.y, teamcol.z, 1.0f);
+  glProgramLocalParameter4fARB(GL_FRAGMENT_PROGRAM_ARB, 0, teamcol.x, teamcol.y, teamcol.z, 1.0F);
 
   glActiveTextureARB(GL_TEXTURE0_ARB);
   glEnable(GL_TEXTURE_2D);
@@ -706,26 +755,28 @@ void ModelDrawer::CleanupS3OAdvDrawing() {
 
 char* LoadTextFile(std::string fn, int& l) {
   FILE* f = fopen(fn.c_str(), "rb");
-  if (!f) {
+  if (f == nullptr) {
     fltk::message("Failed to open %s", fn.c_str());
-    return 0;
+    return nullptr;
   }
   fseek(f, 0, SEEK_END);
   l = ftell(f);
   fseek(f, 0, SEEK_SET);
   char* buf = new char[l];
-  if (fread(buf, l, 1, f)) {
+  if (fread(buf, l, 1, f) != 0U) {
   }
   fclose(f);
   return buf;
 }
 
 uint LoadVertexProgram(std::string fn) {
-  int l;
+  int l = 0;
   char* buf = LoadTextFile(fn, l);
-  if (!buf) return 0;
+  if (buf == nullptr) {
+    return 0;
+  }
 
-  uint ret;
+  uint ret = 0;
   glGenProgramsARB(1, &ret);
   glBindProgramARB(GL_VERTEX_PROGRAM_ARB, ret);
 
@@ -734,7 +785,7 @@ uint LoadVertexProgram(std::string fn) {
 
   if (GL_INVALID_OPERATION == glGetError()) {
     // Find the error position
-    GLint errPos;
+    GLint errPos = 0;
     glGetIntegerv(GL_PROGRAM_ERROR_POSITION_ARB, &errPos);
     // Print implementation-dependent program
     // errors and warnings string.
@@ -747,11 +798,13 @@ uint LoadVertexProgram(std::string fn) {
 }
 
 uint LoadFragmentProgram(std::string fn) {
-  int len;
+  int len = 0;
   char* buf = LoadTextFile(fn, len);
-  if (!buf) return 0;
+  if (buf == nullptr) {
+    return 0;
+  }
 
-  uint ret;
+  uint ret = 0;
   glGenProgramsARB(1, &ret);
   glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, ret);
 
@@ -759,7 +812,7 @@ uint LoadFragmentProgram(std::string fn) {
 
   if (GL_INVALID_OPERATION == glGetError()) {
     // Find the error position
-    GLint errPos;
+    GLint errPos = 0;
     glGetIntegerv(GL_PROGRAM_ERROR_POSITION_ARB, &errPos);
     // Print implementation-dependent program
     // errors and warnings string.

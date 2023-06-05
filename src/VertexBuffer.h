@@ -15,10 +15,10 @@ class VertexBuffer {
   void Init(int bytesize);
 
   void* Bind();  // returns the pointer that should be passed to glVertexPointer
-  void Unbind();
+  void Unbind() const;
 
   void* LockData();  // returns a pointer to the data, write-only
-  void UnlockData();
+  void UnlockData() const;
 
   uint GetByteSize() { return size; }
 
@@ -27,10 +27,10 @@ class VertexBuffer {
  protected:
   VertexBuffer(const VertexBuffer&) {}  // nocopy
 
-  void* data;
-  uint id;
-  uint size;
-  uint type;
+  void* data{0};
+  uint id{0};
+  uint size{0};
+  uint type{};
 
   static int totalBufferSize;
 };

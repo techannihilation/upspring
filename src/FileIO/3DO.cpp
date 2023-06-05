@@ -13,34 +13,38 @@
 
 class CTAPalette {
  public:
-  CTAPalette() {
-    loaded = false;
-    error = false;
-  }
+  CTAPalette() = default;
 
   void Init() {
-    std::string fn = (ups::config::get().app_path() / "data" / "palette.pal").string();
+    std::string const fn = (ups::config::get().app_path() / "data" / "palette.pal").string();
     FILE* f = fopen(fn.c_str(), "rb");
-    if (!f) {
+    if (f == nullptr) {
       if (!error) {
         spdlog::error("Failed to load data/palette.pal");
       }
       error = true;
     } else {
-      for (int c = 0; c < 256; c++) {
-        for (int c2 = 0; c2 < 4; c2++) p[c][c2] = fgetc(f);
-        p[c][3] = 255;
+      for (auto& c : p) {
+        for (unsigned char& c2 : c) {
+          c2 = fgetc(f);
+        }
+        c[3] = 255;
       }
       fclose(f);
     }
   }
 
   int FindIndex(Vector3 color) {
-    if (!loaded) Init();
-    int r = color.x * 255, g = color.y * 255, b = color.z * 255;
-    int best = -1, bestdif = 0;
+    if (!loaded) {
+      Init();
+    }
+    int const r = color.x * 255;
+    int const g = color.y * 255;
+    int const b = color.z * 255;
+    int best = -1;
+    int bestdif = 0;
     for (int a = 0; a < 256; a++) {
-      int dif = abs(r - p[a][0]) + abs(g - p[a][1]) + abs(b - p[a][2]);
+      int const dif = abs(r - p[a][0]) + abs(g - p[a][1]) + abs(b - p[a][2]);
       if (best < 0 || bestdif > dif) {
         bestdif = dif;
         best = a;
@@ -50,18 +54,22 @@ class CTAPalette {
   }
 
   Vector3 GetColor(int index) {
-    if (!loaded) Init();
-    if (index < 0 || index >= 256) return Vector3();
+    if (!loaded) {
+      Init();
+    }
+    if (index < 0 || index >= 256) {
+      return Vector3();
+    }
     return Vector3(p[index][0] / 255, p[index][1] / 255, p[index][2] / 255);
   }
 
   inline unsigned char* operator[](int a) { return p[a]; }
-  unsigned char p[256][4];
-  bool loaded, error;
+  unsigned char p[256][4]{};
+  bool loaded{false}, error{false};
 };
 CTAPalette palette;
 
-const float scaleFactor = 1 / (65536.0f);
+const float scaleFactor = 1 / (65536.0F);
 
 #define FROM_TA(c) (float(c) * scaleFactor)
 #define TO_TA(c) ((c) / scaleFactor)
@@ -70,7 +78,7 @@ const float scaleFactor = 1 / (65536.0f);
 // 3DO support
 // ------------------------------------------------------------------------------------------------
 
-typedef struct {
+using TA_Object = struct {
   int VersionSignature;
   int NumberOfVertexes;
   int NumberOfPrimitives;
@@ -84,9 +92,9 @@ typedef struct {
   int OffsetToPrimitiveArray;  // 40
   int OffsetToSiblingObject;   // 44
   int OffsetToChildObject;     // 48
-} TA_Object;
+};
 
-typedef struct {
+using TA_Polygon = struct {
   int PaletteIndex;
   int VertNum;
   int Always_0;
@@ -95,43 +103,51 @@ typedef struct {
   int Unknown_1;
   int Unknown_2;
   int Unknown_3;
-} TA_Polygon;
+};
 
 static MdlObject* load_object(int ofs, FILE* f, MdlObject* parent, int r = 0) {
-  MdlObject* n = new MdlObject;
+  auto* n = new MdlObject;
   TA_Object obj;
-  size_t read_result;
-  int org = ftell(f);
+  size_t read_result = 0;
+  int const org = ftell(f);
 
   fseek(f, ofs, SEEK_SET);
   read_result = fread(&obj, sizeof(TA_Object), 1, f);
-  if (read_result != (size_t)1) throw std::runtime_error("Couldn't read 3DO header.");
+  if (read_result != static_cast<size_t>(1)) {
+    throw std::runtime_error("Couldn't read 3DO header.");
+  }
 
   if (obj.VersionSignature != 1) {
     spdlog::error("Wrong version. Only version 1 is supported");
-    return 0;
+    return nullptr;
   }
 
   int ipos[3];
-  PolyMesh* pm = new PolyMesh;
+  auto* pm = new PolyMesh;
   n->geometry = pm;
   pm->verts.resize(obj.NumberOfVertexes);
 
   fseek(f, obj.OffsetToVertexArray, SEEK_SET);
   for (int a = 0; a < obj.NumberOfVertexes; a++) {
     read_result = fread(ipos, sizeof(int), 3, f);
-    if (read_result != (size_t)3) throw std::runtime_error("Couldn't read vertexes.");
-    for (int b = 0; b < 3; b++) pm->verts[a].pos.v[b] = FROM_TA(ipos[b]);
+    if (read_result != static_cast<size_t>(3)) {
+      throw std::runtime_error("Couldn't read vertexes.");
+    }
+    for (int b = 0; b < 3; b++) {
+      pm->verts[a].pos.v[b] = FROM_TA(ipos[b]);
+    }
   }
 
   std::vector<TA_Polygon> tapl;
   tapl.resize(obj.NumberOfPrimitives);
 
   fseek(f, obj.OffsetToPrimitiveArray, SEEK_SET);
-  if (obj.NumberOfPrimitives > 0)
-    read_result = fread(&tapl[0], sizeof(TA_Polygon), obj.NumberOfPrimitives, f);
-  if (read_result != (size_t)(obj.NumberOfPrimitives))
+  if (obj.NumberOfPrimitives > 0) {
+    read_result = fread(tapl.data(), sizeof(TA_Polygon), obj.NumberOfPrimitives, f);
+  }
+  if (read_result != static_cast<size_t>(obj.NumberOfPrimitives)) {
     throw std::runtime_error("Couldn't read primitives.");
+  }
   for (int a = 0; a < obj.NumberOfPrimitives; a++) {
     fseek(f, tapl[a].VertOfs, SEEK_SET);
 
@@ -139,9 +155,11 @@ static MdlObject* load_object(int ofs, FILE* f, MdlObject* parent, int r = 0) {
     p->verts.resize(tapl[a].VertNum);
 
     for (int b = 0; b < tapl[a].VertNum; b++) {
-      short vindex;
+      short vindex = 0;
       read_result = fread(&vindex, sizeof(short), 1, f);
-      if (read_result != (size_t)1) throw std::runtime_error("Couldn't read vertex.");
+      if (read_result != static_cast<size_t>(1)) {
+        throw std::runtime_error("Couldn't read vertex.");
+      }
       p->verts[b] = vindex;
     }
 
@@ -163,22 +181,22 @@ static MdlObject* load_object(int ofs, FILE* f, MdlObject* parent, int r = 0) {
   n->position.v[1] = FROM_TA(obj.YFromParent);
   n->position.v[2] = FROM_TA(obj.ZFromParent);
 
-  if (obj.OffsetToSiblingObject) {
-    if (!parent) {
+  if (obj.OffsetToSiblingObject != 0) {
+    if (parent == nullptr) {
       spdlog::error("Error: Root object can not have sibling nodes.");
     } else {
       MdlObject* sibling = load_object(obj.OffsetToSiblingObject, f, parent);
 
-      if (sibling) {
+      if (sibling != nullptr) {
         parent->childs.push_back(sibling);
         sibling->parent = parent;
       }
     }
   }
 
-  if (obj.OffsetToChildObject) {
+  if (obj.OffsetToChildObject != 0) {
     MdlObject* ch = load_object(obj.OffsetToChildObject, f, n, r + 1);
-    if (ch) {
+    if (ch != nullptr) {
       n->childs.push_back(ch);
       ch->parent = n;
     }
@@ -189,13 +207,15 @@ static MdlObject* load_object(int ofs, FILE* f, MdlObject* parent, int r = 0) {
 }
 
 bool Model::Load3DO(const char* filename, IProgressCtl& /*progctl*/) {
-  FILE* f = 0;
+  FILE* f = nullptr;
 
   f = fopen(filename, "rb");
-  if (!f) return false;
+  if (f == nullptr) {
+    return false;
+  }
 
-  root = load_object(0, f, 0);
-  if (!root) {
+  root = load_object(0, f, nullptr);
+  if (root == nullptr) {
     fclose(f);
     return false;
   }
@@ -211,12 +231,14 @@ static void save_object(FILE* f, MdlObject* parent, std::vector<MdlObject*>::ite
   TA_Object n;
   MdlObject* obj = *cur++;
   PolyMesh* pm = obj->ToPolyMesh();
-  size_t write_result;
-  if (!pm) pm = new PolyMesh;
+  size_t write_result = 0;
+  if (pm == nullptr) {
+    pm = new PolyMesh;
+  }
 
   memset(&n, 0, sizeof(TA_Object));
 
-  int header = ftell(f);
+  int const header = ftell(f);
   fseek(f, sizeof(TA_Object), SEEK_CUR);
 
   n.VersionSignature = 1;
@@ -230,35 +252,42 @@ static void save_object(FILE* f, MdlObject* parent, std::vector<MdlObject*>::ite
   WriteZStr(f, obj->name);
 
   n.OffsetToVertexArray = ftell(f);
-  for (unsigned int a = 0; a < pm->verts.size(); a++) {
+  for (auto& vert : pm->verts) {
     int v[3];
-    Vector3* p = &pm->verts[a].pos;
-    for (int i = 0; i < 3; i++) v[i] = TO_TA(p->v[i]);
+    Vector3* p = &vert.pos;
+    for (int i = 0; i < 3; i++) {
+      v[i] = TO_TA(p->v[i]);
+    }
     write_result = fwrite(v, sizeof(int), 3, f);
-    if (write_result != (size_t)3) throw std::runtime_error("Couldn't write vertex.");
+    if (write_result != static_cast<size_t>(3)) {
+      throw std::runtime_error("Couldn't write vertex.");
+    }
   }
 
   n.OffsetToPrimitiveArray = ftell(f);
-  TA_Polygon* tapl = new TA_Polygon[pm->poly.size()];
+  auto* tapl = new TA_Polygon[pm->poly.size()];
   fseek(f, sizeof(TA_Polygon) * pm->poly.size(), SEEK_CUR);
   memset(tapl, 0, sizeof(TA_Polygon) * pm->poly.size());
 
   for (unsigned int a = 0; a < pm->poly.size(); a++) {
     Poly* pl = pm->poly[a];
 
-    if (pl->taColor >= 0)
+    if (pl->taColor >= 0) {
       tapl[a].PaletteIndex = pl->taColor;
-    else
+    } else {
       tapl[a].PaletteIndex = palette.FindIndex(pl->color);
+    }
 
     tapl[a].TexnameOfs = ftell(f);
     WriteZStr(f, pl->texname);
     tapl[a].VertOfs = ftell(f);
-    for (unsigned int b = 0; b < pl->verts.size(); b++) {
-      unsigned short v;
-      v = pl->verts[b];
+    for (int const vert : pl->verts) {
+      unsigned short v = 0;
+      v = vert;
       write_result = fwrite(&v, sizeof(short), 1, f);
-      if (write_result != (size_t)1) throw std::runtime_error("Couldn't write vertex.");
+      if (write_result != static_cast<size_t>(1)) {
+        throw std::runtime_error("Couldn't write vertex.");
+      }
     }
     tapl[a].VertNum = pl->verts.size();
     tapl[a].Unknown_1 = 0;
@@ -269,20 +298,21 @@ static void save_object(FILE* f, MdlObject* parent, std::vector<MdlObject*>::ite
   int old = ftell(f);
   fseek(f, n.OffsetToPrimitiveArray, SEEK_SET);
   write_result = fwrite(tapl, sizeof(TA_Polygon), pm->poly.size(), f);
-  if (write_result != (size_t)(pm->poly.size()))
+  if (write_result != static_cast<size_t>(pm->poly.size())) {
     throw std::runtime_error("Couldn't write polygon.");
+  }
   fseek(f, old, SEEK_SET);
 
   delete pm;
 
-  if (parent) {
+  if (parent != nullptr) {
     if (cur != parent->childs.end()) {
       n.OffsetToSiblingObject = ftell(f);
       save_object(f, parent, cur);
     }
   }
 
-  if (obj->childs.size()) {
+  if (static_cast<unsigned int>(!obj->childs.empty()) != 0U) {
     n.OffsetToChildObject = ftell(f);
     save_object(f, obj, obj->childs.begin());
   }
@@ -290,7 +320,9 @@ static void save_object(FILE* f, MdlObject* parent, std::vector<MdlObject*>::ite
   old = ftell(f);
   fseek(f, header, SEEK_SET);
   write_result = fwrite(&n, sizeof(TA_Object), 1, f);
-  if (write_result != (size_t)1) throw std::runtime_error("Couldn't write 3DO header.");
+  if (write_result != static_cast<size_t>(1)) {
+    throw std::runtime_error("Couldn't write 3DO header.");
+  }
   fseek(f, old, SEEK_SET);
 }
 
@@ -299,10 +331,12 @@ static inline void ApplyOrientationAndScaling(MdlObject* o) {
   o->ApplyTransform(true, true, false);
 }
 
-bool Model::Save3DO(const char* fn, IProgressCtl& /*progctl*/) {
+bool Model::Save3DO(const char* fn, IProgressCtl& /*progctl*/) const {
   FILE* f = fopen(fn, "wb");
 
-  if (!f) throw std::runtime_error("Couldn't open 3DO file for writing.");
+  if (f == nullptr) {
+    throw std::runtime_error("Couldn't open 3DO file for writing.");
+  }
   return false;
 
   MdlObject* cl = root->Clone();
@@ -310,7 +344,7 @@ bool Model::Save3DO(const char* fn, IProgressCtl& /*progctl*/) {
 
   std::vector<MdlObject*> tmp;
   tmp.push_back(cl);
-  save_object(f, 0, tmp.begin());
+  save_object(f, nullptr, tmp.begin());
   fclose(f);
 
   delete cl;

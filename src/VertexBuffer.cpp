@@ -14,16 +14,11 @@
 
 int VertexBuffer::totalBufferSize = 0;
 
-VertexBuffer::VertexBuffer() {
-  id = 0;
-  data = 0;
-  size = 0;
-  type = GL_ARRAY_BUFFER_ARB;
-}
+VertexBuffer::VertexBuffer() = default;
 
 void VertexBuffer::Init(int bytesize) {
   if (GLEW_ARB_vertex_buffer_object) {
-    data = 0;
+    data = nullptr;
     glGenBuffersARB(1, &id);
   } else {
     data = new char[bytesize];
@@ -33,39 +28,43 @@ void VertexBuffer::Init(int bytesize) {
 }
 
 VertexBuffer::~VertexBuffer() {
-  if (id) {
+  if (id != 0U) {
     glDeleteBuffersARB(1, &id);
     id = 0;
   } else {
-    delete[](char*) data;
+    delete[] static_cast<char*>(data);
   }
-  data = 0;
+  data = nullptr;
   totalBufferSize -= size;
 }
 
 void* VertexBuffer::LockData() {
-  if (id) {
+  if (id != 0U) {
     glBindBufferARB(type, id);
-    glBufferDataARB(type, size, 0, GL_STATIC_DRAW_ARB);
+    glBufferDataARB(type, size, nullptr, GL_STATIC_DRAW_ARB);
     return glMapBufferARB(type, GL_WRITE_ONLY);
-  } else
-    return data;
+  }
+  return data;
 }
 
-void VertexBuffer::UnlockData() {
-  if (id) glUnmapBufferARB(type);
+void VertexBuffer::UnlockData() const {
+  if (id != 0U) {
+    glUnmapBufferARB(type);
+  }
 }
 
 void* VertexBuffer::Bind() {
-  if (id) {
+  if (id != 0U) {
     glBindBufferARB(type, id);
-    return 0;
-  } else
-    return data;
+    return nullptr;
+  }
+  return data;
 }
 
-void VertexBuffer::Unbind() {
-  if (id) glBindBufferARB(type, 0);
+void VertexBuffer::Unbind() const {
+  if (id != 0U) {
+    glBindBufferARB(type, 0);
+  }
 }
 
 IndexBuffer::IndexBuffer() { type = GL_ELEMENT_ARRAY_BUFFER_ARB; }

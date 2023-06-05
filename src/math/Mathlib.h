@@ -184,9 +184,9 @@ class Plane {
   }
   float Dis(const Vector3* v) const { return a * v->x + b * v->y + c * v->z - d; }
   float Dis(float x, float y, float z) const { return a * x + b * y + z * c - d; }
-  bool EpsilonCompare(const Plane& pln, float epsilon);
+  bool EpsilonCompare(const Plane& pln, float epsilon) const;
 #ifndef SWIG
-  bool operator==(const Plane& pln);
+  bool operator==(const Plane& pln) const;
   bool operator!=(const Plane& pln) { return !operator==(pln); }
 #endif
   void MakePlane(const Vector3& v1, const Vector3& v2, const Vector3& v3);
@@ -227,8 +227,8 @@ class Matrix {
   void transpose(Matrix* dest) const;
   void apply(const Vector3* v, Vector3* o) const;
   void apply(const Vector4* v, Vector4* o) const;
-  void multiply(const Matrix& lastOperation, Matrix& dst) const;
-  Vector3 camera_pos() const;
+  void multiply(const Matrix& t, Matrix& dst) const;
+  static Vector3 camera_pos();
   Matrix& operator*=(const Matrix& lastop) {
     multiply(lastop, *this);
     return *this;
@@ -247,10 +247,10 @@ class Matrix {
     multiply(f);
     return *this;
   }
-  void align(Vector3* right, Vector3* up, Vector3* front);
-  void xrotate(float r);
-  void yrotate(float r);
-  void zrotate(float r);
+  void align(Vector3* front, Vector3* up, Vector3* right);
+  void xrotate(float t);
+  void yrotate(float t);
+  void zrotate(float t);
   void eulerZXY(float x, float y, float z) { eulerZXY(Vector3(x, y, z)); }
   void eulerZXY(const Vector3& rot);  // euler->matrix. rotation applied in ZXY order (=TA style)
   void eulerYXZ(float x, float y, float z) { eulerYXZ(Vector3(x, y, z)); }
@@ -399,23 +399,23 @@ class Quaternion {
     return r;
   }
   void mul(const Quaternion* q, Quaternion* out) const;
-  void xrotate(float a);
-  void yrotate(float a);
-  void zrotate(float a);
+  void xrotate(float r);
+  void yrotate(float r);
+  void zrotate(float r);
   void rotation(float x, float y, float z);
   void vector_rot(Vector3* ax, float r);
   void slerp(const Quaternion* to, float t, Quaternion* out, SlerpType how) const;
   void apply(float x, float y, float z, float* xout, float* yout, float* zout) const;
   void apply(Vector3* in, Vector3* out) const;
   void makematrix(Matrix* m) const;
-  void inverse(Quaternion* dest) const;
+  void inverse(Quaternion* out) const;
 
   float x, y, z, w;
 };
 
 namespace Math {
 // compare vectors using a large epsilon, needed for collision detection
-bool SamePoint(const Vector3* p1, const Vector3* p2, float epsilon);
+bool SamePoint(const Vector3* v1, const Vector3* v2, float epsilon);
 void NearestBoxVertex(const Vector3* min, const Vector3* max, const Vector3* pos, Vector3* out);
 void ComputeOrientation(float yaw, float pitch, float roll, Vector3* right = 0, Vector3* up = 0,
                         Vector3* front = 0);

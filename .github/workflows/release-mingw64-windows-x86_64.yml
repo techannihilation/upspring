@@ -4,14 +4,19 @@ on:
   push:
     branches: [main]
     tags:
-      - '*'
+      - "*"
 
 jobs:
   build:
     strategy:
       matrix:
         include:
-          - { sys: MINGW64, cpu: x86_64, sysl: mingw64, preset: msys2-mingw64-release }
+          - {
+              sys: MINGW64,
+              cpu: x86_64,
+              sysl: mingw64,
+              preset: msys2-mingw64-release,
+            }
           # - { sys: CLANG64, cpu: x86_64, sysl: clang64, preset: msys2-clang64-release }
     runs-on: windows-latest
     name: 🚧 Build ${{matrix.sys}}
@@ -19,77 +24,77 @@ jobs:
       run:
         shell: msys2 {0}
     steps:
-    - name: '🧰 Checkout'
-      uses: actions/checkout@v3
-      with:
-        fetch-depth: 0
-        submodules: true
+      - name: "🧰 Checkout"
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          submodules: true
 
-    - name: 'Setup MSYS2 - MSYS'
-      uses: msys2/setup-msys2@v2
-      with:
-        msystem: MSYS
-        update: true
-        install: >-
-          zip
+      - name: "Setup MSYS2 - MSYS"
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MSYS
+          update: true
+          install: >-
+            zip
 
-    - name: 'Setup MSYS2 - ${{matrix.sys}}'
-      uses: msys2/setup-msys2@v2
-      with:
-        msystem: ${{matrix.sys}}
-        update: false
-        install: >-
-          git
-          make
-        pacboy: >-
-          toolchain:p
-          ninja:p
-          cmake:p
-          glew:p
-          freeglut:p
-          devil:p
-          boost:p
-          lua:p
-          swig:p
+      - name: "Setup MSYS2 - ${{matrix.sys}}"
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: ${{matrix.sys}}
+          update: false
+          install: >-
+            git
+            make
+          pacboy: >-
+            toolchain:p
+            ninja:p
+            cmake:p
+            glew:p
+            freeglut:p
+            devil:p
+            boost:p
+            lua:p
+            swig:p
 
-    - name: 'Fix IL/ilut_config.h'
-      run: |
-        touch /d/a/_temp/msys64/${{matrix.sysl}}/include/IL/ilut_config.h
+      - name: "Fix IL/ilut_config.h"
+        run: |
+          touch /d/a/_temp/msys64/${{matrix.sysl}}/include/IL/ilut_config.h
 
-    - name: '🚧 Build'
-      run: |
-        cmake --preset ${PRESET}
-        cmake --build --preset ${PRESET}
-      env:
-        PRESET: ${{matrix.preset}}
+      - name: "🚧 Build"
+        run: |
+          cmake --preset ${PRESET}
+          cmake --build --preset ${PRESET}
+        env:
+          PRESET: ${{matrix.preset}}
 
-    - name: 'Create upload directory'
-      if: startsWith(github.ref, 'refs/tags/')
-      run: |
-        mkdir Upspring
-        cp -pfr out/build/${PRESET}/src/* Upspring/
-        cp README.md TODO.md LICENSE.html CHANGELOG.md Upspring/
-        rm -rf Upspring/{CMakeFiles,swig,cmake_install.cmake,libUpspring.dll.a,upspringLUA_wrap.cxx}
-      env:
-        PRESET: ${{matrix.preset}}
+      - name: "Create upload directory"
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          mkdir Upspring
+          cp -pfr out/build/${PRESET}/src/* Upspring/
+          cp README.md TODO.md LICENSE.html CHANGELOG.md Upspring/
+          rm -rf Upspring/{CMakeFiles,swig,cmake_install.cmake,libUpspring.dll.a,upspringLUA_wrap.cxx}
+        env:
+          PRESET: ${{matrix.preset}}
 
-    - name: 'Copy .dlls'
-      if: startsWith(github.ref, 'refs/tags/')
-      run: |
-        # Thanks to: https://github.com/msys2/MINGW-packages/issues/5204#issuecomment-1013818547
-        ldd out/build/${PRESET}/src/*.exe | grep -iv system32|grep -vi windows|grep -v :$  | cut -f2 -d\> | cut -f1 -d\( | tr \\ / |while read a; do ! [ -e "Upspring/`basename $a`" ] && cp -v "$a" Upspring/; done
-      env:
-        PRESET: ${{matrix.preset}}
+      - name: "Copy .dlls"
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          # Thanks to: https://github.com/msys2/MINGW-packages/issues/5204#issuecomment-1013818547
+          ldd out/build/${PRESET}/src/*.exe | grep -iv system32|grep -vi windows|grep -v :$  | cut -f2 -d\> | cut -f1 -d\( | tr \\ / |while read a; do ! [ -e "Upspring/`basename $a`" ] && cp -v "$a" Upspring/; done
+        env:
+          PRESET: ${{matrix.preset}}
 
-    - name: 'Make archive'
-      if: startsWith(github.ref, 'refs/tags/')
-      run: |
-        cd Upspring/ && zip -r ../Upspring-${PRESET}.zip .
-      env:
-        PRESET: ${{matrix.preset}}
+      - name: "Make archive"
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          cd Upspring/ && zip -r ../Upspring-${PRESET}.zip .
+        env:
+          PRESET: ${{matrix.preset}}
 
-    - name: '📤 Release'
-      uses: softprops/action-gh-release@v1
-      if: startsWith(github.ref, 'refs/tags/')
-      with:
-        files: Upspring-${{matrix.preset}}.zip
+      - name: "📤 Release"
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: Upspring-${{matrix.preset}}.zip

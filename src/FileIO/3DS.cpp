@@ -16,20 +16,22 @@ static Lib3dsMesh* ConvertObjTo3DS(MdlObject* obj) {
   Lib3dsMesh* mesh = lib3ds_mesh_new(obj->name.c_str());
 
   PolyMesh* pm = obj->GetPolyMesh();
-  if (pm && !pm->verts.empty()) {
+  if ((pm != nullptr) && !pm->verts.empty()) {
     lib3ds_mesh_resize_vertices(mesh, pm->verts.size(), 1, 1);
     for (std::size_t v = 0, max = pm->verts.size(); v != max; ++v) {
       // Copy Vertexes
-      for (std::uint32_t axis = 0; axis < 3; axis++)
+      for (std::uint32_t axis = 0; axis < 3; axis++) {
         mesh->vertices[v][axis] = pm->verts[v].pos[axis];
+      }
 
       mesh->texcos[v][0] = pm->verts[v].tc[0].x;
       mesh->texcos[v][1] = pm->verts[v].tc[0].y;
     }
 
     uint numFaces = 0;
-    for (std::size_t p = 0, max = pm->poly.size(); p != max; ++p)
-      numFaces += pm->poly[p]->verts.size() - 2;
+    for (auto& p : pm->poly) {
+      numFaces += p->verts.size() - 2;
+    }
 
     lib3ds_mesh_resize_faces(mesh, numFaces);
     uint curFace = 0;
@@ -63,10 +65,11 @@ bool Save3DSObject(const char* fn, MdlObject* obj, IProgressCtl& /*progctl*/) {
   }
 
   std::vector<MdlObject*> objList;
-  if (choice == 0)
+  if (choice == 0) {
     objList = cl->GetChildObjects();
-  else if (choice == 2)
+  } else if (choice == 2) {
     cl->FullMerge();
+  }
   objList.push_back(cl);
 
   for (std::size_t i = 0, max = objList.size(); i != max; ++i) {
@@ -74,7 +77,7 @@ bool Save3DSObject(const char* fn, MdlObject* obj, IProgressCtl& /*progctl*/) {
     lib3ds_file_insert_mesh(file, mesh, i);
   }
 
-  bool r = lib3ds_file_save(file, fn);
+  bool const r = lib3ds_file_save(file, fn) != 0;
 
   // cleanup
   delete cl;
@@ -84,19 +87,23 @@ bool Save3DSObject(const char* fn, MdlObject* obj, IProgressCtl& /*progctl*/) {
 }
 
 static MdlObject* Convert3DSToObj(Lib3dsMesh* mesh) {
-  MdlObject* obj = new MdlObject();
+  auto* obj = new MdlObject();
   PolyMesh* pm = obj->GetOrCreatePolyMesh();
 
   printf("Name: %s\n", mesh->name);
 
-  if (!mesh->faces) return 0;
+  if (mesh->faces == nullptr) {
+    return nullptr;
+  }
 
   std::vector<Vertex> orgvrt(mesh->nvertices);
   for (uint i = 0; i < mesh->nvertices; i++) {
     orgvrt[i].tc[0].x = mesh->texcos[i][0];
     orgvrt[i].tc[0].y = mesh->texcos[i][1];
 
-    for (uint x = 0; x < 3; x++) orgvrt[i].pos[x] = mesh->vertices[i][x];
+    for (uint x = 0; x < 3; x++) {
+      orgvrt[i].pos[x] = mesh->vertices[i][x];
+    }
   }
 
   printf("Name: %s\nVertices: %d\nFaces: %d\n", mesh->name, mesh->vertices, mesh->nfaces);
@@ -117,8 +124,9 @@ static MdlObject* Convert3DSToObj(Lib3dsMesh* mesh) {
       Vertex& vrt = pm->verts[pl->verts[f]];
 
       vrt = orgvrt[face->index[f]];
-      for (std::uint32_t axis = 0; axis < 3; axis++)
+      for (std::uint32_t axis = 0; axis < 3; axis++) {
         vrt.normal[axis] = face_normals[i * 3 + f][axis];
+      }
     }
 
     pm->poly[i] = pl;
@@ -133,11 +141,13 @@ static MdlObject* Convert3DSToObj(Lib3dsMesh* mesh) {
 
 MdlObject* Load3DSObject(const char* fn, IProgressCtl& /*progctl*/) {
   Lib3dsFile* file = lib3ds_file_open(fn);
-  if (!file) return 0;
+  if (file == nullptr) {
+    return nullptr;
+  }
 
   int method = 2;
 
-  int meshCount = file->meshes_size;
+  int const meshCount = file->meshes_size;
   if (meshCount > 1) {
     method = fltk::choice(
         "The file contains more than 1 mesh. What should be done?:\n"
@@ -147,27 +157,32 @@ MdlObject* Load3DSObject(const char* fn, IProgressCtl& /*progctl*/) {
         "1", "2", "3");
   } else if (meshCount == 0) {
     fltk::message("3DS file contains no meshes");
-    return 0;
+    return nullptr;
   }
 
   std::vector<MdlObject*> objects;
 
   for (int i = 0; i < file->meshes_size; i++) {
     MdlObject* o = Convert3DSToObj(file->meshes[i]);
-    if (o) objects.push_back(o);
+    if (o != nullptr) {
+      objects.push_back(o);
+    }
   }
 
   lib3ds_file_free(file);
 
   if (method == 1 || method == 0) {
-    MdlObject* obj = new MdlObject;
+    auto* obj = new MdlObject;
     obj->geometry = new PolyMesh;
     obj->name = fltk::filename_name(fn);
 
-    for (uint x = 0; x < objects.size(); x++) obj->AddChild(objects[x]);
+    for (auto& object : objects) {
+      obj->AddChild(object);
+    }
 
-    if (method == 0)  // merge all
+    if (method == 0) {  // merge all
       obj->FullMerge();
+    }
     return obj;
   }
 

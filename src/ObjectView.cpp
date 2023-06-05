@@ -17,9 +17,9 @@ EditorUI::ObjectView::ObjectView(EditorUI* editor, fltk::Browser* tree)
   tree->list(&browserList);
 }
 
-EditorUI::ObjectView::~ObjectView() {}
+EditorUI::ObjectView::~ObjectView() = default;
 
-void EditorUI::ObjectView::Update() {
+void EditorUI::ObjectView::Update() const {
   tree->redraw();
   tree->relayout();
 }
@@ -28,46 +28,55 @@ void EditorUI::ObjectView::Update() {
 // List
 // ------------------------------------------------------------------------------------------------
 
-EditorUI::ObjectView::List::List() {
-  rootObject = new MdlObject;
-  editor = 0;
-}
+EditorUI::ObjectView::List::List() : rootObject(new MdlObject) {}
 EditorUI::ObjectView::List::~List() {
   rootObject->childs.clear();
   delete rootObject;
 }
 
-MdlObject* EditorUI::ObjectView::List::root_obj() {
+MdlObject* EditorUI::ObjectView::List::root_obj() const {
   rootObject->childs.resize(1);
   rootObject->childs[0] = editor->model->root;
-  return editor->model->root ? rootObject : 0;
+  return editor->model->root != nullptr ? rootObject : nullptr;
 }
 
-int EditorUI::ObjectView::List::children(const fltk::Menu*, const int* indexes, int level) {
+int EditorUI::ObjectView::List::children(const fltk::Menu* /*unused*/, const int* indexes,
+                                         int level) {
   MdlObject* obj = root_obj();
-  if (!obj) return -1;
-  while (level--) {
-    int i = *indexes++;
+  if (obj == nullptr) {
+    return -1;
+  }
+  while ((level--) != 0) {
+    int const i = *indexes++;
     // if (i < 0 || i >= group->children()) return -1;
     MdlObject* ch = obj->childs[i];
-    if (ch->childs.empty()) return -1;
+    if (ch->childs.empty()) {
+      return -1;
+    }
     obj = ch;
   }
   return obj->childs.size();
 }
 
-fltk::Widget* EditorUI::ObjectView::List::child(const fltk::Menu*, const int* indexes, int level) {
+fltk::Widget* EditorUI::ObjectView::List::child(const fltk::Menu* /*unused*/, const int* indexes,
+                                                int level) {
   MdlObject* obj = root_obj();
-  if (!obj) return 0;
+  if (obj == nullptr) {
+    return nullptr;
+  }
   for (;;) {
-    size_t i = *indexes++;
-    if (i < 0 || i >= obj->childs.size()) return 0;
+    size_t const i = *indexes++;
+    if (i < 0 || i >= obj->childs.size()) {
+      return nullptr;
+    }
     MdlObject* ch = obj->childs[i];  // Widget* widget = group->child(i);
-    if (!level--) {
+    if ((level--) == 0) {
       obj = ch;
       break;
     }
-    if (ch->childs.empty()) return 0;
+    if (ch->childs.empty()) {
+      return nullptr;
+    }
     obj = ch;
   }
 
@@ -80,14 +89,14 @@ fltk::Widget* EditorUI::ObjectView::List::child(const fltk::Menu*, const int* in
   item.set_flag(fltk::SELECTED, obj->isSelected);
 
   // set open/closed state
-  item.set_flag(fltk::OPENED, obj->isOpen && obj->childs.size());
+  item.set_flag(fltk::OPENED, obj->isOpen && !obj->childs.empty());
 
   return &item;
 }
 
-void EditorUI::ObjectView::List::flags_changed(const fltk::Menu*, fltk::Widget* w) {
-  MdlObject* obj = (MdlObject*)w->user_data();
-  obj->isOpen = w->flags() & fltk::STATE;
-  obj->isSelected = w->flags() & fltk::SELECTED;
+void EditorUI::ObjectView::List::flags_changed(const fltk::Menu* /*unused*/, fltk::Widget* w) {
+  auto* obj = static_cast<MdlObject*>(w->user_data());
+  obj->isOpen = ((w->flags() & fltk::STATE) != 0);
+  obj->isSelected = ((w->flags() & fltk::SELECTED) != 0);
   editor->SelectionUpdated();
 }

@@ -9,7 +9,7 @@ class EditorUI::ObjectView {
   ObjectView(EditorUI* editor, fltk::Browser* tree);
   ~ObjectView();
 
-  void Update();
+  void Update() const;
 
   EditorUI* editor;
   fltk::Browser* tree;
@@ -25,10 +25,10 @@ class EditorUI::ObjectView {
     fltk::Widget* child(const fltk::Menu*, const int* indexes, int level);
     int children(const fltk::Menu*, const int* indexes, int level);
     void flags_changed(const fltk::Menu*, fltk::Widget*);
-    MdlObject* root_obj();
+    MdlObject* root_obj() const;
 
     fltk::Item item;
-    EditorUI* editor;
+    EditorUI* editor{0};
     MdlObject* rootObject;  // fake root object just for GUI displaying purposes
   } browserList;
 };
