@@ -28,9 +28,11 @@ const int PopupBoxH = 18;
 enum { SELECT_W = 3 };
 
 ViewWindow::ViewWindow(int x, int y, int w, int h, const char* l)
-    : fltk::GlWindow(x, y, w, h, l), selector_count(0), bSelecting(false), bUnSelecting(false), bBoxSelect(false) {
-  
-}
+    : fltk::GlWindow(x, y, w, h, l),
+      selector_count(0),
+      bSelecting(false),
+      bUnSelecting(false),
+      bBoxSelect(false) {}
 
 ViewWindow::~ViewWindow() = default;
 
@@ -483,14 +485,17 @@ Vector3 Camera::GetOrigin() {
 // ------------------------------------------------------------------------------------------------
 
 EditorViewWindow::EditorViewWindow(int X, int Y, int W, int H, IEditor* cb)
-    : ViewWindow(X, Y, W, H), mode(MAP_XY), rendermode(M3D_WIRE), bCullFaces(false), bLighting(false) {
-  
-  bHideGrid = false;
-  bDrawMeshSmoothing = false;
-  bDrawVertexNormals = false;
-  bLockLightToCam = true;
-  bDrawRadius = false;
-  bDrawCenters = true;
+    : ViewWindow(X, Y, W, H),
+      mode(MAP_XY),
+      rendermode(M3D_WIRE),
+      bCullFaces(false),
+      bLighting(false),
+      bHideGrid(false),
+      bDrawRadius(false),
+      bDrawCenters(true),
+      bDrawMeshSmoothing(false),
+      bDrawVertexNormals(false),
+      bLockLightToCam(true) {
   editor = cb;
 }
 

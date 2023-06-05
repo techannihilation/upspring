@@ -284,7 +284,7 @@ bool Model::ExportUVMesh(const char* fn) const {
   return Model::Save(&mdl, fn);
 }
 
-bool Model::ImportUVMesh(const char* fn, IProgressCtl& progctl) {
+bool Model::ImportUVMesh(const char* fn, IProgressCtl& progctl) const {
   Model* mdl = nullptr;
   mdl = Model::Load(fn, false);  // an unoptimized mesh so the vertices are not merged
   return false;
@@ -341,7 +341,7 @@ int MatchPolygon(MdlObject* root, std::vector<Vector3>& pverts, int& startVertex
   return -1;
 }
 
-bool Model::ImportUVCoords(Model* other, IProgressCtl& progctl) {
+bool Model::ImportUVCoords(Model* other, IProgressCtl& progctl) const {
   std::vector<MdlObject*> const objects = GetObjectList();
   MdlObject* srcobj = other->root;
 
@@ -415,7 +415,7 @@ std::vector<MdlObject*> Model::GetObjectList() const {
   return objlist;
 }
 
-std::vector<PolyMesh*> Model::GetPolyMeshList() {
+std::vector<PolyMesh*> Model::GetPolyMeshList() const {
   std::vector<MdlObject*> const objlist = GetObjectList();
   std::vector<PolyMesh*> pmlist;
   for (const auto& a : objlist) {
@@ -456,7 +456,7 @@ Model* Model::Clone() const {
   return cpy;
 }
 
-unsigned long Model::ObjectSelectionHash() {
+unsigned long Model::ObjectSelectionHash() const {
   unsigned long ch = 0;
   unsigned long a = 63689;
   std::vector<MdlObject*> const sel = GetSelectedObjects();
@@ -691,7 +691,7 @@ void Model::Cleanup() const {
   removeInvalidChilds(root);
 }
 
-void Model::FlipUVs() {
+void Model::FlipUVs() const {
   auto objs = GetObjectList();
 
   for (auto& obj : objs) {
@@ -702,7 +702,7 @@ void Model::FlipUVs() {
   }
 }
 
-void Model::MirrorUVs() {
+void Model::MirrorUVs() const {
   auto objs = GetObjectList();
 
   for (auto& obj : objs) {
@@ -713,7 +713,7 @@ void Model::MirrorUVs() {
   }
 }
 
-void Model::AllLowerCaseNames() {
+void Model::AllLowerCaseNames() const {
   // convert to lowecase names
   auto objlist = GetObjectList();
   for (auto& obj : objlist) {

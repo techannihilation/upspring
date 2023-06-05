@@ -47,19 +47,19 @@ struct Poly {
   Poly();
   ~Poly();
 
-  Plane CalcPlane(const std::vector<Vertex>& verts);
+  Plane CalcPlane(const std::vector<Vertex>& vrt);
   void Flip();
-  Poly* Clone();
+  Poly* Clone() const;
   void RotateVerts();
 
   std::vector<int> verts;
   std::string texname;
   Vector3 color;
-  int taColor;  // TA indexed color
+  int taColor{-1};  // TA indexed color
   std::shared_ptr<Texture> texture;
 
-  bool isCurved;  // this polygon should get a curved surface at the next csurf update
-  bool isSelected;
+  bool isCurved{false};  // this polygon should get a curved surface at the next csurf update
+  bool isSelected{false};
 
 #ifndef SWIG
   struct Selector : ViewSelector {
@@ -175,8 +175,8 @@ struct MdlObject {
 
   bool IsEmpty();
   void MergeChild(MdlObject* ch);
-  void FullMerge();                   // merge all childs and their subchilds
-  void GetTransform(Matrix& mat) const;      // calculates the object space -> parent space transform
+  void FullMerge();                         // merge all childs and their subchilds
+  void GetTransform(Matrix& mat) const;     // calculates the object space -> parent space transform
   void GetFullTransform(Matrix& tr) const;  // object space -> world space
   std::vector<MdlObject*> GetChildObjects();  // returns all child objects (recursively)
 
@@ -307,46 +307,46 @@ struct Model {
   bool ExportUVMesh(const char* fn) const;
 
   // copies the UV coords of the single piece exported by ExportUVMesh back to the model
-  bool ImportUVMesh(const char* fn, IProgressCtl& progctl = defprogctl);
-  bool ImportUVCoords(Model* other, IProgressCtl& progctl = defprogctl);
+  bool ImportUVMesh(const char* fn, IProgressCtl& progctl = defprogctl) const;
+  bool ImportUVCoords(Model* other, IProgressCtl& progctl = defprogctl) const;
 
-  void InsertModel(MdlObject* obj, Model* sub);
+  static void InsertModel(MdlObject* obj, Model* sub);
   std::vector<MdlObject*> GetSelectedObjects() const;
   std::vector<MdlObject*> GetObjectList() const;  // returns all objects
-  std::vector<PolyMesh*> GetPolyMeshList();
+  std::vector<PolyMesh*> GetPolyMeshList() const;
   void DeleteObject(MdlObject* obj);
-  void ReplaceObject(MdlObject* oldObj, MdlObject* newObj);
+  void ReplaceObject(MdlObject* oldObj, MdlObject* _new);
   void EstimateMidPosition();
   void CalculateRadius();
   void SwapObjects(MdlObject* a, MdlObject* b);
   Model* Clone() const;
 
-  unsigned long ObjectSelectionHash();
+  unsigned long ObjectSelectionHash() const;
 
   void SetTextureName(uint index, const char* name);
   void SetTexture(uint index, std::shared_ptr<Texture> par_tex);
 
-  bool ConvertToS3O(std::string texName, int texw, int texh);
+  bool ConvertToS3O(std::string textureName, int texw, int texh);
 
   void Remove3DOBase();
   void Cleanup() const;
-  void FlipUVs();
-  void MirrorUVs();
-  void AllLowerCaseNames();
+  void FlipUVs() const;
+  void MirrorUVs() const;
+  void AllLowerCaseNames() const;
 
-  float radius;  // radius of collision sphere
-  float height;  // height of whole object
-  Vector3 mid;   // these give the offset from origin(which is supposed to lay in the ground plane)
-                 // to the middle of the unit collision sphere
+  float radius{};  // radius of collision sphere
+  float height;    // height of whole object
+  Vector3 mid;  // these give the offset from origin(which is supposed to lay in the ground plane)
+                // to the middle of the unit collision sphere
 
   bool HasTex(uint i) { return i < texBindings.size() && texBindings[i].texture; }
   uint TextureID(uint i) { return texBindings[i].texture->glIdent; }
   std::string& TextureName(uint i) { return texBindings[i].name; }
 
   std::vector<TextureBinding> texBindings;
-  int mapping;
+  int mapping{};
 
-  MdlObject* root;
+  MdlObject* root{};
 
   Model(const Model& rhs) = delete;
   void operator=(const Model& rhs) = delete;
