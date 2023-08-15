@@ -10,6 +10,8 @@
 #include <cassert>
 #include <cstdlib>
 
+#include "spdlog/spdlog.h"
+
 #include "Util.h"
 
 #define USE_RADIANS
@@ -25,10 +27,29 @@
 const float pi_div180 = 0.01745329252F;
 
 void Vector3::normalize() {
+  if (isnan(x) || isnan(y) || isnan(z)) {
+    x, y, z = 0.0f;
+    return;
+  }
+
+  if (x <= 0.0f) {
+    x = 0.0f;
+  }
+
+  if (y <= 0.0f) {
+    y = 0.0f;
+  }
+
+  if (z <= 0.0f) {
+    z = 0.0f;
+  }
+
   float const m = 1.0F / sqrt(x * x + y * y + z * z);
-  x *= m;
-  y *= m;
-  z *= m;
+  if (!isinf(m)) {
+    x *= m;
+    y *= m;
+    z *= m;
+  }
 }
 
 bool Vector3::operator==(const Vector3& v) const {

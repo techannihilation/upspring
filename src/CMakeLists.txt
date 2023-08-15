@@ -52,6 +52,7 @@ target_link_libraries (${PROJECT_NAME}
     simdutf::simdutf
     CLI11
     TXPKCore
+    yaml-cpp
 )
 
 target_link_libraries (${PROJECT_NAME}
@@ -75,6 +76,8 @@ target_sources(${PROJECT_NAME} PRIVATE
     FileIO/OBJ.cpp
     FileIO/S3O.cpp
     FileIO/S3O.h
+    FileSystem/CDirectoryArchive.cpp
+    FileSystem/CDirectoryArchive.h
     FileSystem/CSevenZipArchive.cpp
     FileSystem/CSevenZipArchive.h
     FileSystem/CZipArchive.cpp

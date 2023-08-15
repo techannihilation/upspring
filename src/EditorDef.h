@@ -102,10 +102,8 @@ struct hash<std::string> {
 #ifdef _MSC_VER
 #if _MSC_VER > 1310
 #define SNPRINTF _snprintf_s
-#define VSNPRINTF _vsnprintf_s
 #else
 #define SNPRINTF _snprintf
-#define VSNPRINTF _vsnprintf
 #endif
 #define STRCASECMP _stricmp
 #define STRNCASECMP _strnicmp
@@ -114,7 +112,6 @@ struct hash<std::string> {
 #define STRCASECMP strcasecmp
 #define STRNCASECMP strncasecmp
 #define SNPRINTF snprintf
-#define VSNPRINTF vsnprintf
 #define ALLOCA(size) alloca(size)
 #endif
 #define ALLOCA_ARRAY(T, N) (new (ALLOCA(sizeof(T) * N)) T[N])

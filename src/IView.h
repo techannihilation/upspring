@@ -7,6 +7,9 @@
 #ifndef VIEW_INTERFACE_H
 #define VIEW_INTERFACE_H
 
+#include "Texture.h"
+#include "math/Mathlib.h"
+
 #define MAP_XZ 0
 #define MAP_XY 1
 #define MAP_YZ 2

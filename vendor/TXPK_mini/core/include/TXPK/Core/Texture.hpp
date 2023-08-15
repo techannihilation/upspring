@@ -1,6 +1,5 @@
 #pragma once
 
-#include <string.h>
 #include <string>
 #include <vector>
 #include <list>
@@ -22,6 +21,10 @@ namespace txpk
 	class Texture
 	{
 	public:
+		std::string name;
+		uint32 orig_width;
+		uint32 orig_height;
+
 		/**
 		* \brief The default constructor.
 		*/

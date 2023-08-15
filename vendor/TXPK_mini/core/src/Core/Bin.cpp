@@ -18,32 +18,23 @@ namespace txpk
 		std::vector<Color4> textureData;
 		const Rectangle* current = NULL;
 		uint32 r, t, y;
-		//foreach rectangle
-		for (r = 0; r < rectangles.size(); ++r)
+
+		//foreach texture
+		for (r = 0; r < textures.size(); ++r)
 		{
 			//actually faster than copying a smartpointer...
-			current = &(*rectangles[r]);
+			current = &(*textures[r]->getBounds());
 
-			//find corresponding texture
-			for (t = 0; t < textures.size(); ++t)
+			textureData = textures[r]->getRawPixelData();
+
+			//copy data row by row
+			for (y = 0; y < current->height; ++y)
 			{
-				//when addresses match
-				if (&(*textures[t]->getBounds()) == &(*current))
-				{
-					textureData = textures[t]->getRawPixelData();
-
-					//copy data row by row
-					for (y = 0; y < current->height; ++y)
-					{
-						memcpy(
-							&data[(current->top + y) * width + current->left],
-							&textureData[y * current->width],
-							current->width * sizeof(Color4)
-						);
-					}
-
-					break;
-				}
+				memcpy(
+					&data[(current->top + y) * width + current->left],
+					&textureData[y * current->width],
+					current->width * sizeof(Color4)
+				);
 			}
 		}
 

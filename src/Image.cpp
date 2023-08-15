@@ -196,13 +196,14 @@ bool Image::threedo_to_s3o() {
   }
 
   ilBindImage(ilid_);
-  auto* data_ptr = ilGetData();
-  auto** data_pptr = &data_ptr;
+  ILubyte* data_ptr = ilGetData();
+  ILubyte** data_pptr = &data_ptr;
 
   for (std::size_t ph = 0; ph < height_; ph++) {
     for (std::size_t pw = 0; pw < width_; pw++) {
       // trunk-ignore(clang-tidy/cppcoreguidelines-pro-bounds-pointer-arithmetic)
       data_ptr[1] = data_ptr[0];
+      data_ptr[3] = data_ptr[3] + ILubyte(150);
 
       // trunk-ignore(clang-tidy/cppcoreguidelines-pro-bounds-pointer-arithmetic)
       *data_pptr += bpp_;
@@ -224,15 +225,15 @@ bool Image::to_power_of_two() {
   owidth_ = width_;
   if (!is_power_of_two(owidth_)) {
     width_ = next_power_of_two(owidth_);
-    spdlog::debug("Enlarging '{}' cause the width '{}' is not power of two '{}'.", name_, owidth_,
-                  width_);
+    // spdlog::debug("Enlarging '{}' cause the width '{}' is not power of two '{}'.", name_, owidth_,
+    //               width_);
   }
 
   oheight_ = height_;
   if (!is_power_of_two(oheight_)) {
     height_ = next_power_of_two(oheight_);
-    spdlog::debug("Enlarging '{}' cause the height '{}' is not power of two '{}'.", name_, oheight_,
-                  height_);
+    // spdlog::debug("Enlarging '{}' cause the height '{}' is not power of two '{}'.", name_, oheight_,
+    //               height_);
   }
 
   if (width_ != owidth_ || height_ != oheight_) {
@@ -407,6 +408,9 @@ bool Image::load_from_memory_(const std::vector<std::uint8_t>& par_buffer) {
   has_error_ = false;
   image_infos_();
 
+  owidth_ = width_;
+  oheight_ = height_;
+
   return true;
 }
 
@@ -416,7 +420,7 @@ void Image::image_infos_() {
   }
 
   ilBindImage(ilid_);
-  ilGetIntegerv(IL_IMAGE_WIDTH, &width_);
+  ilGetIntegerv(IL_IMAGE_WIDTH, &width_);  
   ilGetIntegerv(IL_IMAGE_HEIGHT, &height_);
   ilGetIntegerv(IL_IMAGE_BYTES_PER_PIXEL, &bpp_);
   ilGetIntegerv(IL_IMAGE_DEPTH, &deepth_);

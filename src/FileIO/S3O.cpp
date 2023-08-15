@@ -159,24 +159,24 @@ static MdlObject* S3O_LoadObject(FILE* f, int offset) {
 bool Model::LoadS3O(const char* filename, IProgressCtl& /*progctl*/) {
   S3OHeader header{};
   size_t const read_result = 0;
-  FILE* file = fopen(filename, "rb");
-  if (file == nullptr) {
+  FILE* fp = fopen(filename, "rb");
+  if (fp == nullptr) {
     return false;
   }
 
-  if (fread(&header, sizeof(S3OHeader), 1, file) != 0U) {
+  if (fread(&header, sizeof(S3OHeader), 1, fp) != 0U) {
   }
 
   if (memcmp(header.magic, S3O_ID, 12) != 0) {
     spdlog::error("S3O model '{}' has a wrong identification", filename);
-    fclose(file);
+    fclose(fp);
     return false;
   }
 
   if (header.version != 0) {
     spdlog::error("S3O model '{}' has a wrong version ({}, wanted: {})", filename, header.version,
                   0);
-    fclose(file);
+    fclose(fp);
     return false;
   }
 
@@ -184,7 +184,7 @@ bool Model::LoadS3O(const char* filename, IProgressCtl& /*progctl*/) {
   mid.set(-header.midx, header.midy, header.midz);
   height = header.height;
 
-  root = S3O_LoadObject(file, header.rootPiece);
+  root = S3O_LoadObject(fp, header.rootPiece);
   MirrorX(root);
 
   std::string const mdlPath = std::filesystem::path(filename).parent_path().string();
@@ -198,7 +198,7 @@ bool Model::LoadS3O(const char* filename, IProgressCtl& /*progctl*/) {
     texBindings.emplace_back();
     TextureBinding& tb = texBindings.back();
 
-    tb.name = Readstring(tex == 1 ? header.texture2 : header.texture1, file);
+    tb.name = Readstring(tex == 1 ? header.texture2 : header.texture1, fp);
     tb.texture = std::make_shared<Texture>();
     if (!tb.texture->Load(tb.name, mdlPath) or tb.texture->HasError()) {
       tb.texture = nullptr;
@@ -210,7 +210,9 @@ bool Model::LoadS3O(const char* filename, IProgressCtl& /*progctl*/) {
 
   mapping = MAPPING_S3O;
 
-  fclose(file);
+  fclose(fp);
+
+  file_ = filename;
 
   return true;
 }

@@ -4,11 +4,33 @@
 #include <windows.h>
 #endif
 
+#ifdef _MSC_VER
+#if _MSC_VER > 1310
+#define VSNPRINTF _vsnprintf_s
+#else
+#define VSNPRINTF _vsnprintf
+#endif
+#else
+#define VSNPRINTF vsnprintf
+#endif
+
+#include <stdarg.h>
 #include <vector>
 #include <algorithm>
 #include <string>
 #include <numeric>
 #include <filesystem>
+
+// Printf style std::string formatting
+inline std::string SPrintf(const char* fmt, ...) {
+  va_list vl;
+  va_start(vl, fmt);
+  char buf[256];
+  VSNPRINTF(buf, sizeof(buf), fmt, vl);
+  va_end(vl);
+
+  return buf;
+}
 
 inline std::string to_lower(const std::string& str) {
   std::string tmp = str;

@@ -10,4 +10,4 @@ lib = require("lib")
 ---------------------------------
 -- Actual code
 ---------------------------------
-upspring.make_archive_atlas("/home/pcdummy/.spring/games/TA.7z", "/home/pcdummy/Projekte/techannihilation/TA_Atlas.dds", true);
+upspring.make_archive_atlas(arg[1], arg[2], true);

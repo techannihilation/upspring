@@ -91,7 +91,7 @@ namespace txpk
 		bool operator !=(const Rectangle& other);
 
 	private:
-		bool rotated; /**< Indicates if the rectangle was rotated or not */
+		bool rotated; /**< Indicates if the rectangle was rotated or not */ 
 	};
 
 	typedef std::shared_ptr<Rectangle> RectanglePtr;

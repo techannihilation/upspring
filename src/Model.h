@@ -4,13 +4,15 @@
 //  This code is released under GPL license, see LICENSE.HTML for info.
 //-----------------------------------------------------------------------
 
-#ifndef JC_MODEL_H
-#define JC_MODEL_H
+#pragma once
+
 #include "Animation.h"
 #include "IView.h"
 #include "Referenced.h"
 #include "Texture.h"
 #include "VertexBuffer.h"
+#include "math/Mathlib.h"
+#include "Atlas/atlas.hpp"
 
 #include <memory>
 
@@ -32,6 +34,8 @@ struct MdlObject;
 struct Model;
 struct IKinfo;
 class PolyMesh;
+
+uint Vector3ToRGB(Vector3 v);
 
 struct Triangle {
   Triangle() { vrt[0] = vrt[1] = vrt[2] = 0; }
@@ -196,6 +200,7 @@ struct MdlObject {
 
   bool HasSelectedParent() const;
 
+  void Rotate180();
   void ApplyTransform(bool rotation, bool scaling, bool position);
   void ApplyParentSpaceTransform(const Matrix& transform);
   void TransformVertices(const Matrix& transform) const;
@@ -288,8 +293,14 @@ struct TextureBinding {
 static IProgressCtl defprogctl;
 
 struct Model {
+  std::string file_;
+
   Model();
   ~Model();
+
+  const std::string& file() {
+    return file_;
+  }
 
   void PostLoad();
 
@@ -328,7 +339,11 @@ struct Model {
 
   bool ConvertToS3O(std::string textureName, int texw, int texh);
 
+  bool add_textures_to_atlas(atlas& par_atlas) const;
+  bool convert_to_atlas_s3o(const atlas& par_atlas);
+
   void Remove3DOBase();
+  void Triangleize();
   void Cleanup() const;
   void FlipUVs() const;
   void MirrorUVs() const;
@@ -368,5 +383,3 @@ bool SaveWavefrontObject(const char* fn, MdlObject* src);
 
 void GenerateUniqueVectors(const std::vector<Vertex>& verts, std::vector<Vector3>& vertPos,
                            std::vector<int>& old2new);
-
-#endif

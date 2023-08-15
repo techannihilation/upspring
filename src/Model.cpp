@@ -15,6 +15,7 @@
 #include <fstream>
 #include <iostream>
 #include <stdexcept>
+#include <unordered_map>
 
 #include "string_util.h"
 
@@ -26,7 +27,10 @@
 
 #include "spdlog/spdlog.h"
 
-#include <unordered_map>
+uint Vector3ToRGB(Vector3 v) {
+  return (static_cast<uint>(v.x * 255.0F) << 16) | (static_cast<uint>(v.y * 255.0F) << 8) |
+         (static_cast<uint>(v.z * 255.0F) << 0);
+}
 
 // ------------------------------------------------------------------------------------------------
 // Model
@@ -469,11 +473,6 @@ unsigned long Model::ObjectSelectionHash() const {
   return ch;
 }
 
-uint Vector3ToRGB(Vector3 v) {
-  return (static_cast<uint>(v.x * 255.0F) << 16) | (static_cast<uint>(v.y * 255.0F) << 8) |
-         (static_cast<uint>(v.z * 255.0F) << 0);
-}
-
 bool Model::ConvertToS3O(std::string textureName, int texw, int texh) {
   std::unordered_map<std::string, std::shared_ptr<Texture>> textures;
 
@@ -487,7 +486,7 @@ bool Model::ConvertToS3O(std::string textureName, int texw, int texh) {
         textures.insert({poly->texname, poly->texture});
 
       } else if (poly->color.x != 0.0F) {  // create a new color texture
-        const std::string color_name(SPrintf("Color%d", Vector3ToRGB(poly->color)));
+        const std::string color_name(SPrintf("color_%d", Vector3ToRGB(poly->color)));
 
         auto ci_ti = textures.find(color_name);
         if (ci_ti != textures.end()) {
@@ -603,6 +602,172 @@ bool Model::ConvertToS3O(std::string textureName, int texw, int texh) {
   return true;
 }
 
+bool Model::add_textures_to_atlas(atlas& par_atlas) const {
+  std::vector<PolyMesh*> const pmlist = GetPolyMeshList();
+
+  std::unordered_map<std::string, std::shared_ptr<Texture>> textures;
+
+  for (auto& polymesh : pmlist) {
+    for (auto& poly : polymesh->poly) {
+      if (poly->texture) {
+        if (textures.find(poly->texname) != textures.end()) {
+          continue;
+        }
+        textures.insert({poly->texname, poly->texture});
+
+      } else if (poly->color.x != 0.0F) {  // create a new color texture
+        const std::string color_name(SPrintf("color_%d", Vector3ToRGB(poly->color)));
+
+        auto ci_ti = textures.find(color_name);
+        if (ci_ti != textures.end()) {
+          poly->texture = ci_ti->second;
+          continue;
+        }
+
+        auto color_image = std::make_shared<Image>();
+        color_image->name(color_name);
+        if (!color_image->create(1, 1, poly->color.x, poly->color.y, poly->color.z)) {
+          spdlog::error("Failed to create a color image, error was: {}", color_image->error());
+          continue;
+        }
+
+        auto color_tex = std::make_shared<Texture>(color_image, color_name);
+        textures.insert({color_name, color_tex});
+
+      } else {
+        continue;
+      }
+    }
+  }
+
+  std::vector<ImagePtr> add;
+  for (const auto& texture : textures) {
+    add.push_back(texture.second->GetImage());
+  }
+
+  return par_atlas.add_3do_textures(add, true);
+}
+
+bool Model::convert_to_atlas_s3o(const atlas& par_atlas) {
+  // Map textures
+  std::unordered_map<std::string, atlas_info_image> textures;
+
+  std::vector<PolyMesh*> const pmlist = GetPolyMeshList();
+
+  for (auto& polymesh : pmlist) {
+    for (auto& poly : polymesh->poly) {
+      if (poly->color.x != 0.0F && poly->texname.empty()) {  // create a new color texture
+        const std::string color_name(SPrintf("color_%d", Vector3ToRGB(poly->color)));
+        poly->texname = color_name;
+      }
+
+      if (!poly->texname.empty()) {
+        auto texname = to_lower(poly->texname);
+
+        if (textures.find(texname) != textures.end()) {
+          continue;
+        }
+
+        if (textures.find(texname+"00") != textures.end()) {
+          continue;
+        }
+
+        for (auto const &tex : par_atlas.info().textures) {
+          if (tex.name == texname || tex.name == texname + "00") {
+            textures.insert({texname, tex});
+          }
+        }
+      }
+    }
+  }
+
+  auto tex1 = std::make_shared<Texture>();
+  auto img1 = std::make_shared<Image>();
+  img1->load(par_atlas.info().color_image);
+  tex1->SetImage(img1);
+  tex1->name = std::filesystem::path(par_atlas.info().color_image).filename().string();
+  SetTexture(0, tex1);
+
+  auto tex2 = std::make_shared<Texture>();
+  auto img2 = std::make_shared<Image>();
+  img2->load(par_atlas.info().other_image);
+  tex2->SetImage(img2);
+  tex2->name = std::filesystem::path(par_atlas.info().other_image).filename().string();
+  SetTexture(1, tex2);
+
+
+  // now set new texture coordinates.
+  // Vertices might need to be split, so vertices are calculated per frame and then optimized again
+
+  const float tc[] = {0.0F, 1.0F, 1.0F, 1.0F, 1.0F, 0.0F, 0.0F, 0.0F};
+  for (PolyMesh *polymesh : pmlist) {
+    std::vector<Vertex> vertices;
+
+    for (Poly *poly : polymesh->poly) {
+      if (poly->verts.size() == 1) {
+        if (polymesh->verts.size() > 0) {
+          vertices.push_back(polymesh->verts[poly->verts[0]]);
+        }
+        spdlog::warn("found a poly with only one vertice");
+        continue;
+      }
+
+      if (poly->texname.empty() || poly->verts.size() > 4) {
+        for (int& vert : poly->verts) {
+          vertices.push_back(polymesh->verts[vert]);
+          Vertex& vrt = vertices.back();
+          vrt.tc[0].x = vrt.tc[0].y = 0.0F;
+          vert = vertices.size() - 1;
+        }
+
+        spdlog::warn("texture '{}' empty or more than 4 vertices ({})", poly->texname, poly->verts.size());
+
+        continue;
+      }
+
+      std::string texname = to_lower(poly->texname);
+      auto got = textures.find(texname);
+      if (got == textures.end()) {
+        got = textures.find(texname + "00");
+
+        if (got == textures.end()) {
+          for (int& vert : poly->verts) {
+            vertices.push_back(polymesh->verts[vert]);
+            Vertex& vrt = vertices.back();
+            vrt.tc[0].x = vrt.tc[0].y = 0.0F;
+            vert = vertices.size() - 1;
+          }
+
+          // Texture not found.
+          spdlog::warn("texture '{}' not found", texname);
+          continue;
+        }
+      }
+
+      // spdlog::info("loading texture '{}'", texname);
+
+      auto tnode = got->second;
+
+      for (uint v = 0; v < poly->verts.size(); v++) {
+        vertices.push_back(polymesh->verts[poly->verts[v]]);
+        Vertex& vrt = vertices.back();
+        // convert to texturebintree UV coords:
+        vrt.tc[0].x = tnode.U(par_atlas.info().width, tc[v * 2 + 0]);
+        vrt.tc[0].y = tnode.V(par_atlas.info().height, tc[v * 2 + 1]);
+
+        poly->verts[v] = vertices.size() - 1;
+      }
+    }
+
+    polymesh->verts = vertices;
+    // polymesh->Optimize(&PolyMesh::IsEqualVertexTC);
+  }
+
+  mapping = MAPPING_S3O;
+
+  return true;
+}
+
 void removeDuplicatedChildPolys(MdlObject* pObj,
                                 std::unordered_map<std::size_t, MdlObject**>& knownHashes) {
   for (auto& obj : pObj->childs) {
@@ -668,12 +833,59 @@ void removeInvalidChilds(MdlObject* obj) {
 
 void Model::Remove3DOBase() {
   if (root == nullptr) {
-    std::cout << "Cleanup3DO() can only be run on the root object." << std::endl;
+    std::cout << "Remove3DOBase() can only be run on the root object." << std::endl;
     return;
   }
 
-  // Remove base.
-  root = root->childs[0];
+  if (root->name == "base") {
+    if (root->childs.size() == 1) {
+      root = root->childs[0];
+      root->parent = nullptr;
+    }
+  }
+}
+
+void Model::Triangleize() {
+  auto objs = GetObjectList();
+
+  for (auto& obj : objs) {
+    auto mesh = obj->GetPolyMesh();
+    std::vector<Vertex> vertices;
+    vertices.reserve(mesh->poly.size() * 3);
+
+    for (auto& pl : mesh->poly) {
+      if (pl->verts.size() == 4) {
+        // Quads
+        std::vector<int> indices = {
+          int(vertices.size() + 0), int(vertices.size() + 1), int(vertices.size() + 2),
+          int(vertices.size() + 0), int(vertices.size() + 2), int(vertices.size() + 3)
+        };
+
+        for (int i = 0; i < 4; ++i) {
+          vertices.push_back(mesh->verts[pl->verts[i]]);
+        }
+
+        // Adjust texture coordinates for the triangles
+        Vertex& vert0 = vertices[indices[0]];
+        Vertex& vert1 = vertices[indices[1]];
+        Vertex& vert2 = vertices[indices[2]];
+        Vertex& vert3 = vertices[indices[5]];
+
+        vert0.tc[0] = mesh->verts[pl->verts[0]].tc[0];
+        vert1.tc[0] = mesh->verts[pl->verts[1]].tc[0];
+        vert2.tc[0] = mesh->verts[pl->verts[2]].tc[0];
+        vert3.tc[0] = mesh->verts[pl->verts[3]].tc[0];
+      } else {
+        // Triangles or other
+        for (auto &vert : pl->verts) {
+          vertices.push_back(mesh->verts[vert]);
+          vert = vertices.size() -1;
+        }
+      }
+    }
+
+    mesh->verts = vertices;
+  }
 }
 
 void Model::Cleanup() const {

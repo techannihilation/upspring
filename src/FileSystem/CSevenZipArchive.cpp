@@ -50,7 +50,7 @@ std::optional<std::string> convert_char16_to_utf8(const char16_t* cstr, std::siz
     return std::nullopt;
   }
 
-  return std::string(utf8_buffer.data(), utf8_buffer.size());
+  return std::string(utf8_buffer.data(), utf8_buffer.size()).c_str();
 }
 
 std::optional<std::string> convert_wchar_to_utf8(const wchar_t* wstr) {
@@ -138,7 +138,6 @@ CSevenZipArchive::CSevenZipArchive(const std::string& name) : IArchive(name), is
                     res);
       continue;
     }
-    spdlog::debug("Got '{}'", name.value());
 
     const std::string lower_name = to_lower(name.value());
 
@@ -161,7 +160,7 @@ CSevenZipArchive::CSevenZipArchive(const std::string& name) : IArchive(name), is
     }
 
     lcNameIndex.emplace(to_lower(fd.origName), fileEntries.size());
-    fileEntries.emplace_back(std::move(fd));
+    fileEntries.emplace_back(fd);
   }
 }
 

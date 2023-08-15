@@ -10,6 +10,7 @@
 #include "Image.h"
 #include "CfgParser.h"
 
+#include "FileSystem/CDirectoryArchive.h"
 #include "FileSystem/CSevenZipArchive.h"
 #include "FileSystem/CZipArchive.h"
 
@@ -136,7 +137,7 @@ std::shared_ptr<Texture> TextureHandler::texture(const std::string& name) {
     tmp += "00";
     ti_it = textures_.find(tmp);
     if (ti_it == textures_.end()) {
-      spdlog::warn("Texture '{}' not found", tmp);
+      spdlog::warn("Texture '{}' not found", to_lower(name));
       return nullptr;
     }
     return ti_it->second;
@@ -163,15 +164,21 @@ bool TextureHandler::has_team_color(const std::string& texture_name) {
 bool TextureHandler::LoadFiltered(
     const std::string& par_archive_path,
     std::function<const std::string(const std::string&)>&& par_filter) {
-  auto ext = std::filesystem::path(par_archive_path).extension();
-
   std::shared_ptr<IArchive> archive;
-  if (ext == ".7z" or ext == ".sd7") {
-    archive = std::make_shared<CSevenZipArchive>(par_archive_path);
-  } else if (ext == ".zip") {
-    archive = std::make_shared<CZipArchive>(par_archive_path);
+
+  auto path = std::filesystem::absolute(par_archive_path);
+  if (std::filesystem::is_directory(path)) {
+    archive = std::make_shared<CDirectoryArchive>(par_archive_path);
   } else {
-    spdlog::error("Unknown archive '{}'", par_archive_path);
+    auto ext = path.extension();
+    if (ext == ".7z" or ext == ".sd7") {
+      archive = std::make_shared<CSevenZipArchive>(par_archive_path);
+    } else if (ext == ".zip") {
+      archive = std::make_shared<CZipArchive>(par_archive_path);
+    } else {
+      spdlog::error("Unknown archive '{}'", path.string());
+      return false;
+    }
   }
 
   if (archive->NumFiles() == 0) {
@@ -192,6 +199,8 @@ bool TextureHandler::LoadFiltered(
       line.erase(std::remove(line.begin(), line.end(), '\n'), line.end());
       teamcolors_.insert(to_lower(line));
     }
+  } else {
+    spdlog::error("no file 'unittextures/tatex/teamtex.txt' in archive");
   }
 
   for (std::uint32_t i = 0; i < archive->NumFiles(); i++) {
@@ -202,16 +211,15 @@ bool TextureHandler::LoadFiltered(
     archive->FileInfo(i, name, size, mode);
 
     if (size < 1 || name.empty()) {
-      spdlog::warn("Empty name or size=0?");
       continue;
     }
 
     // Extension checking
-    auto myExt = std::filesystem::path(name).extension().string();
+    std::string const myExt = std::filesystem::path(name).extension().string().c_str();
     if (myExt.empty()) {
       continue;
     }
-    if (supported_extensions_.find(myExt) != supported_extensions_.end()) {
+    if (supported_extensions_.find(myExt) == supported_extensions_.end()) {
       // Not a supported file.
       continue;
     }
@@ -221,6 +229,8 @@ bool TextureHandler::LoadFiltered(
     if (internal_name.empty()) {
       continue;
     }
+
+    // spdlog::debug("loading {} as {}", name, internal_name);
 
     if (textures_.find(internal_name) != textures_.end()) {
       spdlog::debug("Skipping texture '{}' its already known", internal_name);

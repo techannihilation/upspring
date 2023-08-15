@@ -11,23 +11,11 @@
 
 #include "Util.h"
 
-// Printf style std::string formatting
-std::string SPrintf(const char* fmt, ...) {
-  va_list vl;
-  va_start(vl, fmt);
-  char buf[256];
-  VSNPRINTF(buf, sizeof(buf), fmt, vl);
-  va_end(vl);
-
-  return buf;
-}
 
 std::string ReadZStr(FILE* f) {
   std::string s;
   int c = 0;
-  while ((c = fgetc(f)) != EOF && (c != 0)) {
-    s += std::to_string(c);
-  }
+  while ((c = fgetc(f)) != EOF && c) s += c;
   return s;
 }
 

@@ -69,6 +69,7 @@ namespace std {
 %include "ScriptInterface.h"
 %include "../Image.h"
 %include "../Texture.h"
+%include "../Atlas/atlas.hpp"
 //%include "../Fltk.h"
 
 %feature("immutable") MdlObject::parent;
@@ -116,6 +117,9 @@ inline %{
 namespace UpsScript {
 	auto textureHandler = std::make_shared<TextureHandler>();
 
+	std::shared_ptr<TextureHandler> get_texture_handler() {
+		return textureHandler;
+	}
 
 	void load_archive(const std::string &pArchive) {
 		std::cout << "Loading 3DO textures from archive: " << pArchive << std::endl;
@@ -144,6 +148,7 @@ namespace UpsScript {
 %}
 
 namespace UpsScript {
+	std::shared_ptr<TextureHandler> get_texture_handler();
 	void load_archives();
 	void load_archive(const std::string &pArchive);
 	void textures_to_model(Model *pModel);

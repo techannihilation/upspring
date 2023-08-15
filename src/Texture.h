@@ -50,8 +50,8 @@ class Texture {
 
 // manages 3do textures
 class TextureHandler {
-  std::set<std::string> supported_extensions_ = {".bmp", ".jpg", ".tga", ".png", ".dds",
-                                                 ".pcx", ".pic", ".gif", ".ico"};
+  std::set<std::string> const supported_extensions_ = {".bmp", ".jpg", ".tga", ".png", ".dds",
+                                                       ".pcx", ".pic", ".gif", ".ico"};
   std::unordered_map<std::string, std::shared_ptr<Texture>> textures_;
   std::set<std::string> teamcolors_;
 

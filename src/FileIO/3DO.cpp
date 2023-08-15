@@ -145,7 +145,7 @@ static MdlObject* load_object(int ofs, FILE* f, MdlObject* parent, int r = 0) {
   if (obj.NumberOfPrimitives > 0) {
     read_result = fread(tapl.data(), sizeof(TA_Polygon), obj.NumberOfPrimitives, f);
   }
-  if (read_result != static_cast<size_t>(obj.NumberOfPrimitives)) {
+  if (read_result != static_cast<size_t>(obj.NumberOfPrimitives) && obj.NumberOfPrimitives != 0) {
     throw std::runtime_error("Couldn't read primitives.");
   }
   for (int a = 0; a < obj.NumberOfPrimitives; a++) {
@@ -223,6 +223,8 @@ bool Model::Load3DO(const char* filename, IProgressCtl& /*progctl*/) {
   mapping = MAPPING_3DO;
 
   fclose(f);
+
+  file_ = filename;
 
   return true;
 }

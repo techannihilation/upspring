@@ -125,6 +125,11 @@ void PolyMesh::OptimizeVertices(PolyMesh::IsEqualVertexCB cb) {
   std::vector<int> usage;
   std::vector<Vertex> nv;
 
+  if (verts.empty()) {
+    spdlog::error("OptimizeVertices: found a PolyMesh with no verts");
+    return;
+  }
+
   old2new.resize(verts.size());
   usage.resize(verts.size());
   fill(usage.begin(), usage.end(), 0);

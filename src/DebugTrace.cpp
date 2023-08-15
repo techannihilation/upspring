@@ -7,6 +7,8 @@
 #include "EditorDef.h"
 #include "DebugTrace.h"
 
+#include "string_util.h"
+
 #ifdef WIN32
 #include <windows.h>
 #endif

@@ -57,6 +57,8 @@ class Image {
   inline int height() const { return height_; }
   inline int owidth() const { return owidth_; }
   inline int oheight() const { return oheight_; }
+  inline void owidth(int par_owidth) { owidth_ = par_owidth; }
+  inline void oheight(int par_oheight) { oheight_ = par_oheight; }
   inline int bpp() const { return bpp_; }
   inline int deepth() const { return deepth_; }
   inline int channels() const { return channels_; }

@@ -152,6 +152,14 @@ class Vector2 {
   Vector2(float X, float Y) : x(X), y(Y) {}
   Vector2() { x = y = 0.0f; }
   float x, y;
+
+  Vector2 operator+(const Vector2& rhs) const {
+    return Vector2(x + rhs.x, y + rhs.y);
+  }
+
+  Vector2 operator*(float scalar) const {
+    return Vector2(x * scalar, y * scalar);
+  }
 };
 
 class Vector4 {

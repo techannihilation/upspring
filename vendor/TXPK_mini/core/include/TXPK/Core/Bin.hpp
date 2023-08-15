@@ -17,6 +17,8 @@ namespace txpk
 		uint32 height; /**< Height of the resulting image */
 		RectanglePtrs rectangles; /**< Rectangle pointers to manipulate */
 
+		Bin() = default;
+
 		/**
 		* \brief Creates a new Bin.
 		* \param rectangles List of rectangle pointers.

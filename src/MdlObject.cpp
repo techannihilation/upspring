@@ -263,6 +263,14 @@ void MdlObject::ApplyParentSpaceTransform(const Matrix& psTransform) {
   }
 }
 
+void MdlObject::Rotate180() {
+  Vector3 rot;
+  rot.v[1] = 180 * (3.141593f / 180.0f);
+  rotation.AddEulerAbsolute(rot);
+
+  ApplyTransform(true, false, false);
+}
+
 void MdlObject::ApplyTransform(bool removeRotation, bool removeScaling, bool removePosition) {
   Matrix mat;
   mat.identity();
