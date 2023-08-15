@@ -108,8 +108,8 @@
         "--run",
         "runscripts/convert_with_atlas.lua",
         "--",
-        "../TA/unittextures/tll.yaml",
-        "../TA/objects3d/tll/tllbuilderlvl3.3do"
+        "../TA/unittextures/arm.yaml",
+        "../TA/objects3d/arm/armhcrus1.3do"
       ],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",
