@@ -27,7 +27,7 @@ struct atlas_info_image {
   std::uint32_t top;
 
   inline float U(std::uint32_t par_width, float par_u) {
-    float result = par_u * float(orig_width) / float(par_width) + (float(left) + float(ATLAS_MARGIN) + 0.5F) / float(par_width);
+    float result = par_u * float(orig_width) / float(par_width) + (float(left) + float(ATLAS_MARGIN)) / float(par_width);
     if (result > 1.0f) {
       return 1.0f;
     }
@@ -38,7 +38,7 @@ struct atlas_info_image {
   }
 
   inline float V(std::uint32_t par_height, float par_v) {
-    float result = par_v * float(orig_height) / float(par_height) + (float(top) + float(ATLAS_MARGIN) + 0.5F) / float(par_height);
+    float result = par_v * float(orig_height) / float(par_height) + (float(top) + float(ATLAS_MARGIN)) / float(par_height);
     if (result > 1.0f) {
       return 1.0f;
     }
