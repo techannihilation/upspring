@@ -875,7 +875,7 @@ void Model::Triangleize() {
         vert1.tc[0] = mesh->verts[pl->verts[1]].tc[0];
         vert2.tc[0] = mesh->verts[pl->verts[2]].tc[0];
         vert3.tc[0] = mesh->verts[pl->verts[3]].tc[0];
-      } else {
+      } else if (mesh->verts.size() >= pl->verts.size()) {
         // Triangles or other
         for (auto &vert : pl->verts) {
           vertices.push_back(mesh->verts[vert]);
