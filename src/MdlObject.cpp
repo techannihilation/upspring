@@ -124,14 +124,14 @@ MdlObject::~MdlObject() {
   delete csurfobj;
 }
 
-PolyMesh* MdlObject::GetPolyMesh() const { return dynamic_cast<PolyMesh*>(geometry); }
+PolyMesh* MdlObject::GetPolyMesh() const { return geometry; }
 
 PolyMesh* MdlObject::GetOrCreatePolyMesh() {
-  if (dynamic_cast<PolyMesh*>(geometry) == nullptr) {
+  if (geometry == nullptr) {
     delete geometry;
     geometry = new PolyMesh;
   }
-  return dynamic_cast<PolyMesh*>(geometry);
+  return geometry;
 }
 
 void MdlObject::InvalidateRenderData() const {
@@ -265,7 +265,7 @@ void MdlObject::ApplyParentSpaceTransform(const Matrix& psTransform) {
 
 void MdlObject::Rotate180() {
   Vector3 rot;
-  rot.v[1] = 180 * (3.141593f / 180.0f);
+  rot[1] = 180 * (3.141593f / 180.0f);
   rotation.AddEulerAbsolute(rot);
 
   ApplyTransform(true, false, false);

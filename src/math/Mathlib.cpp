@@ -32,18 +32,6 @@ void Vector3::normalize() {
     return;
   }
 
-  if (x <= 0.0f) {
-    x = 0.0f;
-  }
-
-  if (y <= 0.0f) {
-    y = 0.0f;
-  }
-
-  if (z <= 0.0f) {
-    z = 0.0f;
-  }
-
   float const m = 1.0F / sqrt(x * x + y * y + z * z);
   if (!isinf(m)) {
     x *= m;

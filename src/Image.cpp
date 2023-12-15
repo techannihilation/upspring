@@ -9,6 +9,7 @@
 #include <filesystem>
 
 #include <iostream>
+#include <algorithm>
 
 #include "spdlog/spdlog.h"
 
@@ -195,18 +196,48 @@ bool Image::threedo_to_s3o() {
     return false;
   }
 
-  ilBindImage(ilid_);
-  ILubyte* data_ptr = ilGetData();
-  ILubyte** data_pptr = &data_ptr;
+  if (bpp_ < 4) {
+    add_opaque_alpha();
 
-  for (std::size_t ph = 0; ph < height_; ph++) {
-    for (std::size_t pw = 0; pw < width_; pw++) {
-      // trunk-ignore(clang-tidy/cppcoreguidelines-pro-bounds-pointer-arithmetic)
-      data_ptr[1] = data_ptr[0];
-      data_ptr[3] = data_ptr[3] + ILubyte(150);
+    ilBindImage(ilid_);
 
-      // trunk-ignore(clang-tidy/cppcoreguidelines-pro-bounds-pointer-arithmetic)
-      *data_pptr += bpp_;
+    ILubyte* data_ptr = ilGetData();
+    ILubyte** data_pptr = &data_ptr;
+
+    for (std::size_t ph = 0; ph < height_; ph++) {
+      for (std::size_t pw = 0; pw < width_; pw++) {
+        if (data_ptr[1] < 60) {
+          // trunk-ignore(clang-tidy/cppcoreguidelines-pro-bounds-pointer-arithmetic)
+          data_ptr[3] = std::clamp((255 - data_ptr[1]) * 1.5, 0.0, 255.0);
+        } else {
+          // TODO(jochumdev): is that needed?
+          data_ptr[3] = 0;
+        }
+
+        // trunk-ignore(clang-tidy/cppcoreguidelines-pro-bounds-pointer-arithmetic)
+        data_ptr[1] = data_ptr[0];
+
+        // trunk-ignore(clang-tidy/cppcoreguidelines-pro-bounds-pointer-arithmetic)
+        *data_pptr += bpp_;
+      }
+    }
+  } else {
+    ilBindImage(ilid_);
+
+    ILubyte* data_ptr = ilGetData();
+    ILubyte** data_pptr = &data_ptr;
+
+    for (std::size_t ph = 0; ph < height_; ph++) {
+      for (std::size_t pw = 0; pw < width_; pw++) {
+        // trunk-ignore(clang-tidy/cppcoreguidelines-pro-bounds-pointer-arithmetic)
+        data_ptr[1] = data_ptr[0];
+
+        // trunk-ignore(clang-tidy/cppcoreguidelines-pro-bounds-pointer-arithmetic)
+        data_ptr[3] = std::clamp((255 - data_ptr[3]) * 1.5, 0.0, 255.0);
+
+        // trunk-ignore(clang-tidy/cppcoreguidelines-pro-bounds-pointer-arithmetic)
+        *data_pptr += bpp_;
+      }
     }
   }
 
@@ -225,14 +256,16 @@ bool Image::to_power_of_two() {
   owidth_ = width_;
   if (!is_power_of_two(owidth_)) {
     width_ = next_power_of_two(owidth_);
-    // spdlog::debug("Enlarging '{}' cause the width '{}' is not power of two '{}'.", name_, owidth_,
+    // spdlog::debug("Enlarging '{}' cause the width '{}' is not power of two '{}'.", name_,
+    // owidth_,
     //               width_);
   }
 
   oheight_ = height_;
   if (!is_power_of_two(oheight_)) {
     height_ = next_power_of_two(oheight_);
-    // spdlog::debug("Enlarging '{}' cause the height '{}' is not power of two '{}'.", name_, oheight_,
+    // spdlog::debug("Enlarging '{}' cause the height '{}' is not power of two '{}'.", name_,
+    // oheight_,
     //               height_);
   }
 
@@ -420,7 +453,7 @@ void Image::image_infos_() {
   }
 
   ilBindImage(ilid_);
-  ilGetIntegerv(IL_IMAGE_WIDTH, &width_);  
+  ilGetIntegerv(IL_IMAGE_WIDTH, &width_);
   ilGetIntegerv(IL_IMAGE_HEIGHT, &height_);
   ilGetIntegerv(IL_IMAGE_BYTES_PER_PIXEL, &bpp_);
   ilGetIntegerv(IL_IMAGE_DEPTH, &deepth_);

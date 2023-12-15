@@ -619,10 +619,10 @@ void EditorViewWindow::Draw2D() {
 static Vector3 MakeVisibleColor(Vector3 bg) {
   Vector3 r;
   for (int i = 0; i < 3; i++) {
-    if (bg.v[i] < 0.5F) {
-      r.v[i] = bg.v[i] + 0.5F;
+    if (bg[i] < 0.5F) {
+      r[i] = bg[i] + 0.5F;
     } else {
-      r.v[i] = bg.v[i] - 0.5F;
+      r[i] = bg[i] - 0.5F;
     }
   }
   return r;

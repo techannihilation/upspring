@@ -127,5 +127,11 @@
   "C_Cpp.default.cppStandard": "c++20",
   "C_Cpp.default.cStandard": "c99",
   "C_Cpp.codeAnalysis.clangTidy.args": ["--extra-arg=-fcoroutines"],
-  "cmake.configureOnOpen": true
+  "cmake.configureOnOpen": true,
+  "Lua.diagnostics.globals": [
+    "lfs"
+  ],
+  "Lua.workspace.library": [
+    "${3rd}/lfs/library"
+  ]
 }

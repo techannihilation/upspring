@@ -134,7 +134,7 @@ static MdlObject* load_object(int ofs, FILE* f, MdlObject* parent, int r = 0) {
       throw std::runtime_error("Couldn't read vertexes.");
     }
     for (int b = 0; b < 3; b++) {
-      pm->verts[a].pos.v[b] = FROM_TA(ipos[b]);
+      pm->verts[a].pos[b] = FROM_TA(ipos[b]);
     }
   }
 
@@ -177,9 +177,9 @@ static MdlObject* load_object(int ofs, FILE* f, MdlObject* parent, int r = 0) {
   fseek(f, obj.OffsetToObjectName, SEEK_SET);
   n->name = ReadZStr(f);
 
-  n->position.v[0] = FROM_TA(obj.XFromParent);
-  n->position.v[1] = FROM_TA(obj.YFromParent);
-  n->position.v[2] = FROM_TA(obj.ZFromParent);
+  n->position.x = FROM_TA(obj.XFromParent);
+  n->position.y = FROM_TA(obj.YFromParent);
+  n->position.z = FROM_TA(obj.ZFromParent);
 
   if (obj.OffsetToSiblingObject != 0) {
     if (parent == nullptr) {
@@ -245,9 +245,9 @@ static void save_object(FILE* f, MdlObject* parent, std::vector<MdlObject*>::ite
 
   n.VersionSignature = 1;
   n.NumberOfPrimitives = pm->poly.size();
-  n.XFromParent = TO_TA(obj->position.v[0]);
-  n.YFromParent = TO_TA(obj->position.v[1]);
-  n.ZFromParent = TO_TA(obj->position.v[2]);
+  n.XFromParent = TO_TA(obj->position.x);
+  n.YFromParent = TO_TA(obj->position.y);
+  n.ZFromParent = TO_TA(obj->position.z);
   n.NumberOfVertexes = pm->verts.size();
 
   n.OffsetToObjectName = ftell(f);
@@ -256,9 +256,9 @@ static void save_object(FILE* f, MdlObject* parent, std::vector<MdlObject*>::ite
   n.OffsetToVertexArray = ftell(f);
   for (auto& vert : pm->verts) {
     int v[3];
-    Vector3* p = &vert.pos;
+    Vector3& p = vert.pos;
     for (int i = 0; i < 3; i++) {
-      v[i] = TO_TA(p->v[i]);
+      v[i] = TO_TA(p[i]);
     }
     write_result = fwrite(v, sizeof(int), 3, f);
     if (write_result != static_cast<size_t>(3)) {

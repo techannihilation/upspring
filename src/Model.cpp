@@ -831,17 +831,71 @@ void removeInvalidChilds(MdlObject* obj) {
   }
 }
 
+bool isPlanarQuadOnXZPlane(const Vector3& A, const Vector3& B, const Vector3& C, const Vector3& D) {
+    if (std::abs(A.y) > 0.001f or std::abs(B.y) > 0.001f or std::abs(C.y) > 0.001f or std::abs(D.y) > 0.001f) {
+      return false;
+    }
+
+    // Calculate vectors AB and AD
+    Vector3 AB = {B.x - A.x, B.y - A.y, B.z - A.z};
+    Vector3 AD = {D.x - A.x, D.y - A.y, D.z - A.z};
+    
+    float dot = std::abs(AB.dot(AD));
+    return dot <= 0.001f;
+}
+
 void Model::Remove3DOBase() {
   if (root == nullptr) {
-    std::cout << "Remove3DOBase() can only be run on the root object." << std::endl;
+    spdlog::error("Remove3DOBase() can only be run on the root object.");
     return;
   }
 
-  if (root->name == "base") {
-    if (root->childs.size() == 1) {
-      root = root->childs[0];
-      root->parent = nullptr;
+  auto objs = GetObjectList();
+  for (auto *obj : objs) {
+    PolyMesh *mesh = obj->geometry;
+
+    bool found = false;
+    std::vector<Poly*> polys;
+    // Find planar quad poly's.
+    for (auto *poly : mesh->poly) {
+      if (poly->verts.size() != 4) {
+        polys.push_back(poly);
+        continue;
+      }
+
+      Vector3 &par_a = mesh->verts[poly->verts[0]].pos;
+      Vector3 &par_b = mesh->verts[poly->verts[1]].pos;
+      Vector3 &par_c = mesh->verts[poly->verts[2]].pos;
+      Vector3 &par_d = mesh->verts[poly->verts[3]].pos;
+
+      if (isPlanarQuadOnXZPlane(par_a, par_b, par_c, par_d)) {
+        delete poly;
+        found = true;
+      } else {
+        polys.push_back(poly);
+      }
     }
+
+    // Now delete them.
+    if (found) {
+      spdlog::info("{}: deleting base plate polygons", obj->name);
+
+      // Create a new vector of vertices.
+      std::vector<Vertex> vertices;
+      vertices.reserve(mesh->verts.size());
+
+      // Assign 
+      for (auto *poly : polys) {
+        for (auto &v : poly->verts) {
+          vertices.push_back(mesh->verts[v]);
+          v = vertices.size() - 1;
+        }
+      }
+
+      mesh->verts = vertices;
+    }
+
+    mesh->poly = polys;
   }
 }
 
@@ -849,7 +903,7 @@ void Model::Triangleize() {
   auto objs = GetObjectList();
 
   for (auto& obj : objs) {
-    auto mesh = obj->GetPolyMesh();
+    auto mesh = obj->geometry;
     std::vector<Vertex> vertices;
     vertices.reserve(mesh->poly.size() * 3);
 
@@ -890,7 +944,7 @@ void Model::Triangleize() {
 
 void Model::Cleanup() const {
   if (root == nullptr) {
-    std::cout << "Cleanup() can only be run on the root object." << std::endl;
+    spdlog::error("Cleanup() can only be run on the root object.");
     return;
   }
 

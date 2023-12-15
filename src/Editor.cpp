@@ -505,7 +505,7 @@ void EditorUI::uiObjectRotationChanged(int axis, fltk::Input* o) {
 
   if (sel != nullptr) {
     Vector3 euler = sel->rotation.GetEuler();
-    euler.v[axis] = atof(o->value()) * DegreesToRadians;
+    euler[axis] = atof(o->value()) * DegreesToRadians;
     sel->rotation.SetEuler(euler);
 
     Update();

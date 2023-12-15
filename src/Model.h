@@ -132,20 +132,20 @@ class Rotator {
 class PolyMesh;
 class ModelDrawer;
 
-class Geometry {
- public:
-  virtual ~Geometry() {}
+// class Geometry {
+//  public:
+//   virtual ~Geometry() {}
 
-  virtual void Draw(ModelDrawer* drawer, Model* mdl, MdlObject* o) = 0;
-  virtual Geometry* Clone() = 0;
-  virtual void Transform(const Matrix& transform) = 0;
-  virtual PolyMesh* ToPolyMesh() = 0;
-  virtual void InvalidateRenderData() {}
+//   virtual void Draw(ModelDrawer* drawer, Model* mdl, MdlObject* o) = 0;
+//   virtual Geometry* Clone() = 0;
+//   virtual void Transform(const Matrix& transform) = 0;
+//   virtual PolyMesh* ToPolyMesh() = 0;
+//   virtual void InvalidateRenderData() {}
 
-  virtual void CalculateRadius(float& radius, const Matrix& tr, const Vector3& mid) = 0;
-};
+//   virtual void CalculateRadius(float& radius, const Matrix& tr, const Vector3& mid) = 0;
+// };
 
-class PolyMesh : public Geometry {
+class PolyMesh {
  public:
   ~PolyMesh();
 
@@ -153,7 +153,7 @@ class PolyMesh : public Geometry {
   std::vector<Poly*> poly;
 
   void Draw(ModelDrawer* drawer, Model* mdl, MdlObject* o);
-  Geometry* Clone();
+  PolyMesh* Clone();
   void Transform(const Matrix& transform);
   PolyMesh* ToPolyMesh();  // clones
   std::vector<Triangle> MakeTris();
@@ -164,6 +164,8 @@ class PolyMesh : public Geometry {
 
   void OptimizeVertices(IsEqualVertexCB cb);
   void Optimize(IsEqualVertexCB cb);
+
+  void InvalidateRenderData() {}
 
   void MoveGeometry(PolyMesh* dst);
   void FlipPolygons();  // flip polygons of object and child objects
@@ -235,7 +237,7 @@ struct MdlObject {
   Rotator rotation;
   Vector3 scale;
 
-  Geometry* geometry{};
+  PolyMesh* geometry{};
 
   AnimationInfo animInfo;
 

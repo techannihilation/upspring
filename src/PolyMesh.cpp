@@ -81,7 +81,7 @@ void PolyMesh::Draw(ModelDrawer* /*drawer*/, Model* /*mdl*/, MdlObject* /*o*/) {
 
 PolyMesh* PolyMesh::ToPolyMesh() { return dynamic_cast<PolyMesh*>(Clone()); }
 
-Geometry* PolyMesh::Clone() {
+PolyMesh* PolyMesh::Clone() {
   auto* cp = new PolyMesh;
 
   cp->verts = verts;

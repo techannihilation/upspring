@@ -109,7 +109,7 @@
         "runscripts/convert_with_atlas.lua",
         "--",
         "../TA/unittextures/arm.yaml",
-        "../TA/objects3d/arm/armhcrus1.3do"
+        "../TA/objects3d/arm/armsolar.3do"
       ],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",
@@ -133,7 +133,7 @@
       "type": "cppdbg",
       "request": "launch",
       "program": "${workspaceFolder}/out/build/gcc-debug/src/Upspring",
-      "args": ["/home/pcdummy/.spring/games/TA.sdd/objects3d/tllcaretta.s3o"],
+      "args": ["../TA/objects3d/arm/armsolar.s3o"],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",
       "environment": [],

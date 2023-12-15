@@ -61,7 +61,7 @@ class QuatController : public AnimController {
       Matrix m;
       q->makematrix(&m);
       Vector3 const euler = m.calcEulerYXZ();
-      return euler.v[Axis];
+      return euler[Axis];
     }
   };
 
