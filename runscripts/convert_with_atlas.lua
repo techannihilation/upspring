@@ -10,6 +10,10 @@ lib = require("lib")
 ---------------------------------
 -- Actual code
 ---------------------------------
+
+---------------------------------
+-- Usage: ./Upspring -r runscripts/convert_with_atlas.lua -- ../TA/unittextures/arm.yaml ../TA/objects3d/arm/armcom.3do 
+---------------------------------
 local atlas = upspring.atlas()
 if not atlas:load_yaml(arg[1]) then
     error("failed to load the atlas yaml")
@@ -26,9 +30,12 @@ model.root:Rotate180();
 model:convert_to_atlas_s3o(atlas)
 
 model:Remove3DOBase()
-model:Triangleize()
+-- model:Triangleize()
 
-model.root:NormalizeNormals();
+-- model.root:NormalizeNormals();
+
+
+-- model:Cleanup();
 
 local _dirname = lib.utils.dirname(arg[2])
 local _fileName = lib.utils.basename(arg[2], lib.utils.get_suffix(arg[2]))

@@ -47,13 +47,13 @@ for i, v in ipairs(arg) do
 
         -- model:Remove3DOBase();       
         model.root:Rotate180();
+        model:Remove3DOBase()
 
         model:convert_to_atlas_s3o(atlas)
 
-        model:Remove3DOBase()
-        model:Triangleize()
-
         model.root:NormalizeNormals();
+
+        -- model:Triangleize()
 
         local _dirname = lib.utils.dirname(v)
         local _fileName = lib.utils.basename(v, lib.utils.get_suffix(v))

@@ -40,11 +40,11 @@ model.root:Rotate180();
 
 model:convert_to_atlas_s3o(atlas)
 
-model:Remove3DOBase()
-model:Triangleize()
-
 model.root:NormalizeNormals();
 
+model:Remove3DOBase()
+
+--model:Triangleize()
 
 local _s3oOut = lib.utils.join_paths(_dirname, _fileName .. ".s3o")
 local ok = model:SaveS3O(_s3oOut)
