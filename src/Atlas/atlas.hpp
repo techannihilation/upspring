@@ -9,7 +9,7 @@
 
 #include <TXPK/Core/IPacker.hpp>
 
-#define ATLAS_MARGIN 2
+#define ATLAS_MARGIN 0
 
 struct atlas_info_image {
   atlas_info_image() {};
