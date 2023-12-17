@@ -208,7 +208,7 @@ bool Image::threedo_to_s3o() {
       for (std::size_t pw = 0; pw < width_; pw++) {
         if (data_ptr[1] < 60) {
           // trunk-ignore(clang-tidy/cppcoreguidelines-pro-bounds-pointer-arithmetic)
-          data_ptr[3] = std::clamp((255 - data_ptr[1]) * 1.5, 0.0, 255.0);
+          data_ptr[3] = std::clamp(255 - data_ptr[1], 0, 255);
         } else {
           // TODO(jochumdev): is that needed?
           data_ptr[3] = 0;
@@ -233,7 +233,7 @@ bool Image::threedo_to_s3o() {
         data_ptr[1] = data_ptr[0];
 
         // trunk-ignore(clang-tidy/cppcoreguidelines-pro-bounds-pointer-arithmetic)
-        data_ptr[3] = std::clamp((255 - data_ptr[3]) * 1.5, 0.0, 255.0);
+        data_ptr[3] = std::clamp(255 - data_ptr[3], 0, 255);
 
         // trunk-ignore(clang-tidy/cppcoreguidelines-pro-bounds-pointer-arithmetic)
         *data_pptr += bpp_;
