@@ -12,11 +12,17 @@
 #define ATLAS_MARGIN 0
 
 struct atlas_info_image {
-  atlas_info_image() {};
+  atlas_info_image(){};
   atlas_info_image(std::string& par_name, std::uint32_t par_width, std::uint32_t par_height,
                    std::uint32_t par_orig_width, std::uint32_t par_orig_height,
                    std::uint32_t par_left, std::uint32_t par_top)
-      : name(par_name), width(par_width), height(par_height), orig_width(par_orig_width), orig_height(par_orig_height), left(par_left), top(par_top) {}
+      : name(par_name),
+        width(par_width),
+        height(par_height),
+        orig_width(par_orig_width),
+        orig_height(par_orig_height),
+        left(par_left),
+        top(par_top) {}
 
   std::string name;
   std::uint32_t width;
@@ -27,7 +33,8 @@ struct atlas_info_image {
   std::uint32_t top;
 
   inline float U(std::uint32_t par_width, float par_u) {
-    float result = par_u * float(orig_width) / float(par_width) + (float(left) + float(ATLAS_MARGIN)) / float(par_width);
+    float result = par_u * float(orig_width) / float(par_width) +
+                   (float(left) + float(ATLAS_MARGIN)) / float(par_width);
     if (result > 1.0f) {
       return 1.0f;
     }
@@ -38,7 +45,8 @@ struct atlas_info_image {
   }
 
   inline float V(std::uint32_t par_height, float par_v) {
-    float result = par_v * float(orig_height) / float(par_height) + (float(top) + float(ATLAS_MARGIN)) / float(par_height);
+    float result = par_v * float(orig_height) / float(par_height) +
+                   (float(top) + float(ATLAS_MARGIN)) / float(par_height);
     if (result > 1.0f) {
       return 1.0f;
     }

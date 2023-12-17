@@ -90,16 +90,17 @@ bool atlas::add_3do_textures(std::vector<ImagePtr> par_images, bool par_power_of
     }
 
     auto marginImage = std::make_shared<Image>();
-    
+
     // Copy attributes.
     marginImage->name(img->name());
     marginImage->owidth(img->width());
     marginImage->oheight(img->height());
 
-    marginImage->create(img->width() + (ATLAS_MARGIN * 2), img->height() + (ATLAS_MARGIN*2), 4);
+    marginImage->create(img->width() + (ATLAS_MARGIN * 2), img->height() + (ATLAS_MARGIN * 2), 4);
     marginImage->clear_color(0.0f, 0.0f, 0.0f, 0.0f);
-  
-    if (!marginImage->blit(img, ATLAS_MARGIN, ATLAS_MARGIN, 0, 0, 0, 0, img->width(), img->height(), 1)) {
+
+    if (!marginImage->blit(img, ATLAS_MARGIN, ATLAS_MARGIN, 0, 0, 0, 0, img->width(), img->height(),
+                           1)) {
       spdlog::error("image->blit failed, error was: {}", img->error());
       continue;
     }
@@ -142,7 +143,6 @@ bool atlas::pack() {
     return false;
   }
 
-
   spdlog::debug("found '{}' rectangles", rectangles.size());
   bin_ = packer_->pack(rectangles, 0, txpk::SizeContraintType::None, false);
 
@@ -164,13 +164,9 @@ bool atlas::pack() {
   return true;
 }
 
-void atlas::info(atlas_info& par_info) {
-  info_ = par_info;
-}
+void atlas::info(atlas_info& par_info) { info_ = par_info; }
 
-const atlas_info& atlas::info() const {
-  return info_;
-}
+const atlas_info& atlas::info() const { return info_; }
 
 bool atlas::save(const std::string& par_savepath) {
   if (!packed_ && !pack()) {
@@ -189,12 +185,13 @@ bool atlas::save(const std::string& par_savepath) {
 
   // Generate fake other.dds
   Image other_image;
-  if (!other_image.create(bin_.width, bin_.height, 4)) {
+  if (!other_image.create(1, 1, 4)) {
     spdlog::error("other.dds create failed: %s", other_image.error());
     return false;
   }
-  other_image.clear_color(0.0f / 255.0f, 129.0f / 255.0f, 79.0f / 255.0f, 1.0f);
-  auto other_save_path = (yaml_path.parent_path() / (yaml_path.stem().string() + "_tex2.dds")).string();
+  other_image.clear_color(0.2F, 0.1F, 0.8F, 1.0F);
+  auto other_save_path =
+      (yaml_path.parent_path() / (yaml_path.stem().string() + "_tex2.dds")).string();
   if (!other_image.save(other_save_path)) {
     spdlog::error("normals.dds save failed: %s", other_image.error());
     return false;
@@ -203,12 +200,13 @@ bool atlas::save(const std::string& par_savepath) {
 
   // Generate fake normals.dds
   Image normal_image;
-  if (!normal_image.create(bin_.width, bin_.height, 4)) {
+  if (!normal_image.create(1, 1, 4)) {
     spdlog::error("normals.dds create failed: %s", normal_image.error());
     return false;
-  } 
+  }
   normal_image.clear_color(128.0f / 255.0f, 129.0f / 255.0f, 255.0f / 255.0f, 1.0f);
-  auto normal_save_path = (yaml_path.parent_path() / (yaml_path.stem().string() + "_normals.dds")).string();
+  auto normal_save_path =
+      (yaml_path.parent_path() / (yaml_path.stem().string() + "_normals.dds")).string();
   if (!normal_image.save(normal_save_path)) {
     spdlog::error("normals.dds save failed: %s", normal_image.error());
     return false;
