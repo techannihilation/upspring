@@ -12,31 +12,6 @@
 #include "EditorDef.h"
 #include "EditorIncl.h"
 
-#ifdef WIN32
-#include <windows.h>
-
-class Timer {
-  LARGE_INTEGER startCounter;
-
- public:
-  void Reset() { QueryPerformanceCounter(&startCounter); }
-
-  unsigned int GetTicks(void) {
-    LARGE_INTEGER cur;
-    QueryPerformanceCounter(&cur);
-
-    cur.QuadPart -= startCounter.QuadPart;
-    cur.QuadPart *= 1000;
-
-    LARGE_INTEGER tickps;
-    QueryPerformanceFrequency(&tickps);
-    cur.QuadPart /= tickps.QuadPart;
-
-    return (DWORD)cur.QuadPart;
-  }
-};
-
-#else
 // #error implement tick counting stuff for other OSes here
 // use a stub Timer replacement to at least allow compiling
 class Timer {
@@ -46,7 +21,6 @@ class Timer {
   void Reset() {}
   static unsigned int GetTicks() { return 0; }
 };
-#endif
 
 TimelineUI::TimelineUI(IEditor* editor)
     : callback(editor), timer(new Timer), time(0.0F), isPlaying(false) {

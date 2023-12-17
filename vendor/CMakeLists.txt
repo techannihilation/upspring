@@ -16,3 +16,5 @@ add_subdirectory(simdutf)
 # add_subdirectory(DevIL/DevIL)
 
 add_subdirectory(TXPK_mini)
+
+add_subdirectory(yaml-cpp)
