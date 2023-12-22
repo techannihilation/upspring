@@ -340,6 +340,7 @@ bool Model::SaveS3O(const char* filename, IProgressCtl& /*progctl*/) {
 
   FILE* f = fopen(filename, "wb");
   if (f == nullptr) {
+    spdlog::error("Failed to open '{}' for writing.", filename);
     return false;
   }
 

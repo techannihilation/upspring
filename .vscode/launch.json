@@ -156,7 +156,13 @@
       "type": "cppdbg",
       "request": "launch",
       "program": "${workspaceFolder}/out/build/msys2-mingw64-debug/src/Upspring",
-      "args": [],
+      "args": [
+        "--run",
+        "runscripts\\convert_with_atlas.lua",
+        "--", 
+        "..\\TA\\unittextures\\arm.yaml",
+        "..\\TA-3do\\objects3d\\arm_broadside.3do",
+      ],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",
       "environment": [],
@@ -173,7 +179,6 @@
           "ignoreFailures": true
         }
       ],
-      "preLaunchTask": "msys2-mingw64-debug"
     }
   ]
 }
