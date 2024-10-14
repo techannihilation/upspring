@@ -1254,9 +1254,6 @@ int luaopen_upspring(lua_State* lua_state);
 }
 
 void run_script(CLI::App& app, const std::string& par_script_file) {
-  // Config
-  ups::config::get().app_path(std::filesystem::path(CLI::argv()[0]).remove_filename());
-
   // Find script
   auto script_file = par_script_file;
   if (!std::filesystem::exists(par_script_file)) {
@@ -1327,14 +1324,18 @@ int main(int argc, char* argv[]) {
 #endif
 
   CLI::App app{"Upspring - the Spring RTS model editor", "Upspring"};
+  argv = app.ensure_utf8(argv);
   app.prefix_command();
 
   app.set_version_flag("--version", std::string(UPSPRING_VERSION));
 
   app.add_option_function<std::string>(
-      "--run,-r", [&app](const std::string par_script_file) { run_script(app, par_script_file); },
+      "--run,-r", [&app, &argv](const std::string par_script_file) {
+        ups::config::get().app_path(std::filesystem::path(argv[0]).remove_filename());
+        run_script(app, par_script_file);
+      },
       "Run a lua script file and exit");
-  app.callback([&app]() {
+  app.callback([&app, &argv]() {
     CLI::App subApp;
     std::string model_file;
     subApp.add_option("file", model_file, "Model file to load");
@@ -1343,7 +1344,7 @@ int main(int argc, char* argv[]) {
     /**
      * Config
      */
-    ups::config::get().app_path(std::filesystem::path(CLI::argv()[0]).remove_filename());
+    ups::config::get().app_path(std::filesystem::path(argv[0]).remove_filename());
 
     /**
      * Normal app start
