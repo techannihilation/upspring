@@ -48,7 +48,6 @@ target_link_libraries (${PROJECT_NAME}
     lib3ds
     7zip
 
-    lua
     minizip-ng
     spdlog
     simdutf::simdutf
@@ -58,11 +57,12 @@ target_link_libraries (${PROJECT_NAME}
 )
 
 target_link_libraries (${PROJECT_NAME}
+    ${LUA_LIBRARIES}
     ${Boost_LIBRARIES}
 )
 
 target_include_directories(${PROJECT_NAME}
-    PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}" "${LUA_INCLUDE_DIR}"
+    PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}" "${LUA_INCLUDE_DIR}"
 )
 
 if ("${CMAKE_BUILD_TYPE}" MATCHES "Debug")

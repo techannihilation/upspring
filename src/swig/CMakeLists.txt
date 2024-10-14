@@ -15,8 +15,8 @@ swig_add_library(upspring
 )
 
 target_include_directories(upspring
-    PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/.."
-    PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}" "${LUA_INCLUDE_DIR}"
+    PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/.." "${LUA_INCLUDE_DIR}"
+    PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}"
 )
 
 set_target_properties(upspring PROPERTIES
