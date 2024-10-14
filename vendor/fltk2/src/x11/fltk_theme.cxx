@@ -48,6 +48,7 @@
 #include <fltk/Monitor.h>
 #include <fltk/events.h>
 #include <fltk/string.h>
+#include <fltk/Font.h>
 #include <ctype.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -270,7 +271,7 @@ static fltk::Font* grok_font(const char* s, float& fontsize, char* fontencoding)
   char fontname[64] = "";
   if ( (p = strtok_r((char*)s, ",", &sv)) ) {
     // Turn "adobe-foobar" into just "foobar":
-    char* q = strchr(p, '-');
+    const char* q = strchr(p, '-');
     if (q) p = q+1;
     strncpy(fontname, p, sizeof(fontname));
   }

@@ -538,7 +538,7 @@ void fltk::setfont(Font* font, float psize) {
   // See if the current font is correct:
   if (font == current_font_ && psize == current_size_ &&
       (f->encoding==encoding_ ||
-	   (!encoding_ || !strcmp(f->encoding, encoding_))))
+	   (encoding_ != nullptr || !strcmp(f->encoding, encoding_))))
     return;
   current_font_ = font; current_size_ = psize;
 
@@ -556,7 +556,7 @@ void fltk::setfont(Font* font, float psize) {
     open_display();
     t->xlist = XListFonts(xdisplay, t->system_name, 100, &(t->n));
     if (!t->xlist || t->n<=0) {	// use variable if no matching font...
-      t->first = f = new FontSize("variable",0);
+      t->first = f = new FontSize("fixed",0);
       f->minsize = 0;
       f->maxsize = 32767;
       goto DONE;
@@ -653,10 +653,10 @@ static IFont fonts [] = {
   {{"helvetica",1}, "-*-helvetica-bold-r-normal--*", 	fonts+1, fonts+3},
   {{"helvetica",2}, "-*-helvetica-medium-o-normal--*",	fonts+3, fonts+2},
   {{"helvetica",3}, "-*-helvetica-bold-o-normal--*",	fonts+3, fonts+3},
-  {{"courier", 0},  "-*-courier-medium-r-normal--*",	fonts+5, fonts+6},
-  {{"courier", 1},  "-*-courier-bold-r-normal--*",	fonts+5, fonts+7},
-  {{"courier", 2},  "-*-courier-medium-o-normal--*",	fonts+7, fonts+6},
-  {{"courier", 3},  "-*-courier-bold-o-normal--*",	fonts+7, fonts+7},
+  {{"courier", 0},  "-*-courier-new-medium-r-normal--*",	fonts+5, fonts+6},
+  {{"courier", 1},  "-*-courier-new-bold-r-normal--*",	fonts+5, fonts+7},
+  {{"courier", 2},  "-*-courier-new-medium-o-normal--*",	fonts+7, fonts+6},
+  {{"courier", 3},  "-*-courier-new-bold-o-normal--*",	fonts+7, fonts+7},
   {{"times", 0},    "-*-times-medium-r-normal--*",	fonts+9, fonts+10},
   {{"times", 1},    "-*-times-bold-r-normal--*",	fonts+9, fonts+11},
   {{"times", 2},    "-*-times-medium-i-normal--*",	fonts+11,fonts+10},

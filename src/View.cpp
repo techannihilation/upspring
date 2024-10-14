@@ -7,8 +7,9 @@
 #include "EditorIncl.h"
 #include "EditorDef.h"
 
-#include <fltk/gl.h>
 #include <GL/glu.h>
+#include <fltk/gl.h>
+
 #include <cmath>
 
 #include "View.h"
@@ -16,6 +17,7 @@
 #include "Model.h"
 #include "Tools.h"
 #include "CfgParser.h"
+#include "fltk/Style.h"
 
 const int PopupBoxW = 32;
 const int PopupBoxH = 18;

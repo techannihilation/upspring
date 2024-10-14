@@ -1,10 +1,10 @@
 version: 0.1
 cli:
-  version: 1.10.0
+  version: 1.22.6
 plugins:
   sources:
     - id: trunk
-      ref: v0.0.17
+      ref: v1.6.3
       uri: https://github.com/trunk-io/plugins
 lint:
   definitions:
@@ -17,26 +17,31 @@ lint:
           run: clang-tidy --extra-arg=-std=c++20 --extra-arg=-fcoroutines --export-fixes=${tmpfile} ${target} -p ${workspace}
           success_codes: [0, 1]
           cache_results: true
-          run_linter_from: compile_command
           read_output_from: tmp_file
       run_timeout: 10m
   enabled:
-    - ruff@0.0.265
-    - yamllint@1.32.0
-    - prettier@2.8.8
-    - isort@5.12.0
+    - bandit@1.7.10
+    - checkov@3.2.260
+    - trufflehog@3.82.8
+    - shellcheck@0.10.0
+    - shfmt@3.6.0
+    - taplo@0.9.3
+    - ruff@0.6.9
+    - yamllint@1.35.1
+    - prettier@3.3.3
+    - isort@5.13.2
     - git-diff-check
-    - flake8@6.0.0
-    - oxipng@8.0.0
-    - actionlint@1.6.24
-    - black@23.3.0
-    - markdownlint@0.34.0
-    - gitleaks@8.16.3
+    - flake8@7.1.1
+    - oxipng@9.1.2
+    - actionlint@1.7.3
+    - black@24.10.0
+    - markdownlint@0.42.0
+    - gitleaks@8.20.1
     - clang-tidy@SYSTEM
-    - clang-format@14.0.1
+    - clang-format@16.0.3
 runtimes:
   enabled:
-    - go@1.19.5
+    - go@1.21.0
     - node@18.12.1
     - python@3.10.8
 actions:

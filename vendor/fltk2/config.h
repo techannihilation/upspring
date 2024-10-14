@@ -174,7 +174,7 @@
    to call any OpenGL extension and have the program run without
    missing symbols (though you need to check if the extension
    exists before you call it). See http://glew.sourceforge.net */
-#define USE_GLEW                0
+#define USE_GLEW                1
 
 /* Standard autoconf stuff to figure out readdir() header files.
    (ignored for _WIN32) */

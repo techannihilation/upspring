@@ -37,6 +37,8 @@
 #include <fltk/utf.h>
 #include <fltk/x.h>
 
+#include <X11/Xft/Xft.h>
+
 // define some symbols missing from some Xft header files:
 #ifndef XFT_MINSPACE
 #define XFT_MINSPACE        "minspace"  /* Bool use minimum line spacing */

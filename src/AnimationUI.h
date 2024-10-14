@@ -2,9 +2,9 @@
 
 #ifndef AnimationUI_h
 #define AnimationUI_h
+#include <fltk/Window.h>
 #include <fltk/Choice.h>
 #include <fltk/Item.h>
-#include <fltk/Window.h>
 
 #include "EditorDef.h"
 #include "EditorIncl.h"

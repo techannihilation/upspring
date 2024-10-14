@@ -22,7 +22,9 @@
 //
 // Please report all bugs and problems to "fltk-bugs@fltk.org".
 
+#include <fltk/draw.h>
 #include <fltk/string.h>
+#include <fltk/x.h>
 
 #ifdef DEBUG
 #  include <stdio.h>
@@ -41,7 +43,7 @@ uchar *				// O - Pixel buffer or NULL if failed
 fltk::readimage(uchar *p,	// I - Pixel buffer or NULL to allocate
 	PixelType type,		// Type of pixels to store (RGB and RGBA only now)
 	const Rectangle& r,	// area to read
-		int linedelta	// pointer increment per line
+	int linedelta
 ) {
   int X = r.x();
   int Y = r.y();
@@ -83,7 +85,9 @@ fltk::readimage(uchar *p,	// I - Pixel buffer or NULL to allocate
     image = XGetImage(xdisplay, xwindow, X, Y, w, h, AllPlanes, ZPixmap);
   }
 
-  if (!image) return 0;
+  if (!image) { 
+	return 0;
+  }
 
 #ifdef FLTK_DEBUG
   printf("width            = %d\n", image->width);

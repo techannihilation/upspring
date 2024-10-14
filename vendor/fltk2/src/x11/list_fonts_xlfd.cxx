@@ -39,6 +39,7 @@
 // translation other than to list all the fonts and find a match.
 
 #include <fltk/x.h>
+#include <fltk/string.h>
 #include <ctype.h>
 #include <string.h>
 #include <stdlib.h>
@@ -92,7 +93,7 @@ static int to_nice(char* o, const char* p) {
   // collect all the attribute words:
   for (int n = 3; n <= 5; n++) {
     // get the next word:
-    if (*e) e++; x = e; e = font_word(x,1);
+    if (*e) { e++; x = e; e = font_word(x,1); }
     int t = attribute(n,x);
     if (t < 0) {*o++ = ' '; strncpy(o,x,e-x); o += e-x;}
     else type |= t;

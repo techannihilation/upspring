@@ -40,6 +40,10 @@
 
 #include <fltk/error.h>
 #include <fltk/math.h>
+#include <fltk/Image.h>
+#include <fltk/draw.h>
+#include <fltk/Color.h>
+#include <fltk/x.h>
 #include "XColorMap.h"
 
 #if USE_XSHM
@@ -472,7 +476,7 @@ static U32* getbuffer(int w) {
 static void mask_converter(const uchar* from, uchar* to, int w)
 {
   uchar bg[3];
-  Color col = getbgcolor(); if (!col) col = GRAY75;
+  Color col = fltk::getbgcolor(); if (!col) col = GRAY75;
   split_color(col, bg[0],bg[1],bg[2]);
   uchar fg[3];
   col = getcolor(); if (!col) col = BLACK;
@@ -482,7 +486,7 @@ static void mask_converter(const uchar* from, uchar* to, int w)
   U32* bp = buffer;
   char* ap = alphapointer;
   char aaccum = 0;
-  char amask = ::amask;
+  char myAmask = amask;
 
   uchar c;
   uchar r,g,b;
@@ -492,7 +496,7 @@ static void mask_converter(const uchar* from, uchar* to, int w)
     if (c==255) {
       *bp++ = 0;
     } else {
-      aaccum |= amask;
+      aaccum |= myAmask;
       if (c) {
 	r = (c*bg[0]+(255-c)*fg[0])>>8;
 	g = (c*bg[1]+(255-c)*fg[1])>>8;
@@ -502,13 +506,13 @@ static void mask_converter(const uchar* from, uchar* to, int w)
 	*bp++ = (fg[0]<<16)|(fg[1]<<8)|fg[2];
       }
     }
-    if (amask & 0x80) {
-      *ap++ = aaccum; aaccum = 0; amask = 1;
+    if (myAmask & 0x80) {
+      *ap++ = aaccum; aaccum = 0; myAmask = 1;
     } else {
-      amask <<= 1;
+      myAmask <<= 1;
     }
   }
-  if (amask != 1) *ap = aaccum;
+  if (myAmask != 1) *ap = aaccum;
   converter[RGB32]((const uchar*)buffer, to, w);
 }
 
@@ -521,7 +525,7 @@ static void rgba_converter(const uchar* from, uchar* to, int w) {
   U32* bp = buffer;
   char* ap = alphapointer;
   char aaccum = 0;
-  char amask = ::amask;
+  char myAmask = amask;
 
   uchar r,g,b,a;
 
@@ -533,7 +537,7 @@ static void rgba_converter(const uchar* from, uchar* to, int w) {
     if (!a) {
       *bp++ = 0;
     } else {
-      aaccum |= amask;
+      aaccum |= myAmask;
       if (a != 255) {
 	r = r+((bg[0]*(255-a))>>8);
 	g = g+((bg[1]*(255-a))>>8);
@@ -541,13 +545,13 @@ static void rgba_converter(const uchar* from, uchar* to, int w) {
       }
       *bp++ = (r<<16)|(g<<8)|b;
     }
-    if (amask & 0x80) {
-      *ap++ = aaccum; aaccum = 0; amask = 1;
+    if (myAmask & 0x80) {
+      *ap++ = aaccum; aaccum = 0; myAmask = 1;
     } else {
-      amask <<= 1;
+      myAmask <<= 1;
     }
   }
-  if (amask != 1) *ap = aaccum;
+  if (myAmask != 1) *ap = aaccum;
   converter[RGB32]((const uchar*)buffer, to, w);
 }
 
@@ -561,7 +565,7 @@ static void argb32_converter(const uchar* from, uchar* to, int w) {
   const U32* f = (const U32*)from;
   char* ap = alphapointer;
   char aaccum = 0;
-  char amask = ::amask;
+  char myAmask = amask;
 
   U32 c;
   uchar r,g,b,a;
@@ -572,7 +576,7 @@ static void argb32_converter(const uchar* from, uchar* to, int w) {
     if (!a) {
       *bp++ = 0;
     } else {
-      aaccum |= amask;
+      aaccum |= myAmask;
       if (a == 255) {
 	*bp++ = c;
       } else {
@@ -582,13 +586,13 @@ static void argb32_converter(const uchar* from, uchar* to, int w) {
 	*bp++ = (r<<16)|(g<<8)|b;
       }
     }
-    if (amask & 0x80) {
-      *ap++ = aaccum; aaccum = 0; amask = 1;
+    if (myAmask & 0x80) {
+      *ap++ = aaccum; aaccum = 0; myAmask = 1;
     } else {
-      amask <<= 1;
+      myAmask <<= 1;
     }
   }
-  if (amask != 1) *ap = aaccum;
+  if (myAmask != 1) *ap = aaccum;
   converter[RGB32]((const uchar*)buffer, to, w);
 }
 
@@ -601,7 +605,7 @@ static void rgbm_converter(const uchar* from, uchar* to, int w) {
   U32* bp = buffer;
   char* ap = alphapointer;
   char aaccum = 0;
-  char amask = ::amask;
+  char myAmask = amask;
 
   uchar r,g,b,a;
 
@@ -613,7 +617,7 @@ static void rgbm_converter(const uchar* from, uchar* to, int w) {
     if (!a) {
       *bp++ = 0;
     } else {
-      aaccum |= amask;
+      aaccum |= myAmask;
       if (a != 255) {
 	r = (r*a+bg[0]*(255-a))>>8;
 	g = (g*a+bg[1]*(255-a))>>8;
@@ -621,13 +625,13 @@ static void rgbm_converter(const uchar* from, uchar* to, int w) {
       }
       *bp++ = (r<<16)|(g<<8)|b;
     }
-    if (amask & 0x80) {
-      *ap++ = aaccum; aaccum = 0; amask = 1;
+    if (myAmask & 0x80) {
+      *ap++ = aaccum; aaccum = 0; myAmask = 1;
     } else {
-      amask <<= 1;
+      myAmask <<= 1;
     }
   }
-  if (amask != 1) *ap = aaccum;
+  if (myAmask != 1) *ap = aaccum;
   converter[RGB32]((const uchar*)buffer, to, w);
 }
 
@@ -641,7 +645,7 @@ static void mrgb32_converter(const uchar* from, uchar* to, int w) {
   const U32* f = (const U32*)from;
   char* ap = alphapointer;
   char aaccum = 0;
-  char amask = ::amask;
+  char myAmask = amask;
 
   U32 c;
   uchar r,g,b,a;
@@ -652,7 +656,7 @@ static void mrgb32_converter(const uchar* from, uchar* to, int w) {
     if (!a) {
       *bp++ = 0;
     } else {
-      aaccum |= amask;
+      aaccum |= myAmask;
       if (a == 255) {
 	*bp++ = c;
       } else {
@@ -662,13 +666,13 @@ static void mrgb32_converter(const uchar* from, uchar* to, int w) {
 	*bp++ = (r<<16)|(g<<8)|b;
       }
     }
-    if (amask & 0x80) {
-      *ap++ = aaccum; aaccum = 0; amask = 1;
+    if (myAmask & 0x80) {
+      *ap++ = aaccum; aaccum = 0; myAmask = 1;
     } else {
-      amask <<= 1;
+      myAmask <<= 1;
     }
   }
-  if (amask != 1) *ap = aaccum;
+  if (myAmask != 1) *ap = aaccum;
   converter[RGB32]((const uchar*)buffer, to, w);
 }
 
@@ -939,9 +943,9 @@ static void figure_out_visual() {
     // All 16-bit TrueColor visuals are supported on any machine with
     // 24 or more bits per integer.
 #ifdef U16
-    ::i.byte_order = WORDS_BIGENDIAN;
+    i.byte_order = WORDS_BIGENDIAN;
 #else
-    ::i.byte_order = 1;
+    i.byte_order = 1;
 #endif
     if (rs == 11 && gs == 6 && bs == 0 && fl_extrashift == 3) {
       converter[MONO] = mono_to_565;
@@ -959,14 +963,14 @@ static void figure_out_visual() {
   case 4:
     converter[MONO] = mono_to_32;
     if (rs == 0 && gs == 8 && bs == 16) {
-      ::i.byte_order = !WORDS_BIGENDIAN;
+      i.byte_order = !WORDS_BIGENDIAN;
 #if USE_XSHM
       use_xshm_pixmaps = false;
 #endif
       goto RGBX;
     }
     if (rs == 24 && gs == 16 && bs == 8) {
-      ::i.byte_order = WORDS_BIGENDIAN;
+      i.byte_order = WORDS_BIGENDIAN;
     RGBX:
       converter[RGB] = rgb_to_rgbx;
 #if WORDS_BIGENDIAN
@@ -978,14 +982,14 @@ static void figure_out_visual() {
       break;
     }
     if (rs == 8 && gs == 16 && bs == 24) {
-      ::i.byte_order = !WORDS_BIGENDIAN;
+      i.byte_order = !WORDS_BIGENDIAN;
 #if USE_XSHM
       use_xshm_pixmaps = false;
 #endif
       goto XRGB;
     }
     if (rs == 16 && gs == 8 && bs == 0) {
-      ::i.byte_order = WORDS_BIGENDIAN;
+      i.byte_order = WORDS_BIGENDIAN;
     XRGB:
       converter[RGB] = rgb_to_xrgb;
       converter[RGBx] = rgba_to_xrgb;

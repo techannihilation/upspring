@@ -27,6 +27,8 @@ See [TODO.md](TODO.md)
 
   I need to check which dependecies you need.
 
+  On Arch Linux it crashes hard without install [Courier](https://github.com/wine-mirror/wine/raw/refs/heads/master/fonts/courier.ttf).
+
 - Windows
 
   Download from the [releases](https://github.com/techannihilation/upspring/releases) page.

@@ -87,26 +87,6 @@ const char *fltk::e_text = "";
 bool      fltk::grab_,
 	  fltk::exit_modal_;
 
-static Window *xfocus;	// which window X thinks has focus
-static Window *xmousewin; // which window X thinks has ENTER
-
-// Update focus() in response to anything that might change it.
-// This is called whenever a window is added or hidden, and whenever
-// X says the focus window has changed.
-static void fix_focus() {
-  Widget* w = xfocus;
-  // Modal overrides whatever the system says the focus is:
-  if (grab_ || w && modal_) w = modal_;
-  if (w) {
-    if (w->contains(focus())) return; // already has it
-    unsigned saved = e_keysym;
-    e_keysym = 0; // make widgets not think a keystroke moved focus
-    if (w->take_focus()) {e_keysym = saved; return;}
-    e_keysym = saved;
-  }
-  // give nothing the focus:
-  focus(0);
-}
 
 extern "C" {
 // This function is here because Window::label() uses it:

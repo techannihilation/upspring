@@ -2,10 +2,10 @@
 
 #ifndef EditorUI_h
 #define EditorUI_h
+#include <fltk/Window.h>
 #include <fltk/Item.h>
 #include <fltk/MenuBar.h>
 #include <fltk/PopupMenu.h>
-#include <fltk/Window.h>
 
 #include "AnimationUI.h"
 #include "EditorDef.h"

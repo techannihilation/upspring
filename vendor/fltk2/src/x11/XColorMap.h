@@ -25,6 +25,7 @@
 //
 
 #include <config.h>
+#include <fltk/FL_API.h>
 
 #if USE_COLORMAP
 // one of these for each color in fltk's "colormap":

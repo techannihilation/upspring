@@ -19,7 +19,7 @@ target_compile_definitions(${PROJECT_NAME} PUBLIC UPSPRING_VERSION="${UPSPRING_V
 find_package(GLEW REQUIRED)
 find_package(DevIL REQUIRED)
 find_package(ZLIB REQUIRED)
-find_package(Boost REQUIRED COMPONENTS regex)
+find_package(Boost CONFIG)
 find_package(OpenGL REQUIRED)
 find_package(Lua REQUIRED)
 
@@ -48,6 +48,7 @@ target_link_libraries (${PROJECT_NAME}
     lib3ds
     7zip
 
+    lua
     minizip-ng
     spdlog
     simdutf::simdutf
@@ -58,11 +59,10 @@ target_link_libraries (${PROJECT_NAME}
 
 target_link_libraries (${PROJECT_NAME}
     ${Boost_LIBRARIES}
-    ${LUA_LIBRARIES}
 )
 
 target_include_directories(${PROJECT_NAME}
-    PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}"
+    PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}" "${LUA_INCLUDE_DIR}"
 )
 
 if ("${CMAKE_BUILD_TYPE}" MATCHES "Debug")

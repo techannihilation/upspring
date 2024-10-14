@@ -30,9 +30,16 @@
 #define DEBUG_TABLET 0
 
 #include <config.h>
-#include <fltk/x.h>
-#include <fltk/Window.h>
+#include <fltk/run.h>
+#include <fltk/Monitor.h>
+#include <fltk/error.h>
+#include <fltk/damage.h>
+#include <fltk/filename.h>
+#include <fltk/layout.h>
+#include <fltk/events.h>
 #include <fltk/Style.h>
+#include <fltk/Window.h>
+#include <fltk/x.h>
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -46,6 +53,7 @@
 #include <fltk/Browser.h>
 #include <fltk/utf.h>
 
+#include <X11/X.h>
 #include <X11/extensions/XInput.h>
 #include <X11/extensions/XI.h>
 
@@ -56,6 +64,28 @@
 #endif
 
 using namespace fltk;
+
+
+static Window *xfocus;	// which window X thinks has focus
+static Window *xmousewin; // which window X thinks has ENTER
+
+// Update focus() in response to anything that might change it.
+// This is called whenever a window is added or hidden, and whenever
+// X says the focus window has changed.
+static void fix_focus() {
+  Widget* w = xfocus;
+  // Modal overrides whatever the system says the focus is:
+  if (grab_ || w && modal_) w = modal_;
+  if (w) {
+    if (w->contains(focus())) return; // already has it
+    unsigned saved = e_keysym;
+    e_keysym = 0; // make widgets not think a keystroke moved focus
+    if (w->take_focus()) {e_keysym = saved; return;}
+    e_keysym = saved;
+  }
+  // give nothing the focus:
+  focus(0);
+}
 
 ////////////////////////////////////////////////////////////////
 // interface to poll/select call:

@@ -3,7 +3,7 @@
   "configurations": [
     {
       "name": "Debug gcc build with gdb",
-      "type": "cppdbg",
+      "type": "lldb",
       "request": "launch",
       "program": "${workspaceFolder}/out/build/gcc-debug/src/Upspring",
       "args": [],

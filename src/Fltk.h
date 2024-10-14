@@ -10,6 +10,7 @@
 #pragma warning(disable : 4312 4311)
 #endif
 
+#include <fltk/Window.h>
 #include <fltk/BarGroup.h>
 #include <fltk/Divider.h>
 #include <fltk/FileInput.h>
@@ -21,7 +22,6 @@
 #include <fltk/PopupMenu.h>
 #include <fltk/TabGroup.h>
 #include <fltk/TiledGroup.h>
-#include <fltk/Window.h>
 #include <fltk/ask.h>
 #include <fltk/events.h>
 // NOTE: "font.h" needs to be "Font.h" on Linux (in fltk2)

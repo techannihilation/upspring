@@ -28,6 +28,10 @@
 #include "XColorMap.h"
 #include <string.h>
 
+#include "fltk/x.h"
+
+using namespace fltk;
+
 ////////////////////////////////////////////////////////////////
 // Code to look at the X visual and figure out the best way to turn
 // a color into a pixel value.

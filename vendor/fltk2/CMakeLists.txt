@@ -279,8 +279,14 @@ elseif (UNIX)
     target_compile_definitions(fltk2 PUBLIC HAVE_SCANDIR=1 HAVE_SCANDIR_POSIX=1 HAVE_DIRENT_H=1)
 
     find_package(X11 COMPONENTS Xft Xinerama Xcursor Xi Xext)
+    find_package(Freetype)
+    find_package(Fontconfig)
+
+    target_include_directories (fltk2 
+        PUBLIC ${X11_INCLUDE_DIR} ${FREETYPE_INCLUDE_DIRS} ${Fontconfig_INCLUDE_DIRS}
+    )
 
     target_link_libraries (fltk2 
-        PUBLIC ${X11_LIBRARIES} ${X11_Xft_LIB} ${X11_Xinerama_LIB} ${X11_Xcursor_LIB} ${X11_Xi_LIB}
+        PUBLIC ${X11_LIBRARIES} ${X11_Xft_LIB} ${X11_Xinerama_LIB} ${X11_Xcursor_LIB} ${X11_Xi_LIB} ${FREETYPE_LIBRARIES} ${Fontconfig_LIBRARIES}
     )
 endif()
